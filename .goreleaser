@@ -1,0 +1,20 @@
+builds:
+  - goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+archives:
+  - format: tar.gz
+    replacements:
+      darwin: macOS
+      amd64: 64-bit
+    files:
+      - LICENSE
+      - README.md
+      - samples/**/*
+      - install/**/*
+release:
+  draft: true
+  prerelease: true

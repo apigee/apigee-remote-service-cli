@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<XMLToJSON async="false" continueOnError="true" enabled="true" name="Products-to-JSON-2">
+    <DisplayName>Products to JSON 2</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <OutputVariable>apiCredential</OutputVariable>
+    <Source>AccessEntity.ChildNodes.Access-App-Info-2.App.Credentials</Source>
+    <Options>
+        <TreatAsArray>
+            <Path>Credentials/Credential</Path>
+            <Path>Credentials/Credential/ApiProducts/ApiProduct</Path>
+        </TreatAsArray>
+    </Options>
+</XMLToJSON>
