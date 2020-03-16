@@ -673,6 +673,8 @@ func (p *provision) printApigeeHandler(cred *credential, printf shared.FormatFn,
 		}
 	}
 	if p.IsHybrid {
+		handler.Metadata.Namespace = "apigee"
+		handler.Spec.Connection.Address = "apigee-adapter.apigee:5000"
 		handler.Spec.Params.HybridConfig = "/opt/apigee/customer/default.properties"
 		handler.Spec.Params.AnalyticsOptions = analyticsOptions{
 			CollectionInterval: "10s",
