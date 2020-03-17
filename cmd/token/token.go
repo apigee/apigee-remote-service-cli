@@ -23,8 +23,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/apigee/apigee-proxy-cli/cmd/provision"
-	"github.com/apigee/apigee-proxy-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
+	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/lestrrat/go-jwx/jwk"
 	"github.com/lestrrat/go-jwx/jws"
 	"github.com/lestrrat/go-jwx/jwt"

@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/apigee/apigee-proxy-cli/apigee"
+	"github.com/apigee/apigee-remote-service-cli/apigee"
 )
 
 const (

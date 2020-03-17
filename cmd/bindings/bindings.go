@@ -22,7 +22,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/apigee/apigee-proxy-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-golib/product"
 	"github.com/spf13/cobra"
 )

@@ -22,10 +22,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/apigee/apigee-proxy-cli/cmd/bindings"
-	"github.com/apigee/apigee-proxy-cli/cmd/provision"
-	"github.com/apigee/apigee-proxy-cli/cmd/token"
-	"github.com/apigee/apigee-proxy-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/cmd/bindings"
+	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
+	"github.com/apigee/apigee-remote-service-cli/cmd/token"
+	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/spf13/cobra"
 )
 

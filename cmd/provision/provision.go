@@ -40,9 +40,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apigee/apigee-proxy-cli/apigee"
-	"github.com/apigee/apigee-proxy-cli/proxies"
-	"github.com/apigee/apigee-proxy-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/apigee"
+	"github.com/apigee/apigee-remote-service-cli/proxies"
+	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"

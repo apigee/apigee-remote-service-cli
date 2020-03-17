@@ -17,8 +17,8 @@ package main
 import (
 	"os"
 
-	"github.com/apigee/apigee-proxy-cli/cmd"
-	"github.com/apigee/apigee-proxy-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/cmd"
+	"github.com/apigee/apigee-remote-service-cli/shared"
 )
 
 // populated via ldflags
