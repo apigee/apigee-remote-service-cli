@@ -12,5 +12,6 @@
 *.out
 coverage.txt
 
+# Distribution
 dist/
 bin/goreleaser
