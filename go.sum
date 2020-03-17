@@ -499,8 +499,10 @@ github.com/stretchr/testify v0.0.0-20151208002404-e3a8ff8ce365/go.mod h1:a8OnRci
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
-github.com/theganyo/apigee-proxy-go v0.0.0-20200305215602-1fb70f674ee6 h1:YcqP3KDwEf9ShcOoBc9JFfygURNjIvLKhwXMMgsdMck=
-github.com/theganyo/apigee-proxy-go v0.0.0-20200305215602-1fb70f674ee6/go.mod h1:Ac+bmJkVCa4ycU6qE1c0FSv+hgGd4oiL2KXlezKQdus=
+github.com/theganyo/apigee-remote-service-golib v0.0.0-20200305215602-1fb70f674ee6 h1:YcqP3KDwEf9ShcOoBc9JFfygURNjIvLKhwXMMgsdMck=
+github.com/theganyo/apigee-remote-service-golib v0.0.0-20200305215602-1fb70f674ee6/go.mod h1:Ac+bmJkVCa4ycU6qE1c0FSv+hgGd4oiL2KXlezKQdus=
+github.com/theganyo/apigee-remote-service-golib v0.0.0-20200317205714-bc036d661c4a h1:jWGwMMajjbC9x0aoRGRVI5kdsoBw7ftRavZgTnpCzCE=
+github.com/theganyo/apigee-remote-service-golib v0.0.0-20200317205714-bc036d661c4a/go.mod h1:GMHr4zczdM/ZQAjtcFu70pnwF2xIsQ+4K2TNqjhJAlc=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=

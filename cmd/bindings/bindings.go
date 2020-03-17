@@ -23,7 +23,7 @@ import (
 	"text/template"
 
 	"github.com/apigee/apigee-proxy-cli/shared"
-	"github.com/apigee/apigee-proxy-go/product"
+	"github.com/apigee/apigee-remote-service-golib/product"
 	"github.com/spf13/cobra"
 )
 
