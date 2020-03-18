@@ -1,10 +1,10 @@
-// Copyright 2017 Istio Authors
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,18 +50,16 @@ import (
 )
 
 const (
-	kvmName           = "istio"
+	kvmName           = "remote-service"
 	encryptKVM        = true
-	authProxyName     = "istio-auth"
-	mgmtProxyName     = "istio-mgmt"
+	authProxyName     = "remote-service"
 	internalProxyName = "edgemicro-internal"
 
 	legacyCredentialURLFormat = "%s/credential/organization/%s/environment/%s" // InternalProxyURL, org, env
 
-	legacyAuthProxyZip = "istio-auth-legacy.zip"
-	hybridAuthProxyZip = "istio-auth-hybrid.zip"
-	mgmtProxyZip       = "istio-mgmt.zip"
-	internalProxyZip   = "istio-internal.zip"
+	legacyAuthProxyZip = "remote-service-legacy.zip"
+	hybridAuthProxyZip = "remote-service-hybrid.zip"
+	internalProxyZip   = "internal.zip"
 
 	apiProductsPath        = "apiproducts"
 	developersPath         = "developers"
@@ -101,9 +99,9 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 
 	c := &cobra.Command{
 		Use:   "provision",
-		Short: "Provision your Apigee environment for Istio",
-		Long: `The provision command will set up your Apigee environment for Istio. This includes creating 
-and installing a kvm with certificates, creating credentials, and deploying a necessary proxy 
+		Short: "Provision your Apigee environment for remote services",
+		Long: `The provision command will set up your Apigee environment for remote services. This includes creating 
+and installing a remote-service kvm with certificates, creating credentials, and deploying a remote-service proxy 
 to your organization and environment.`,
 		Args: cobra.NoArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -205,7 +203,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 			}
 		}
 
-		// input istio-auth proxy
+		// input remote-service proxy
 		var customizedProxy string
 		if p.IsHybrid {
 			customizedProxy, err = getCustomizedProxy(tempDir, hybridAuthProxyZip, nil)
@@ -286,20 +284,20 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 
 // ensures that there's a product, developer, and app
 func (p *provision) createHybridCredential(verbosef shared.FormatFn) (*credential, error) {
-	const istioAuthName = "istio-auth"
+	const removeServiceName = "remote-service"
 
 	// create product
 	product := apiProduct{
-		Name:         istioAuthName,
-		DisplayName:  istioAuthName,
+		Name:         removeServiceName,
+		DisplayName:  removeServiceName,
 		ApprovalType: "auto",
 		Attributes: []attribute{
 			{Name: "access", Value: "internal"},
 		},
-		Description:  istioAuthName + " access",
+		Description:  removeServiceName + " access",
 		APIResources: []string{"/**"},
 		Environments: []string{p.Env},
-		Proxies:      []string{istioAuthName},
+		Proxies:      []string{removeServiceName},
 	}
 	req, err := p.Client.NewRequestNoEnv(http.MethodPost, apiProductsPath, product)
 	if err != nil {
@@ -310,16 +308,16 @@ func (p *provision) createHybridCredential(verbosef shared.FormatFn) (*credentia
 		if res.StatusCode != http.StatusConflict { // exists
 			return nil, err
 		}
-		verbosef("product %s already exists", istioAuthName)
+		verbosef("product %s already exists", removeServiceName)
 	}
 
 	// create developer
 	devEmail := p.developerEmail
 	dev := developer{
 		Email:     devEmail,
-		FirstName: istioAuthName,
-		LastName:  istioAuthName,
-		UserName:  istioAuthName,
+		FirstName: removeServiceName,
+		LastName:  removeServiceName,
+		UserName:  removeServiceName,
 	}
 	req, err = p.Client.NewRequestNoEnv(http.MethodPost, developersPath, dev)
 	if err != nil {
@@ -335,8 +333,8 @@ func (p *provision) createHybridCredential(verbosef shared.FormatFn) (*credentia
 
 	// create application
 	app := application{
-		Name:        istioAuthName,
-		APIProducts: []string{istioAuthName},
+		Name:        removeServiceName,
+		APIProducts: []string{removeServiceName},
 	}
 	applicationsPath := fmt.Sprintf(applicationsPathFormat, devEmail)
 	req, err = p.Client.NewRequestNoEnv(http.MethodPost, applicationsPath, &app)
@@ -359,12 +357,12 @@ func (p *provision) createHybridCredential(verbosef shared.FormatFn) (*credentia
 	}
 
 	// http.StatusConflict == app exists, create a new credential
-	verbosef("app %s already exists", istioAuthName)
+	verbosef("app %s already exists", removeServiceName)
 	appCred := appCredential{
 		Key:    newHash(),
 		Secret: newHash(),
 	}
-	createKeyPath := fmt.Sprintf(keyCreatePathFormat, devEmail, istioAuthName)
+	createKeyPath := fmt.Sprintf(keyCreatePathFormat, devEmail, removeServiceName)
 	if req, err = p.Client.NewRequestNoEnv(http.MethodPost, createKeyPath, &appCred); err != nil {
 		return nil, err
 	}
@@ -374,9 +372,9 @@ func (p *provision) createHybridCredential(verbosef shared.FormatFn) (*credentia
 
 	// adding product to the credential requires a separate call
 	appCredDetails := appCredentialDetails{
-		APIProducts: []string{istioAuthName},
+		APIProducts: []string{removeServiceName},
 	}
-	keyPath := fmt.Sprintf(keyPathFormat, devEmail, istioAuthName, appCred.Key)
+	keyPath := fmt.Sprintf(keyPathFormat, devEmail, removeServiceName, appCred.Key)
 	if req, err = p.Client.NewRequestNoEnv(http.MethodPost, keyPath, &appCredDetails); err != nil {
 		return nil, err
 	}
@@ -684,8 +682,8 @@ func (p *provision) printApigeeHandler(cred *credential, printf shared.FormatFn,
 	if err != nil {
 		return err
 	}
-	printf("# Istio handler configuration for Apigee gRPC adapter for Mixer")
-	printf("# generated by apigee-istio provision on %s", time.Now().Format("2006-01-02 15:04:05"))
+	printf("# Configuration for Apigee Remote Service")
+	printf("# generated by apigee-remote-service-cli provision on %s", time.Now().Format("2006-01-02 15:04:05"))
 	if verifyErrors != nil {
 		printf("# WARNING: verification of provision failed. May not be valid.")
 	}

@@ -41,9 +41,9 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 	rootArgs := &shared.RootArgs{}
 
 	c := &cobra.Command{
-		Use:   "apigee-istio",
-		Short: "Utility to work with Apigee and Istio.",
-		Long:  "This command lets you interact with Apigee and Istio.",
+		Use:   "apigee-remote-service-cli",
+		Short: "Utility to work with Apigee Remote Service.",
+		Long:  "This command lets you interact with Apigee Remote Service",
 	}
 	c.SetArgs(args)
 	c.PersistentFlags().AddGoFlagSet(flag.CommandLine)
@@ -99,7 +99,7 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 			return rootArgs.Resolve(true)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			printf("apigee-istio version %s %s [%s]",
+			printf("apigee-remote-service-cli version %s %s [%s]",
 				shared.BuildInfo.Version, shared.BuildInfo.Date, shared.BuildInfo.Commit)
 
 			if rootArgs.RouterBase == "https://-.apigee.net" {
@@ -121,7 +121,7 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 				body, _ := ioutil.ReadAll(resp.Body)
 				fatalf("error getting proxy version. response code: %d, body: %s", resp.StatusCode, string(body))
 			}
-			printf("istio-auth proxy version: %v", version.Version)
+			printf("remote-service proxy version: %v", version.Version)
 		},
 	}
 

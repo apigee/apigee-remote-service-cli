@@ -39,7 +39,7 @@ const (
 
 	internalProxyURLFormat     = "%s://istioservices.%s/edgemicro" // routerBase scheme, routerBase domain
 	internalProxyURLFormatOPDK = "%s/edgemicro"                    // routerBase
-	customerProxyURLFormat     = "%s/istio-auth"                   // routerBase
+	customerProxyURLFormat     = "%s/remote-service"               // routerBase
 )
 
 // BuildInfoType holds version information

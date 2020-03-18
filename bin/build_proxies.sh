@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 #
-# If you change the proxies, you must run this and check in the generated proxies.go.
-# Remember to update the returned proxy version(s).
+# If you change any proxies:
+# 1. update the returned version(s) in the Send-Version.xml of the affected proxies
+# 2. run this script to generate proxies.go and check in your changes.
 #
 
 SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -17,30 +18,30 @@ TEMP_DIR=$(mktemp -d)
 PROXIES_ZIP_DIR="${TEMP_DIR}/proxies"
 PROXIES_SOURCE_DIR="${ROOTDIR}/proxies"
 
-LEGACY_AUTH_PROXY_SRC="${PROXIES_SOURCE_DIR}/auth-proxy-legacy"
+LEGACY_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-legacy"
 INTERNAL_PROXY_SRC="${PROXIES_SOURCE_DIR}/internal-proxy"
-HYBRID_AUTH_PROXY_SRC="${PROXIES_SOURCE_DIR}/auth-proxy-hybrid"
+HYBRID_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-hybrid"
 
 if [ ! -d "${PROXIES_ZIP_DIR}" ]; then
   mkdir -p "${PROXIES_ZIP_DIR}"
 fi
 
-# legacy saas auth proxy
-ZIP=${PROXIES_ZIP_DIR}/istio-auth-legacy.zip
+# legacy saas remote proxy
+ZIP=${PROXIES_ZIP_DIR}/remote-service-legacy.zip
 echo "building ${ZIP}"
 rm -f "${ZIP}"
-cd "${LEGACY_AUTH_PROXY_SRC}"
+cd "${LEGACY_REMOTE_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
-# hybrid auth proxy
-ZIP=${PROXIES_ZIP_DIR}/istio-auth-hybrid.zip
+# hybrid remote proxy
+ZIP=${PROXIES_ZIP_DIR}/remote-service-hybrid.zip
 echo "building ${ZIP}"
 rm -f "${ZIP}"
-cd "${HYBRID_AUTH_PROXY_SRC}"
+cd "${HYBRID_REMOTE_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
 # internal proxy
-ZIP=${PROXIES_ZIP_DIR}/istio-internal.zip
+ZIP=${PROXIES_ZIP_DIR}/internal.zip
 echo "building ${ZIP}"
 rm -f "${ZIP}"
 cd "${INTERNAL_PROXY_SRC}"

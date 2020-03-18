@@ -4,5 +4,7 @@ An Apigee Edge proxy to support analytics and quota.
 
 ## Development
 
-IMPORTANT: If you change the proxy source, you must run `bin/build_proxy_sources.sh` and rebuild the 
-`apigee-istio` CLI to include it.
+IMPORTANT: If you change any proxies, you must:
+1. update the returned version(s) in the Send-Version.xml of the affected proxies.
+2. run `bin/build_proxies.sh` to generate proxies.go.
+3. rebuild `apigee-remote-service-cli` to include it for provisioning.

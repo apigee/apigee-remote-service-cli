@@ -15,3 +15,5 @@ coverage.txt
 # Distribution
 dist/
 bin/goreleaser
+apigee-remote-service-cli
+test.yaml

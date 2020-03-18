@@ -1,10 +1,10 @@
-// Copyright 2017 Istio Authors
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +28,6 @@ import (
 )
 
 const (
-	servicesAttr          = "istio-services"
 	productsURLFormat     = "/v1/organizations/%s/apiproducts"               // ManagementBase
 	productAttrPathFormat = "/v1/organizations/%s/apiproducts/%s/attributes" // ManagementBase, prod
 )
@@ -44,8 +43,8 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 
 	c := &cobra.Command{
 		Use:   "bindings",
-		Short: "Manage Apigee Product to Istio Service bindings",
-		Long:  "Manage Apigee Product to Istio Service bindings.",
+		Short: "Manage Apigee Product to Remote Service bindings",
+		Long:  "Manage Apigee Product to Remote Service bindings.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return rootArgs.Resolve(false)
 		},
@@ -61,8 +60,8 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 func cmdBindingsList(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "list",
-		Short: "List Apigee Product to Istio Service bindings",
-		Long:  "List Apigee Product to Istio Service bindings",
+		Short: "List Apigee Product to Remote Service bindings",
+		Long:  "List Apigee Product to Remote Service bindings",
 		Args:  cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
@@ -76,8 +75,8 @@ func cmdBindingsList(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command
 func cmdBindingsAdd(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "add [service name] [product name]",
-		Short: "Add Istio Service binding to Apigee Product",
-		Long:  "Add Istio Service binding to Apigee Product",
+		Short: "Add Remote Service binding to Apigee Product",
+		Long:  "Add Remote Service binding to Apigee Product",
 		Args:  cobra.ExactArgs(2),
 
 		Run: func(cmd *cobra.Command, args []string) {
@@ -101,8 +100,8 @@ func cmdBindingsAdd(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command 
 func cmdBindingsRemove(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "remove [service name] [product name]",
-		Short: "Remove Istio Service binding from Apigee Product",
-		Long:  "Remove Istio Service binding from Apigee Product",
+		Short: "Remove Remote Service binding from Apigee Product",
+		Long:  "Remove Remote Service binding from Apigee Product",
 		Args:  cobra.ExactArgs(2),
 
 		Run: func(cmd *cobra.Command, args []string) {
@@ -235,12 +234,12 @@ func (b *bindings) updateServiceBindings(p *product.APIProduct, bindings []strin
 	bindingsString := strings.Join(bindings, ",")
 	var attributes []product.Attribute
 	for _, a := range p.Attributes {
-		if a.Name != servicesAttr {
+		if a.Name != product.TargetsAttr {
 			attributes = append(attributes, a)
 		}
 	}
 	attributes = append(attributes, product.Attribute{
-		Name:  servicesAttr,
+		Name:  product.TargetsAttr,
 		Value: bindingsString,
 	})
 	newAttrs := attrUpdate{
