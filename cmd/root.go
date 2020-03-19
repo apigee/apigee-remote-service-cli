@@ -51,27 +51,27 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 	var addCommand = func(cmds ...*cobra.Command) {
 		for _, subC := range cmds {
 			// add general flags
-			subC.PersistentFlags().StringVarP(&rootArgs.RouterBase, "routerBase", "r",
-				shared.DefaultRouterBase, "Apigee router base")
-			subC.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "managementBase", "m",
-				shared.DefaultManagementBase, "Apigee management base")
+			subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
+				shared.DefaultRuntimeBase, "Apigee runtime base URL (required for hybrid)")
+			subC.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m",
+				shared.DefaultManagementBase, "Apigee management base URL")
 			subC.PersistentFlags().BoolVarP(&rootArgs.Verbose, "verbose", "v",
 				false, "verbose output")
-			subC.PersistentFlags().BoolVarP(&rootArgs.IsHybrid, "hybrid", "y",
-				false, "Apigee hybrid (automatically sets management base)")
-			subC.PersistentFlags().StringVarP(&rootArgs.NetrcPath, "netrc", "n",
-				"", "Path to a .netrc file to use (default is $HOME/.netrc")
+			subC.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "",
+				false, "Apigee SaaS (sets management URL)")
+			subC.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "",
+				false, "Apigee OPDK")
 
 			subC.PersistentFlags().StringVarP(&rootArgs.Org, "org", "o",
 				"", "Apigee organization name")
 			subC.PersistentFlags().StringVarP(&rootArgs.Env, "env", "e",
 				"", "Apigee environment name")
 			subC.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u",
-				"", "Apigee username")
+				"", "Apigee username (legacy or OPDK)")
 			subC.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p",
-				"", "Apigee password")
+				"", "Apigee password (legacy or OPDK)")
 			subC.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t",
-				"", "Apigee OAuth or SAML token")
+				"", "Apigee OAuth or SAML token (hybrid)")
 
 			subC.MarkPersistentFlagRequired("org")
 			subC.MarkPersistentFlagRequired("env")
@@ -102,12 +102,12 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 			printf("apigee-remote-service-cli version %s %s [%s]",
 				shared.BuildInfo.Version, shared.BuildInfo.Date, shared.BuildInfo.Commit)
 
-			if rootArgs.RouterBase == "https://-.apigee.net" {
+			if rootArgs.RuntimeBase == "https://-.apigee.net" {
 				return
 			}
 
 			// check proxy version
-			versionURL := fmt.Sprintf(versionAPIFormat, rootArgs.CustomerProxyURL)
+			versionURL := fmt.Sprintf(versionAPIFormat, rootArgs.RemoteServiceProxyURL)
 			req, err := http.NewRequest(http.MethodGet, versionURL, nil)
 			if err != nil {
 				fatalf("error creating request: %v", err)
@@ -125,8 +125,8 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 		},
 	}
 
-	subC.PersistentFlags().StringVarP(&rootArgs.RouterBase, "routerBase", "r",
-		shared.DefaultRouterBase, "Apigee router base")
+	subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
+		shared.DefaultRuntimeBase, "Apigee runtime base URL")
 
 	subC.PersistentFlags().StringVarP(&rootArgs.Org, "org", "o",
 		"", "Apigee organization name")

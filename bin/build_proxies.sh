@@ -20,7 +20,7 @@ PROXIES_SOURCE_DIR="${ROOTDIR}/proxies"
 
 LEGACY_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-legacy"
 INTERNAL_PROXY_SRC="${PROXIES_SOURCE_DIR}/internal-proxy"
-HYBRID_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-hybrid"
+GCP_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-gcp"
 
 if [ ! -d "${PROXIES_ZIP_DIR}" ]; then
   mkdir -p "${PROXIES_ZIP_DIR}"
@@ -33,11 +33,11 @@ rm -f "${ZIP}"
 cd "${LEGACY_REMOTE_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
-# hybrid remote proxy
-ZIP=${PROXIES_ZIP_DIR}/remote-service-hybrid.zip
+# gcp remote proxy
+ZIP=${PROXIES_ZIP_DIR}/remote-service-gcp.zip
 echo "building ${ZIP}"
 rm -f "${ZIP}"
-cd "${HYBRID_REMOTE_PROXY_SRC}"
+cd "${GCP_REMOTE_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
 # internal proxy

@@ -15,7 +15,6 @@ import (
 	"os"
 	"path"
 	"reflect"
-	"strings"
 
 	"github.com/bgentry/go-netrc/netrc"
 	"github.com/google/go-querystring/query"
@@ -64,6 +63,8 @@ type EdgeClient struct {
 	// Storage           StorageService
 	// StorageActions    StorageActionsService
 	// Tags              TagsService
+
+	IsGCPManaged bool
 
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
@@ -138,6 +139,9 @@ type EdgeClientOptions struct {
 
 	// Optional. Warning: if set to true, HTTP Basic Auth base64 blobs will appear in output.
 	Debug bool
+
+	// Optional. For hybrid and NG must be true.
+	GCPManaged bool
 }
 
 // EdgeAuth holds information about how to authenticate to the Edge Management server.
@@ -209,7 +213,13 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	baseURL.Path = path.Join(baseURL.Path, "v1/organizations/", o.Org, "/")
 	baseURLEnv.Path = path.Join(baseURLEnv.Path, "v1/organizations/", o.Org, "environments/", o.Env)
 
-	c := &EdgeClient{client: httpClient, BaseURL: baseURL, BaseURLEnv: baseURLEnv, UserAgent: userAgent}
+	c := &EdgeClient{
+		client:       httpClient,
+		BaseURL:      baseURL,
+		BaseURLEnv:   baseURLEnv,
+		UserAgent:    userAgent,
+		IsGCPManaged: o.GCPManaged,
+	}
 	c.Proxies = &ProxiesServiceOp{client: c}
 	c.KVMService = &KVMServiceOp{client: c}
 
@@ -421,11 +431,6 @@ func (c *EdgeClient) Do(req *http.Request, v interface{}) (*Response, error) {
 	}
 
 	return response, err
-}
-
-// IsHybrid returns true if Apigee hybrid target
-func (c *EdgeClient) IsHybrid() bool {
-	return strings.Contains(c.BaseURL.Host, "apigee.googleapis.com")
 }
 
 func (r *ErrorResponse) Error() string {

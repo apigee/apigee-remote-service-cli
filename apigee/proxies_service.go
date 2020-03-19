@@ -32,8 +32,8 @@ type ProxiesService interface {
 	// Export(string, Revision) (string, *Response, error)
 	GetDeployment(proxy string) (*EnvironmentDeployment, *Response, error)
 	GetDeployedRevision(proxy string) (*Revision, error)
-	GetHybridDeployments(proxy string) ([]HybridDeployment, *Response, error)
-	GetHybridDeployedRevision(proxy string) (*Revision, error)
+	GetGCPDeployments(proxy string) ([]GCPDeployment, *Response, error)
+	GetGCPDeployedRevision(proxy string) (*Revision, error)
 }
 
 // ProxiesServiceOp represents operations against Apigee proxies
@@ -43,13 +43,13 @@ type ProxiesServiceOp struct {
 
 var _ ProxiesService = &ProxiesServiceOp{}
 
-// HybridDeployments holds an array of HybridDeployment objects.
-type HybridDeployments struct {
-	Deployments []HybridDeployment `json:"deployments,omitempty"`
+// GCPDeployments holds an array of GCPDeployment objects.
+type GCPDeployments struct {
+	Deployments []GCPDeployment `json:"deployments,omitempty"`
 }
 
-// HybridDeployment contains information about a deployment in hybrid.
-type HybridDeployment struct {
+// GCPDeployment contains information about a deployment in GCP.
+type GCPDeployment struct {
 	Environment     string `json:"environment,omitempty"`
 	Name            string `json:"apiProxy,omitempty"`
 	Revision        string `json:"revision,omitempty"`
@@ -312,12 +312,12 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 	defer ioreader.Close()
 
 	var req *http.Request
-	if !s.client.IsHybrid() {
+	if !s.client.IsGCPManaged {
 		req, err = s.client.NewRequestNoEnv("POST", urlPath, ioreader)
 		if err != nil {
 			return nil, nil, err
 		}
-	} else { // hybrid API requires formdata format
+	} else { // GCP API requires formdata format
 		var b bytes.Buffer
 		w := multipart.NewWriter(&b)
 		var fw io.Writer
@@ -406,7 +406,7 @@ func (s *ProxiesServiceOp) Undeploy(proxyName, env string, rev Revision) (*Proxy
 
 	var req *http.Request
 	var err error
-	if s.client.IsHybrid() {
+	if s.client.IsGCPManaged {
 		req, err = s.client.NewRequest("DELETE", urlPath, nil)
 	} else {
 		origURL, err := url.Parse(urlPath)
@@ -442,7 +442,7 @@ func (s *ProxiesServiceOp) Deploy(proxyName, env string, rev Revision) (*ProxyRe
 	}
 	q := origURL.Query()
 	q.Add("override", "true")
-	if !s.client.IsHybrid() {
+	if !s.client.IsGCPManaged {
 		q.Add("action", "deploy")
 		q.Add("delay", "12")
 		q.Add("env", env)
@@ -481,10 +481,10 @@ func (s *ProxiesServiceOp) Deploy(proxyName, env string, rev Revision) (*ProxyRe
 // }
 
 // GetDeployment retrieves the information about the deployment of an API Proxy in an environment.
-// DOES NOT WORK WITH HYBRID!
+// DOES NOT WORK WITH GCP API!
 func (s *ProxiesServiceOp) GetDeployment(proxy string) (*EnvironmentDeployment, *Response, error) {
-	if s.client.IsHybrid() {
-		return nil, nil, errors.New("not compatible with hybrid")
+	if s.client.IsGCPManaged {
+		return nil, nil, errors.New("not compatible with GCP Experience")
 	}
 	urlPath := path.Join(proxiesPath, proxy, "deployments")
 	req, e := s.client.NewRequest("GET", urlPath, nil)
@@ -517,18 +517,18 @@ func (s *ProxiesServiceOp) GetDeployedRevision(proxy string) (*Revision, error) 
 	return nil, nil
 }
 
-// GetHybridDeployments retrieves the information about deployments of an API Proxy in
-// an hybrid organization, including the environment names and revision numbers.
-func (s *ProxiesServiceOp) GetHybridDeployments(proxy string) ([]HybridDeployment, *Response, error) {
-	if !s.client.IsHybrid() {
-		return nil, nil, errors.New("not compatible with non-hybrid")
+// GetGCPDeployments retrieves the information about deployments of an API Proxy in
+// an GCP organization, including the environment names and revision numbers.
+func (s *ProxiesServiceOp) GetGCPDeployments(proxy string) ([]GCPDeployment, *Response, error) {
+	if !s.client.IsGCPManaged {
+		return nil, nil, errors.New("only compatible with GCP Experience")
 	}
 	urlPath := path.Join(proxiesPath, proxy, "deployments")
 	req, e := s.client.NewRequest("GET", urlPath, nil)
 	if e != nil {
 		return nil, nil, e
 	}
-	deployments := HybridDeployments{}
+	deployments := GCPDeployments{}
 	resp, e := s.client.Do(req, &deployments)
 	if e != nil {
 		return nil, resp, e
@@ -536,9 +536,9 @@ func (s *ProxiesServiceOp) GetHybridDeployments(proxy string) ([]HybridDeploymen
 	return deployments.Deployments, resp, e
 }
 
-// GetHybridDeployedRevision returns the Revision that is deployed to an environment in hybrid.
-func (s *ProxiesServiceOp) GetHybridDeployedRevision(proxy string) (*Revision, error) {
-	deployments, resp, err := s.GetHybridDeployments(proxy)
+// GetGCPDeployedRevision returns the Revision that is deployed to an environment in GCP.
+func (s *ProxiesServiceOp) GetGCPDeployedRevision(proxy string) (*Revision, error) {
+	deployments, resp, err := s.GetGCPDeployments(proxy)
 	if err != nil && (resp == nil || resp.StatusCode == http.StatusUnauthorized) {
 		return nil, err
 	}

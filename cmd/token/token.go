@@ -33,9 +33,9 @@ import (
 )
 
 const (
-	tokenURLFormat         = "%s/token"  // customerProxyURL
-	certsURLFormat         = "%s/certs"  // customerProxyURL
-	rotateURLFormat        = "%s/rotate" // customerProxyURL
+	tokenURLFormat         = "%s/token"  // RemoteServiceProxyURL
+	certsURLFormat         = "%s/certs"  // RemoteServiceProxyURL
+	rotateURLFormat        = "%s/rotate" // RemoteServiceProxyURL
 	clientCredentialsGrant = "client_credentials"
 )
 
@@ -149,7 +149,7 @@ func (t *token) createToken(printf, fatalf shared.FormatFn) (string, error) {
 	body := new(bytes.Buffer)
 	json.NewEncoder(body).Encode(tokenReq)
 
-	tokenURL := fmt.Sprintf(tokenURLFormat, t.CustomerProxyURL)
+	tokenURL := fmt.Sprintf(tokenURLFormat, t.RemoteServiceProxyURL)
 	req, err := http.NewRequest(http.MethodPost, tokenURL, body)
 	if err != nil {
 		return "", err
@@ -201,7 +201,7 @@ func (t *token) inspectToken(printf, fatalf shared.FormatFn) error {
 	// verify JWT
 	printf("\nverifying...")
 
-	url := fmt.Sprintf(certsURLFormat, t.CustomerProxyURL)
+	url := fmt.Sprintf(certsURLFormat, t.RemoteServiceProxyURL)
 	jwkSet, err := jwk.FetchHTTP(url)
 	if err != nil {
 		fatalf("error fetching certs: %v", err)
@@ -248,7 +248,7 @@ func (t *token) rotateCert(printf, fatalf shared.FormatFn) {
 		fatalf("encoding error: %v", err)
 	}
 
-	rotateURL := fmt.Sprintf(rotateURLFormat, t.CustomerProxyURL)
+	rotateURL := fmt.Sprintf(rotateURLFormat, t.RemoteServiceProxyURL)
 	req, err := http.NewRequest(http.MethodPost, rotateURL, body)
 	if err != nil {
 		fatalf("unable to create request: %v", err)

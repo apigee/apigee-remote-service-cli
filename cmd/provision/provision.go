@@ -57,9 +57,9 @@ const (
 
 	legacyCredentialURLFormat = "%s/credential/organization/%s/environment/%s" // InternalProxyURL, org, env
 
-	legacyAuthProxyZip = "remote-service-legacy.zip"
-	hybridAuthProxyZip = "remote-service-hybrid.zip"
-	internalProxyZip   = "internal.zip"
+	legacyAuthProxyZip    = "remote-service-legacy.zip"
+	remoteServiceProxyZip = "remote-service-gcp.zip"
+	internalProxyZip      = "internal.zip"
 
 	apiProductsPath        = "apiproducts"
 	developersPath         = "developers"
@@ -67,11 +67,11 @@ const (
 	keyCreatePathFormat    = "developers/%s/apps/%s/keys/create" // developer email, app ID
 	keyPathFormat          = "developers/%s/apps/%s/keys/%s"     // developer email, app ID, key ID
 
-	certsURLFormat        = "%s/certs"        // CustomerProxyURL
-	productsURLFormat     = "%s/products"     // CustomerProxyURL
-	verifyAPIKeyURLFormat = "%s/verifyApiKey" // CustomerProxyURL
-	quotasURLFormat       = "%s/quotas"       // CustomerProxyURL
-	rotateURLFormat       = "%s/rotate"       // CustomerProxyURL
+	certsURLFormat        = "%s/certs"        // RemoteServiceProxyURL
+	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
+	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
+	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
+	rotateURLFormat       = "%s/rotate"       // RemoteServiceProxyURL
 
 	analyticsURLFormat      = "%s/analytics/organization/%s/environment/%s"   // InternalProxyURL, org, env
 	legacyAnalyticURLFormat = "%s/axpublisher/organization/%s/environment/%s" // InternalProxyURL, org, env
@@ -107,8 +107,13 @@ to your organization and environment.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			err := rootArgs.Resolve(false)
 			if err == nil {
-				if !p.verifyOnly && p.IsHybrid && p.developerEmail == "" {
-					fatalf("hybrid provisioning requires an email address for --developer-email")
+				if p.IsGCPManaged && !p.verifyOnly {
+					if p.Token == "" {
+						fatalf("--token is required")
+					}
+					if p.developerEmail == "" {
+						fatalf("--developer-email is required")
+					}
 				}
 			}
 			return err
@@ -123,7 +128,7 @@ to your organization and environment.`,
 	}
 
 	c.Flags().StringVarP(&p.developerEmail, "developer-email", "d", "",
-		"email used to create a developer (hybrid only)")
+		"email used to create a developer (ignored for --legacy or --opdk)")
 	c.Flags().IntVarP(&p.certExpirationInYears, "years", "", 1,
 		"number of years before the jwt cert expires")
 	c.Flags().IntVarP(&p.certKeyStrength, "strength", "", 2048,
@@ -189,7 +194,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 					return errors.Wrapf(err, "error reading file %s", policiesFile)
 				}
 				oldTarget := "https://edgemicroservices.apigee.net"
-				bytes = []byte(strings.Replace(string(bytes), oldTarget, p.RouterBase, 1))
+				bytes = []byte(strings.Replace(string(bytes), oldTarget, p.RuntimeBase, 1))
 				if err := ioutil.WriteFile(policiesFile, bytes, 0); err != nil {
 					return errors.Wrapf(err, "error writing %s", policiesFile)
 				}
@@ -205,8 +210,8 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 
 		// input remote-service proxy
 		var customizedProxy string
-		if p.IsHybrid {
-			customizedProxy, err = getCustomizedProxy(tempDir, hybridAuthProxyZip, nil)
+		if p.IsGCPManaged {
+			customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, nil)
 		} else {
 			customizedProxy, err = getCustomizedProxy(tempDir, legacyAuthProxyZip, replaceVHAndAuthTarget)
 		}
@@ -218,8 +223,8 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 			fatalf("error deploying %s proxy: %v", authProxyName, err)
 		}
 
-		if p.IsHybrid {
-			cred, err = p.createHybridCredential(verbosef)
+		if p.IsGCPManaged {
+			cred, err = p.createGCPCredential(verbosef)
 		} else {
 			cred, err = p.createLegacyCredential(verbosef)
 		}
@@ -252,13 +257,13 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 	}
 
 	var verifyErrors error
-	if !p.IsHybrid {
+	if p.IsLegacySaaS || p.IsOPDK {
 		verbosef("verifying internal proxy...")
 		verifyErrors = p.verifyInternalProxy(opts.Auth, verbosef, fatalf)
 	}
 
-	verbosef("verifying customer proxy...")
-	verifyErrors = multierr.Combine(verifyErrors, p.verifyCustomerProxy(opts.Auth, verbosef, fatalf))
+	verbosef("verifying remote-service proxy...")
+	verifyErrors = multierr.Combine(verifyErrors, p.verifyRemoteServiceProxy(opts.Auth, verbosef, fatalf))
 
 	if verifyErrors != nil {
 		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
@@ -283,7 +288,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 }
 
 // ensures that there's a product, developer, and app
-func (p *provision) createHybridCredential(verbosef shared.FormatFn) (*credential, error) {
+func (p *provision) createGCPCredential(verbosef shared.FormatFn) (*credential, error) {
 	const removeServiceName = "remote-service"
 
 	// create product
@@ -408,7 +413,7 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 		setMgmtURL := false
 		for i, cp := range callout.Properties {
 			if cp.Name == "REGION_MAP" {
-				callout.Properties[i].Value = fmt.Sprintf("DN=%s", p.RouterBase)
+				callout.Properties[i].Value = fmt.Sprintf("DN=%s", p.RuntimeBase)
 			}
 			if cp.Name == "MGMT_URL_PREFIX" {
 				setMgmtURL = true
@@ -549,7 +554,7 @@ func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) err
 		Encrypted: encryptKVM,
 	}
 
-	if !p.IsHybrid { // hybrid API breaks with any initial entries
+	if !p.IsGCPManaged { // GCP API breaks with any initial entries
 		kvm.Entries = []apigee.Entry{
 			{
 				Name:  "private_key",
@@ -579,7 +584,7 @@ func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) err
 	}
 	printf("kvm %s created", kvmName)
 
-	if p.IsHybrid { // hybrid requires an additional call to set the certificate
+	if p.IsGCPManaged { // GCP requires an additional call to set the certificate
 
 		rotateReq := rotateRequest{
 			PrivateKey:  privateKey,
@@ -591,7 +596,7 @@ func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) err
 		if err = json.NewEncoder(body).Encode(rotateReq); err != nil {
 			return err
 		}
-		rotateURL := fmt.Sprintf(rotateURLFormat, p.CustomerProxyURL)
+		rotateURL := fmt.Sprintf(rotateURLFormat, p.RemoteServiceProxyURL)
 		req, err := http.NewRequest(http.MethodPost, rotateURL, body)
 		if err != nil {
 			return err
@@ -656,12 +661,12 @@ func (p *provision) printApigeeHandler(cred *credential, printf shared.FormatFn,
 				Address: "apigee-adapter:5000",
 			},
 			Params: params{
-				ApigeeBase:   p.InternalProxyURL,
-				CustomerBase: p.CustomerProxyURL,
-				OrgName:      p.Org,
-				EnvName:      p.Env,
-				Key:          cred.Key,
-				Secret:       cred.Secret,
+				InternalAPI:      p.InternalProxyURL,
+				RemoteServiceAPI: p.RemoteServiceProxyURL,
+				OrgName:          p.Org,
+				EnvName:          p.Env,
+				Key:              cred.Key,
+				Secret:           cred.Secret,
 			},
 		},
 	}
@@ -670,10 +675,10 @@ func (p *provision) printApigeeHandler(cred *credential, printf shared.FormatFn,
 			LegacyEndpoint: true,
 		}
 	}
-	if p.IsHybrid {
+	if p.IsGCPManaged {
 		handler.Metadata.Namespace = "apigee"
 		handler.Spec.Connection.Address = "apigee-adapter.apigee:5000"
-		handler.Spec.Params.HybridConfig = "/opt/apigee/customer/default.properties"
+		handler.Spec.Params.FluentdConfigFile = "/opt/apigee/customer/default.properties"
 		handler.Spec.Params.AnalyticsOptions = analyticsOptions{
 			CollectionInterval: "10s",
 		}
@@ -695,8 +700,8 @@ func (p *provision) checkAndDeployProxy(name, file string, printf shared.FormatF
 	printf("checking if proxy %s deployment exists...", name)
 	var oldRev *apigee.Revision
 	var err error
-	if p.IsHybrid {
-		oldRev, err = p.Client.Proxies.GetHybridDeployedRevision(name)
+	if p.IsGCPManaged {
+		oldRev, err = p.Client.Proxies.GetGCPDeployedRevision(name)
 	} else {
 		oldRev, err = p.Client.Proxies.GetDeployedRevision(name)
 	}
@@ -749,7 +754,7 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 	}
 	defer resp.Body.Close()
 
-	if oldRev != nil && !p.IsHybrid { // it's not necessary to undeploy first in hybrid
+	if oldRev != nil && !p.IsGCPManaged { // it's not necessary to undeploy first with GCP
 		printf("undeploying proxy %s revision %d on env %s...",
 			name, oldRev, p.Env)
 		_, resp, err = p.Client.Proxies.Undeploy(name, p.Env, *oldRev)
@@ -807,11 +812,11 @@ func (p *provision) verifyInternalProxy(auth *apigee.EdgeAuth, printf, fatalf sh
 	return verifyErrors
 }
 
-// verify GET customerProxyURL/certs
-// verify GET customerProxyURL/products
-// verify POST customerProxyURL/verifyApiKey
-// verify POST customerProxyURL/quotas
-func (p *provision) verifyCustomerProxy(auth *apigee.EdgeAuth, printf, fatalf shared.FormatFn) error {
+// verify GET RemoteServiceProxyURL/certs
+// verify GET RemoteServiceProxyURL/products
+// verify POST RemoteServiceProxyURL/verifyApiKey
+// verify POST RemoteServiceProxyURL/quotas
+func (p *provision) verifyRemoteServiceProxy(auth *apigee.EdgeAuth, printf, fatalf shared.FormatFn) error {
 
 	verifyGET := func(targetURL string) error {
 		req, err := http.NewRequest(http.MethodGet, targetURL, nil)
@@ -828,15 +833,15 @@ func (p *provision) verifyCustomerProxy(auth *apigee.EdgeAuth, printf, fatalf sh
 	}
 
 	var verifyErrors error
-	certsURL := fmt.Sprintf(certsURLFormat, p.CustomerProxyURL)
+	certsURL := fmt.Sprintf(certsURLFormat, p.RemoteServiceProxyURL)
 	err := verifyGET(certsURL)
 	verifyErrors = multierr.Append(verifyErrors, err)
 
-	productsURL := fmt.Sprintf(productsURLFormat, p.CustomerProxyURL)
+	productsURL := fmt.Sprintf(productsURLFormat, p.RemoteServiceProxyURL)
 	err = verifyGET(productsURL)
 	verifyErrors = multierr.Append(verifyErrors, err)
 
-	verifyAPIKeyURL := fmt.Sprintf(verifyAPIKeyURLFormat, p.CustomerProxyURL)
+	verifyAPIKeyURL := fmt.Sprintf(verifyAPIKeyURLFormat, p.RemoteServiceProxyURL)
 	body := fmt.Sprintf(`{ "apiKey": "%s" }`, auth.Username)
 	req, err := http.NewRequest(http.MethodPost, verifyAPIKeyURL, strings.NewReader(body))
 	if err != nil {
@@ -852,7 +857,7 @@ func (p *provision) verifyCustomerProxy(auth *apigee.EdgeAuth, printf, fatalf sh
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
 
-	quotasURL := fmt.Sprintf(quotasURLFormat, p.CustomerProxyURL)
+	quotasURL := fmt.Sprintf(quotasURLFormat, p.RemoteServiceProxyURL)
 	req, err = http.NewRequest(http.MethodPost, quotasURL, strings.NewReader("{}"))
 	if err != nil {
 		fatalf("unable to create request", err)
@@ -984,14 +989,14 @@ type specification struct {
 }
 
 type params struct {
-	ApigeeBase       string           `yaml:"apigee_base,omitempty"`
-	CustomerBase     string           `yaml:"customer_base"`
-	HybridConfig     string           `yaml:"hybrid_config,omitempty"`
-	OrgName          string           `yaml:"org_name"`
-	EnvName          string           `yaml:"env_name"`
-	Key              string           `yaml:"key"`
-	Secret           string           `yaml:"secret"`
-	AnalyticsOptions analyticsOptions `yaml:"analytics,omitempty"`
+	InternalAPI       string           `yaml:"internal_api,omitempty"`
+	RemoteServiceAPI  string           `yaml:"remote_service_api"`
+	FluentdConfigFile string           `yaml:"fluentd_config_file,omitempty"`
+	OrgName           string           `yaml:"org_name"`
+	EnvName           string           `yaml:"env_name"`
+	Key               string           `yaml:"key"`
+	Secret            string           `yaml:"secret"`
+	AnalyticsOptions  analyticsOptions `yaml:"analytics,omitempty"`
 }
 
 type analyticsOptions struct {

@@ -25,21 +25,24 @@ import (
 )
 
 const (
-	// DefaultManagementBase is the default management API URL for Apigee
-	DefaultManagementBase = "https://api.enterprise.apigee.com"
+	// GCPExperienceBase is the default management API URL for GCP Experience
+	GCPExperienceBase = "https://apigee.googleapis.com"
 
-	// HybridManagementBase is the default management API URL for Apigee Hybrid
-	HybridManagementBase = "https://apigee.googleapis.com"
+	// LegacySaaSManagementBase is the default base for legacy SaaS management operations
+	LegacySaaSManagementBase = "https://api.enterprise.apigee.com"
 
-	// DefaultRouterBase is the default (fake format) for base of the organization router URL
-	DefaultRouterBase = "https://{org}-{env}.apigee.net"
+	// DefaultManagementBase is the base URL for GCE Experience management operations
+	DefaultManagementBase = GCPExperienceBase
 
-	// RouterBaseFormat is the real format for base of the organization router URL
-	RouterBaseFormat = "https://%s-%s.apigee.net"
+	// DefaultRuntimeBase is the default (fake format) for base of the organization runtime URL (legacy SaaS and OPDK)
+	DefaultRuntimeBase = "https://{org}-{env}.apigee.net"
 
-	internalProxyURLFormat     = "%s://istioservices.%s/edgemicro" // routerBase scheme, routerBase domain
-	internalProxyURLFormatOPDK = "%s/edgemicro"                    // routerBase
-	customerProxyURLFormat     = "%s/remote-service"               // routerBase
+	// RuntimeBaseFormat is a format for base of the organization runtime URL (legacy SaaS and OPDK)
+	RuntimeBaseFormat = "https://%s-%s.apigee.net"
+
+	internalProxyURLFormat      = "%s://istioservices.%s/edgemicro" // runtime scheme, runtime domain (legacy SaaS and OPDK)
+	internalProxyURLFormatOPDK  = "%s/edgemicro"                    // runtimeBase
+	remoteServiceProxyURLFormat = "%s/remote-service"               // runtimeBase
 )
 
 // BuildInfoType holds version information
@@ -54,7 +57,7 @@ var BuildInfo BuildInfoType
 
 // RootArgs is the base struct to hold all command arguments
 type RootArgs struct {
-	RouterBase     string // "https://org-env.apigee.net"
+	RuntimeBase    string // "https://org-env.apigee.net"
 	ManagementBase string // "https://api.enterprise.apigee.com"
 	Verbose        bool
 	Org            string
@@ -64,44 +67,49 @@ type RootArgs struct {
 	Token          string
 	NetrcPath      string
 	IsOPDK         bool
-	IsHybrid       bool
+	IsLegacySaaS   bool
+	IsGCPManaged   bool
 
 	// the following is derived in Resolve()
-	InternalProxyURL string
-	CustomerProxyURL string
-	Client           *apigee.EdgeClient
-	ClientOpts       *apigee.EdgeClientOptions
+	InternalProxyURL      string
+	RemoteServiceProxyURL string
+	Client                *apigee.EdgeClient
+	ClientOpts            *apigee.EdgeClientOptions
 }
 
 // Resolve is used to populate shared args, it's automatically called prior when creating the root command
 func (r *RootArgs) Resolve(skipAuth bool) error {
-	if r.IsHybrid || r.ManagementBase == HybridManagementBase {
-		r.IsHybrid = true
-		r.ManagementBase = HybridManagementBase
+	if r.IsLegacySaaS && r.IsOPDK {
+		return errors.New("--legacy and --opdk options are exclusive")
 	}
-	r.IsOPDK = !r.IsHybrid && r.ManagementBase != DefaultManagementBase
+	r.IsGCPManaged = !(r.IsLegacySaaS || r.IsOPDK)
 
-	if r.RouterBase == DefaultRouterBase {
-		if r.IsOPDK || r.IsHybrid {
-			return errors.New("you must specify a router base with Hybrid or OPDK")
-		}
-		r.RouterBase = fmt.Sprintf(RouterBaseFormat, r.Org, r.Env)
+	if r.IsLegacySaaS && r.ManagementBase == DefaultManagementBase {
+		r.ManagementBase = LegacySaaSManagementBase
 	}
 
-	// calculate internal proxy URL from router URL (reuse the scheme and domain) - not valid for Hybrid!
-	if !r.IsHybrid {
-		if r.IsOPDK {
-			r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormatOPDK, r.RouterBase)
-		} else {
-			u, err := url.Parse(r.RouterBase)
-			if err != nil {
-				return err
-			}
-			domain := u.Host[strings.Index(u.Host, ".")+1:]
-			r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormat, u.Scheme, domain)
+	if r.RuntimeBase == DefaultRuntimeBase {
+		if !r.IsLegacySaaS {
+			return errors.New("--runtime is required")
 		}
+		r.RuntimeBase = fmt.Sprintf(RuntimeBaseFormat, r.Org, r.Env)
 	}
-	r.CustomerProxyURL = fmt.Sprintf(customerProxyURLFormat, r.RouterBase)
+
+	// calculate internal proxy URL from runtime URL for LegacySaaS or OPDK
+	// note: GCPExperience doesn't have an internal proxy
+	if r.IsOPDK {
+		r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormatOPDK, r.RuntimeBase)
+	}
+	if r.IsLegacySaaS {
+		u, err := url.Parse(r.RuntimeBase)
+		if err != nil {
+			return err
+		}
+		domain := u.Host[strings.Index(u.Host, ".")+1:]
+		r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormat, u.Scheme, domain)
+	}
+
+	r.RemoteServiceProxyURL = fmt.Sprintf(remoteServiceProxyURLFormat, r.RuntimeBase)
 
 	r.ClientOpts = &apigee.EdgeClientOptions{
 		MgmtURL: r.ManagementBase,
@@ -114,7 +122,8 @@ func (r *RootArgs) Resolve(skipAuth bool) error {
 			BearerToken: r.Token,
 			SkipAuth:    skipAuth,
 		},
-		Debug: r.Verbose,
+		GCPManaged: r.IsGCPManaged,
+		Debug:      r.Verbose,
 	}
 	var err error
 	r.Client, err = apigee.NewEdgeClient(r.ClientOpts)
