@@ -539,7 +539,7 @@ func (s *ProxiesServiceOp) GetGCPDeployments(proxy string) ([]GCPDeployment, *Re
 // GetGCPDeployedRevision returns the Revision that is deployed to an environment in GCP.
 func (s *ProxiesServiceOp) GetGCPDeployedRevision(proxy string) (*Revision, error) {
 	deployments, resp, err := s.GetGCPDeployments(proxy)
-	if err != nil && (resp == nil || resp.StatusCode == http.StatusUnauthorized) {
+	if err != nil && (resp == nil || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) {
 		return nil, err
 	}
 	if len(deployments) > 0 {

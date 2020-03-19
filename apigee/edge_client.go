@@ -90,7 +90,17 @@ type ErrorResponse struct {
 	Response *http.Response
 
 	// Error message - maybe the json for this is "fault"
+	// Message string `json:"message"`
+
+	// Error message - maybe the json for this is "fault"
+	Message ResponseErrorMessage `json:"error"`
+}
+
+// ResponseErrorMessage is a component of an ErrorResponse
+type ResponseErrorMessage struct {
+	Code    int    `json:"code"`
 	Message string `json:"message"`
+	Status  string `json:"status"`
 }
 
 func addOptions(s string, opt interface{}) (string, error) {

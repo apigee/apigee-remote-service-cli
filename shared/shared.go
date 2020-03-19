@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@ package shared
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -33,9 +35,6 @@ const (
 
 	// DefaultManagementBase is the base URL for GCE Experience management operations
 	DefaultManagementBase = GCPExperienceBase
-
-	// DefaultRuntimeBase is the default (fake format) for base of the organization runtime URL (legacy SaaS and OPDK)
-	DefaultRuntimeBase = "https://{org}-{env}.apigee.net"
 
 	// RuntimeBaseFormat is a format for base of the organization runtime URL (legacy SaaS and OPDK)
 	RuntimeBaseFormat = "https://%s-%s.apigee.net"
@@ -57,18 +56,19 @@ var BuildInfo BuildInfoType
 
 // RootArgs is the base struct to hold all command arguments
 type RootArgs struct {
-	RuntimeBase    string // "https://org-env.apigee.net"
-	ManagementBase string // "https://api.enterprise.apigee.com"
-	Verbose        bool
-	Org            string
-	Env            string
-	Username       string
-	Password       string
-	Token          string
-	NetrcPath      string
-	IsOPDK         bool
-	IsLegacySaaS   bool
-	IsGCPManaged   bool
+	RuntimeBase        string // "https://org-env.apigee.net"
+	ManagementBase     string // "https://api.enterprise.apigee.com"
+	Verbose            bool
+	Org                string
+	Env                string
+	Username           string
+	Password           string
+	Token              string
+	NetrcPath          string
+	IsOPDK             bool
+	IsLegacySaaS       bool
+	IsGCPManaged       bool
+	OverrideConfigFile string
 
 	// the following is derived in Resolve()
 	InternalProxyURL      string
@@ -84,11 +84,22 @@ func (r *RootArgs) Resolve(skipAuth bool) error {
 	}
 	r.IsGCPManaged = !(r.IsLegacySaaS || r.IsOPDK)
 
+	if r.IsGCPManaged {
+		err := r.loadOverrideConfig()
+		if err != nil {
+			return fmt.Errorf("--override-config-file %s load failed: %s", r.OverrideConfigFile, err)
+		}
+	}
+
+	if r.Org == "" || r.Env == "" {
+		return fmt.Errorf("--environment and --organization are required")
+	}
+
 	if r.IsLegacySaaS && r.ManagementBase == DefaultManagementBase {
 		r.ManagementBase = LegacySaaSManagementBase
 	}
 
-	if r.RuntimeBase == DefaultRuntimeBase {
+	if r.RuntimeBase == "" {
 		if !r.IsLegacySaaS {
 			return errors.New("--runtime is required")
 		}
@@ -125,6 +136,7 @@ func (r *RootArgs) Resolve(skipAuth bool) error {
 		GCPManaged: r.IsGCPManaged,
 		Debug:      r.Verbose,
 	}
+
 	var err error
 	r.Client, err = apigee.NewEdgeClient(r.ClientOpts)
 	if err != nil {
@@ -164,4 +176,57 @@ func Errorf(format string, args ...interface{}) {
 
 // NoPrintf is a FormatFn that does nothing
 func NoPrintf(format string, args ...interface{}) {
+}
+
+type overrideConfig struct {
+	Org  string        `yaml:"org"`
+	Envs []OverrideEnv `yaml:"envs"`
+}
+
+// OverrideEnv is subconfig of overrideConfig
+type OverrideEnv struct {
+	Name      string `yaml:"name"`
+	HostAlias string `yaml:"hostAlias"`
+}
+
+func (r *RootArgs) loadOverrideConfig() error {
+	if r.OverrideConfigFile == "" {
+		return nil
+	}
+	c := &overrideConfig{}
+	yamlFile, err := ioutil.ReadFile(r.OverrideConfigFile)
+	if err == nil {
+		err = yaml.Unmarshal(yamlFile, c)
+	}
+	if err != nil {
+		return err
+	}
+
+	if r.Org == "" {
+		r.Org = c.Org
+	}
+
+	if len(c.Envs) == 1 {
+		loadEnv(r, c.Envs[0])
+	} else {
+		for _, e := range c.Envs {
+			loadEnv(r, e)
+			break
+		}
+	}
+
+	if r.Env == "" {
+		return fmt.Errorf("--override-config-file %s has multiple envs, --env required", r.OverrideConfigFile)
+	}
+
+	return nil
+}
+
+func loadEnv(r *RootArgs, env OverrideEnv) {
+	if r.Env == "" {
+		r.Env = env.Name
+	}
+	if r.RuntimeBase == "" {
+		r.RuntimeBase = fmt.Sprintf("https://%s", env.HostAlias)
+	}
 }

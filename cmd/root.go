@@ -50,9 +50,8 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 
 	var addCommand = func(cmds ...*cobra.Command) {
 		for _, subC := range cmds {
-			// add general flags
 			subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
-				shared.DefaultRuntimeBase, "Apigee runtime base URL (required for hybrid)")
+				"", "Apigee runtime base URL (required for hybrid or OPDK)")
 			subC.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m",
 				shared.DefaultManagementBase, "Apigee management base URL")
 			subC.PersistentFlags().BoolVarP(&rootArgs.Verbose, "verbose", "v",
@@ -62,9 +61,9 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 			subC.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "",
 				false, "Apigee OPDK")
 
-			subC.PersistentFlags().StringVarP(&rootArgs.Org, "org", "o",
+			subC.PersistentFlags().StringVarP(&rootArgs.Org, "organization", "o",
 				"", "Apigee organization name")
-			subC.PersistentFlags().StringVarP(&rootArgs.Env, "env", "e",
+			subC.PersistentFlags().StringVarP(&rootArgs.Env, "environment", "e",
 				"", "Apigee environment name")
 			subC.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u",
 				"", "Apigee username (legacy or OPDK)")
@@ -73,8 +72,8 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 			subC.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t",
 				"", "Apigee OAuth or SAML token (hybrid)")
 
-			subC.MarkPersistentFlagRequired("org")
-			subC.MarkPersistentFlagRequired("env")
+			subC.PersistentFlags().StringVarP(&rootArgs.OverrideConfigFile, "override-config-file", "",
+				"", "Apigee Hybrid overrides yaml file")
 
 			c.AddCommand(subC)
 		}
@@ -125,8 +124,7 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 		},
 	}
 
-	subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
-		shared.DefaultRuntimeBase, "Apigee runtime base URL")
+	subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r", "", "Apigee runtime base URL")
 
 	subC.PersistentFlags().StringVarP(&rootArgs.Org, "org", "o",
 		"", "Apigee organization name")
