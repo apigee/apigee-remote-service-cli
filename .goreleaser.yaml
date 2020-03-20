@@ -13,8 +13,6 @@ archives:
     files:
       - LICENSE
       - README.md
-      - samples/**/*
-      - install/**/*
 release:
   draft: true
   prerelease: true
