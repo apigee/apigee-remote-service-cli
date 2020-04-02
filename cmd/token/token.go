@@ -58,7 +58,7 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 		Short: "JWT Token Utilities",
 		Long:  "JWT Token Utilities",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return rootArgs.Resolve(true)
+			return rootArgs.Resolve(true, true)
 		},
 	}
 

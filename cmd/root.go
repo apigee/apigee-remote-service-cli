@@ -72,8 +72,8 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 			subC.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t",
 				"", "Apigee OAuth or SAML token (hybrid)")
 
-			subC.PersistentFlags().StringVarP(&rootArgs.OverrideConfigFile, "override-config-file", "",
-				"", "Apigee Hybrid overrides yaml file")
+			subC.PersistentFlags().StringVarP(&rootArgs.HybridConfigFile, "hybrid-config", "",
+				"", "Apigee Hybrid config file")
 
 			c.AddCommand(subC)
 		}
@@ -95,13 +95,14 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 		Use:   "version",
 		Short: "Prints build version - specify org and env to include proxy version",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return rootArgs.Resolve(true)
+			return rootArgs.Resolve(true, false)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			printf("apigee-remote-service-cli version %s %s [%s]",
 				shared.BuildInfo.Version, shared.BuildInfo.Date, shared.BuildInfo.Commit)
 
-			if rootArgs.RuntimeBase == "https://-.apigee.net" {
+			if rootArgs.RuntimeBase == "" {
+				printf("proxy version unknown (specify --hybrid-config OR --runtime to check)")
 				return
 			}
 
@@ -124,12 +125,10 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 		},
 	}
 
-	subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r", "", "Apigee runtime base URL")
-
-	subC.PersistentFlags().StringVarP(&rootArgs.Org, "org", "o",
-		"", "Apigee organization name")
-	subC.PersistentFlags().StringVarP(&rootArgs.Env, "env", "e",
-		"", "Apigee environment name")
+	subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
+		"", "Apigee runtime base URL")
+	subC.PersistentFlags().StringVarP(&rootArgs.HybridConfigFile, "hybrid-config", "",
+		"", "Apigee Hybrid config file")
 
 	return subC
 }

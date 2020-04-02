@@ -46,7 +46,7 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 		Short: "Manage Apigee Product to Remote Service bindings",
 		Long:  "Manage Apigee Product to Remote Service bindings.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return rootArgs.Resolve(false)
+			return rootArgs.Resolve(false, true)
 		},
 	}
 

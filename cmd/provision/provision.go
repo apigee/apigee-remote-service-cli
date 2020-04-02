@@ -43,23 +43,33 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/proxies"
 	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
-const (
-	kvmName           = "remote-service"
-	encryptKVM        = true
-	authProxyName     = "remote-service"
-	internalProxyName = "edgemicro-internal"
+const ( // legacy
+	legacyCredentialURLFormat = "%s/credential/organization/%s/environment/%s"  // InternalProxyURL, org, env
+	analyticsURLFormat        = "%s/analytics/organization/%s/environment/%s"   // InternalProxyURL, org, env
+	legacyAnalyticURLFormat   = "%s/axpublisher/organization/%s/environment/%s" // InternalProxyURL, org, env
+	legacyAuthProxyZip        = "remote-service-legacy.zip"
 
-	legacyCredentialURLFormat = "%s/credential/organization/%s/environment/%s" // InternalProxyURL, org, env
+	// virtualHost is only necessary for legacy
+	virtualHostReplaceText    = "<VirtualHost>default</VirtualHost>"
+	virtualHostReplacementFmt = "<VirtualHost>%s</VirtualHost>" // each virtualHost
 
-	legacyAuthProxyZip    = "remote-service-legacy.zip"
+	internalProxyName = "edgemicro-internal" // legacy
+	internalProxyZip  = "internal.zip"
+)
+
+const ( // modern
+	kvmName       = "remote-service"
+	encryptKVM    = true
+	authProxyName = "remote-service"
+
 	remoteServiceProxyZip = "remote-service-gcp.zip"
-	internalProxyZip      = "internal.zip"
 
 	apiProductsPath        = "apiproducts"
 	developersPath         = "developers"
@@ -73,12 +83,9 @@ const (
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
 	rotateURLFormat       = "%s/rotate"       // RemoteServiceProxyURL
 
-	analyticsURLFormat      = "%s/analytics/organization/%s/environment/%s"   // InternalProxyURL, org, env
-	legacyAnalyticURLFormat = "%s/axpublisher/organization/%s/environment/%s" // InternalProxyURL, org, env
+	remoteServiceInternalURLFormat = "https://apigee-runtime-%s-%s/remote-service" // org, env
 
-	// virtualHost is only necessary for legacy
-	virtualHostReplaceText    = "<VirtualHost>default</VirtualHost>"
-	virtualHostReplacementFmt = "<VirtualHost>%s</VirtualHost>" // each virtualHost
+	fluentdConfigFile = "/opt/apigee/customer/default.properties"
 )
 
 type provision struct {
@@ -91,6 +98,7 @@ type provision struct {
 	provisionKey          string
 	provisionSecret       string
 	developerEmail        string
+	namespace             string
 }
 
 // Cmd returns base command
@@ -105,7 +113,7 @@ and installing a remote-service kvm with certificates, creating credentials, and
 to your organization and environment.`,
 		Args: cobra.NoArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			err := rootArgs.Resolve(false)
+			err := rootArgs.Resolve(false, true)
 			if err == nil {
 				if p.IsGCPManaged && !p.verifyOnly {
 					if p.Token == "" {
@@ -121,7 +129,7 @@ to your organization and environment.`,
 
 		Run: func(cmd *cobra.Command, _ []string) {
 			if p.verifyOnly && (p.provisionKey == "" || p.provisionSecret == "") {
-				fatalf("--verifyOnly requires values for --key and --secret")
+				fatalf("--verify-only requires values for --key and --secret")
 			}
 			p.run(printf, fatalf)
 		},
@@ -133,12 +141,14 @@ to your organization and environment.`,
 		"number of years before the jwt cert expires")
 	c.Flags().IntVarP(&p.certKeyStrength, "strength", "", 2048,
 		"key strength")
-	c.Flags().BoolVarP(&p.forceProxyInstall, "forceProxyInstall", "f", false,
+	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")
-	c.Flags().StringVarP(&p.virtualHosts, "virtualHosts", "", "default,secure",
+	c.Flags().StringVarP(&p.virtualHosts, "virtual-hosts", "", "default,secure",
 		"override proxy virtualHosts")
-	c.Flags().BoolVarP(&p.verifyOnly, "verifyOnly", "", false,
+	c.Flags().BoolVarP(&p.verifyOnly, "verify-only", "", false,
 		"verify only, don’t provision anything")
+	c.Flags().StringVarP(&p.namespace, "namespace", "n", "apigee",
+		"emit configuration as an Envoy ConfigMap in the specified namespace")
 
 	c.Flags().StringVarP(&p.provisionKey, "key", "k", "", "gateway key (for --verify-only)")
 	c.Flags().StringVarP(&p.provisionSecret, "secret", "s", "", "gateway secret (for --verify-only)")
@@ -275,8 +285,8 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 	}
 
 	if !p.verifyOnly {
-		if err := p.printApigeeHandler(cred, printf, verifyErrors); err != nil {
-			fatalf("error generating handler: %v", err)
+		if err := p.printConfig(cred, printf, verifyErrors); err != nil {
+			fatalf("error generating config: %v", err)
 		}
 	}
 
@@ -647,53 +657,92 @@ func (p *provision) createLegacyCredential(printf shared.FormatFn) (*credential,
 	return cred, nil
 }
 
-func (p *provision) printApigeeHandler(cred *credential, printf shared.FormatFn, verifyErrors error) error {
-	handler := apigeeHandler{
-		APIVersion: "config.istio.io/v1alpha2",
-		Kind:       "handler",
-		Metadata: metadata{
-			Name:      "apigee-handler",
-			Namespace: "istio-system",
-		},
-		Spec: specification{
-			Adapter: "apigee",
-			Connection: connection{
-				Address: "apigee-adapter:5000",
-			},
-			Params: params{
-				InternalAPI:      p.InternalProxyURL,
-				RemoteServiceAPI: p.RemoteServiceProxyURL,
-				OrgName:          p.Org,
-				EnvName:          p.Env,
-				Key:              cred.Key,
-				Secret:           cred.Secret,
-			},
+/*
+# Example ConfigMap for apigee-remote-service-envoy configuration in SaaS.
+# You must update the tenant values appropriately.
+# Note: Alternatively, you can use the generated config from the CLI directly.
+#       Direct the output to `config.yaml` and run the follow command on it:
+#       `kubectl -n apigee create configmap apigee-remote-service-envoy --from-file=config.yaml`
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apigee-remote-service-envoy
+  namespace: apigee
+data:
+	config.yaml: |
+		xxxx...
+*/
+func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verifyErrors error) error {
+
+	config := server.Config{
+		Tenant: server.TenantConfig{
+			ManagementAPI:    p.ManagementBase,
+			RemoteServiceAPI: p.RemoteServiceProxyURL,
+			OrgName:          p.Org,
+			EnvName:          p.Env,
+			Key:              cred.Key,
+			Secret:           cred.Secret,
 		},
 	}
-	if p.IsOPDK {
-		handler.Spec.Params.AnalyticsOptions = analyticsOptions{
-			LegacyEndpoint: true,
-		}
-	}
+
 	if p.IsGCPManaged {
-		handler.Metadata.Namespace = "apigee"
-		handler.Spec.Connection.Address = "apigee-adapter.apigee:5000"
-		handler.Spec.Params.FluentdConfigFile = "/opt/apigee/customer/default.properties"
-		handler.Spec.Params.AnalyticsOptions = analyticsOptions{
-			CollectionInterval: "10s",
-		}
+		config.Tenant.ManagementAPI = ""
+		config.Tenant.RemoteServiceAPI = fmt.Sprintf(remoteServiceInternalURLFormat, p.Org, p.Env)
+		config.Tenant.FluentdConfigFile = fluentdConfigFile
+		config.Tenant.AllowUnverifiedSSLCert = true
+		config.Analytics.CollectionInterval = 10 * time.Second
 	}
-	formattedBytes, err := yaml.Marshal(handler)
+
+	if p.IsOPDK {
+		config.Analytics.LegacyEndpoint = true
+	}
+
+	// encode config
+	var yamlBuffer bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(config)
 	if err != nil {
 		return err
 	}
-	printf("# Configuration for Apigee Remote Service")
-	printf("# generated by apigee-remote-service-cli provision on %s", time.Now().Format("2006-01-02 15:04:05"))
-	if verifyErrors != nil {
-		printf("# WARNING: verification of provision failed. May not be valid.")
+	configYAML := yamlBuffer.String()
+
+	print := func(config string) error {
+		printf("# Configuration for apigee-remote-service-envoy")
+		printf("# generated by apigee-remote-service-cli provision on %s", time.Now().Format("2006-01-02 15:04:05"))
+		if verifyErrors != nil {
+			printf("# WARNING: verification of provision failed. May not be valid.")
+		}
+		print(config)
+		return nil
 	}
-	printf(string(formattedBytes))
-	return nil
+
+	if p.namespace == "" {
+		return print(configYAML)
+	}
+
+	// ConfigMap
+	data := map[string]string{"config.yaml": configYAML}
+	crd := kubernetesCRD{
+		APIVersion: "v1",
+		Kind:       "ConfigMap",
+		Metadata: metadata{
+			Name:      "apigee-remote-service-envoy",
+			Namespace: p.namespace,
+		},
+		Data: data,
+	}
+
+	yamlBuffer.Reset()
+	yamlEncoder = yaml.NewEncoder(&yamlBuffer)
+	yamlEncoder.SetIndent(2)
+	err = yamlEncoder.Encode(crd)
+	if err != nil {
+		return err
+	}
+	configMapYAML := yamlBuffer.String()
+
+	return print(configMapYAML)
 }
 
 func (p *provision) checkAndDeployProxy(name, file string, printf shared.FormatFn) error {
@@ -970,38 +1019,16 @@ func zipDir(source, file string) error {
 	return w.Close()
 }
 
-type apigeeHandler struct {
-	APIVersion string        `yaml:"apiVersion"`
-	Kind       string        `yaml:"kind"`
-	Metadata   metadata      `yaml:"metadata"`
-	Spec       specification `yaml:"spec"`
+type kubernetesCRD struct {
+	APIVersion string            `yaml:"apiVersion"`
+	Kind       string            `yaml:"kind"`
+	Metadata   metadata          `yaml:"metadata"`
+	Data       map[string]string `yaml:"data"`
 }
 
 type metadata struct {
 	Name      string `yaml:"name"`
 	Namespace string `yaml:"namespace"`
-}
-
-type specification struct {
-	Adapter    string     `yaml:"adapter"`
-	Connection connection `yaml:"connection"`
-	Params     params     `yaml:"params"`
-}
-
-type params struct {
-	InternalAPI       string           `yaml:"internal_api,omitempty"`
-	RemoteServiceAPI  string           `yaml:"remote_service_api"`
-	FluentdConfigFile string           `yaml:"fluentd_config_file,omitempty"`
-	OrgName           string           `yaml:"org_name"`
-	EnvName           string           `yaml:"env_name"`
-	Key               string           `yaml:"key"`
-	Secret            string           `yaml:"secret"`
-	AnalyticsOptions  analyticsOptions `yaml:"analytics,omitempty"`
-}
-
-type analyticsOptions struct {
-	LegacyEndpoint     bool   `yaml:"legacy_endpoint,omitempty"`
-	CollectionInterval string `yaml:"collection_interval,omitempty"`
 }
 
 type credential struct {

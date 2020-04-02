@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -56,19 +56,19 @@ var BuildInfo BuildInfoType
 
 // RootArgs is the base struct to hold all command arguments
 type RootArgs struct {
-	RuntimeBase        string // "https://org-env.apigee.net"
-	ManagementBase     string // "https://api.enterprise.apigee.com"
-	Verbose            bool
-	Org                string
-	Env                string
-	Username           string
-	Password           string
-	Token              string
-	NetrcPath          string
-	IsOPDK             bool
-	IsLegacySaaS       bool
-	IsGCPManaged       bool
-	OverrideConfigFile string
+	RuntimeBase      string // "https://org-env.apigee.net"
+	ManagementBase   string // "https://api.enterprise.apigee.com"
+	Verbose          bool
+	Org              string
+	Env              string
+	Username         string
+	Password         string
+	Token            string
+	NetrcPath        string
+	IsOPDK           bool
+	IsLegacySaaS     bool
+	IsGCPManaged     bool
+	HybridConfigFile string
 
 	// the following is derived in Resolve()
 	InternalProxyURL      string
@@ -78,7 +78,7 @@ type RootArgs struct {
 }
 
 // Resolve is used to populate shared args, it's automatically called prior when creating the root command
-func (r *RootArgs) Resolve(skipAuth bool) error {
+func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	if r.IsLegacySaaS && r.IsOPDK {
 		return errors.New("--legacy and --opdk options are exclusive")
 	}
@@ -87,12 +87,8 @@ func (r *RootArgs) Resolve(skipAuth bool) error {
 	if r.IsGCPManaged {
 		err := r.loadOverrideConfig()
 		if err != nil {
-			return fmt.Errorf("--override-config-file %s load failed: %s", r.OverrideConfigFile, err)
+			return fmt.Errorf("--hybrid-config %s load failed: %s", r.HybridConfigFile, err)
 		}
-	}
-
-	if r.Org == "" || r.Env == "" {
-		return fmt.Errorf("--environment and --organization are required")
 	}
 
 	if r.IsLegacySaaS && r.ManagementBase == DefaultManagementBase {
@@ -100,10 +96,17 @@ func (r *RootArgs) Resolve(skipAuth bool) error {
 	}
 
 	if r.RuntimeBase == "" {
-		if !r.IsLegacySaaS {
+		if requireRuntime && (r.IsGCPManaged || r.IsOPDK) {
 			return errors.New("--runtime is required")
 		}
-		r.RuntimeBase = fmt.Sprintf(RuntimeBaseFormat, r.Org, r.Env)
+
+		if r.IsLegacySaaS {
+			if r.Org != "" && r.Env != "" {
+				r.RuntimeBase = fmt.Sprintf(RuntimeBaseFormat, r.Org, r.Env)
+			} else if requireRuntime {
+				return fmt.Errorf("--environment and --organization are required")
+			}
+		}
 	}
 
 	// calculate internal proxy URL from runtime URL for LegacySaaS or OPDK
@@ -190,11 +193,11 @@ type OverrideEnv struct {
 }
 
 func (r *RootArgs) loadOverrideConfig() error {
-	if r.OverrideConfigFile == "" {
+	if r.HybridConfigFile == "" {
 		return nil
 	}
 	c := &overrideConfig{}
-	yamlFile, err := ioutil.ReadFile(r.OverrideConfigFile)
+	yamlFile, err := ioutil.ReadFile(r.HybridConfigFile)
 	if err == nil {
 		err = yaml.Unmarshal(yamlFile, c)
 	}
@@ -216,7 +219,7 @@ func (r *RootArgs) loadOverrideConfig() error {
 	}
 
 	if r.Env == "" {
-		return fmt.Errorf("--override-config-file %s has multiple envs, --env required", r.OverrideConfigFile)
+		return fmt.Errorf("--hybrid-config %s has multiple envs, --env required", r.HybridConfigFile)
 	}
 
 	return nil
