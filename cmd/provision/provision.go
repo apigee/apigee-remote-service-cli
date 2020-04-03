@@ -83,7 +83,7 @@ const ( // modern
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
 	rotateURLFormat       = "%s/rotate"       // RemoteServiceProxyURL
 
-	remoteServiceInternalURLFormat = "https://apigee-runtime-%s-%s/remote-service" // org, env
+	remoteServiceAPIURLFormat = "https://apigee-runtime-%s-%s:8443/remote-service" // org, env
 
 	fluentdConfigFile = "/opt/apigee/customer/default.properties"
 )
@@ -687,7 +687,7 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 
 	if p.IsGCPManaged {
 		config.Tenant.ManagementAPI = ""
-		config.Tenant.RemoteServiceAPI = fmt.Sprintf(remoteServiceInternalURLFormat, p.Org, p.Env)
+		config.Tenant.RemoteServiceAPI = fmt.Sprintf(remoteServiceAPIURLFormat, p.Org, p.Env)
 		config.Tenant.FluentdConfigFile = fluentdConfigFile
 		config.Tenant.AllowUnverifiedSSLCert = true
 		config.Analytics.CollectionInterval = 10 * time.Second
