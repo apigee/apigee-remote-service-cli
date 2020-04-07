@@ -147,7 +147,7 @@ to your organization and environment.`,
 		"override proxy virtualHosts")
 	c.Flags().BoolVarP(&p.verifyOnly, "verify-only", "", false,
 		"verify only, don’t provision anything")
-	c.Flags().StringVarP(&p.namespace, "namespace", "n", "apigee",
+	c.Flags().StringVarP(&p.namespace, "namespace", "n", "",
 		"emit configuration as an Envoy ConfigMap in the specified namespace")
 
 	c.Flags().StringVarP(&p.provisionKey, "key", "k", "", "gateway key (for --verify-only)")
