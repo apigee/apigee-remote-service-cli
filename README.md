@@ -68,12 +68,6 @@ Then, run provision to get your configuration:
 
     apigee-remote-service-cli provision --organization $ORG --environment $ENV --developer-email $EMAIL --runtime $RUNTIME --token $TOKEN
 
-_Tip_  
-The CLI can parse the overrides.yaml file from your Hybrid setup to avoid
-having to specify your organization, environment, and runtime.
-
-    apigee-remote-service-cli provision --hybrid-config $OVERRIDES --developer-email $EMAIL --token $TOKEN
-
 ### Apigee OPDK
 
 If you are running Apigee Private Cloud (OPDK), you'll need to specify 

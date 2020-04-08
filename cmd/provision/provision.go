@@ -83,7 +83,7 @@ const ( // modern
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
 	rotateURLFormat       = "%s/rotate"       // RemoteServiceProxyURL
 
-	remoteServiceAPIURLFormat = "https://apigee-runtime-%s-%s:8443/remote-service" // org, env
+	remoteServiceAPIURLFormat = "https://apigee-runtime-%s-%s.%s:8443/remote-service" // org, env, namespace
 
 	fluentdConfigFile = "/opt/apigee/customer/default.properties"
 )
@@ -687,10 +687,15 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 
 	if p.IsGCPManaged {
 		config.Tenant.ManagementAPI = ""
-		config.Tenant.RemoteServiceAPI = fmt.Sprintf(remoteServiceAPIURLFormat, p.Org, p.Env)
 		config.Tenant.FluentdConfigFile = fluentdConfigFile
-		config.Tenant.AllowUnverifiedSSLCert = true
 		config.Analytics.CollectionInterval = 10 * time.Second
+
+		// // Inside a mesh, we could use an internal address...
+		// // BUT it would have to be the same mesh. So, removing for now.
+		// if p.namespace != "" {
+		// 	config.Tenant.RemoteServiceAPI = fmt.Sprintf(remoteServiceAPIURLFormat, p.Org, p.Env, p.namespace)
+		// 	config.Tenant.AllowUnverifiedSSLCert = true
+		// }
 	}
 
 	if p.IsOPDK {

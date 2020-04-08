@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
+	"github.com/apigee/apigee-remote-service-envoy/server"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,7 +42,8 @@ const (
 
 	internalProxyURLFormat      = "%s://istioservices.%s/edgemicro" // runtime scheme, runtime domain (legacy SaaS and OPDK)
 	internalProxyURLFormatOPDK  = "%s/edgemicro"                    // runtimeBase
-	remoteServiceProxyURLFormat = "%s/remote-service"               // runtimeBase
+	remoteServicePath           = "/remote-service"
+	remoteServiceProxyURLFormat = "%s" + remoteServicePath // runtimeBase
 )
 
 // BuildInfoType holds version information
@@ -56,19 +58,20 @@ var BuildInfo BuildInfoType
 
 // RootArgs is the base struct to hold all command arguments
 type RootArgs struct {
-	RuntimeBase      string // "https://org-env.apigee.net"
-	ManagementBase   string // "https://api.enterprise.apigee.com"
-	Verbose          bool
-	Org              string
-	Env              string
-	Username         string
-	Password         string
-	Token            string
-	NetrcPath        string
-	IsOPDK           bool
-	IsLegacySaaS     bool
-	IsGCPManaged     bool
-	HybridConfigFile string
+	RuntimeBase    string // "https://org-env.apigee.net"
+	ManagementBase string // "https://api.enterprise.apigee.com"
+	Verbose        bool
+	Org            string
+	Env            string
+	Username       string
+	Password       string
+	Token          string
+	NetrcPath      string
+	IsOPDK         bool
+	IsLegacySaaS   bool
+	IsGCPManaged   bool
+	ConfigPath     string
+	ServerConfig   *server.Config // config loaded from ConfigPath
 
 	// the following is derived in Resolve()
 	InternalProxyURL      string
@@ -79,17 +82,13 @@ type RootArgs struct {
 
 // Resolve is used to populate shared args, it's automatically called prior when creating the root command
 func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
+
+	r.loadConfig()
+
 	if r.IsLegacySaaS && r.IsOPDK {
 		return errors.New("--legacy and --opdk options are exclusive")
 	}
 	r.IsGCPManaged = !(r.IsLegacySaaS || r.IsOPDK)
-
-	if r.IsGCPManaged {
-		err := r.loadOverrideConfig()
-		if err != nil {
-			return fmt.Errorf("--hybrid-config %s load failed: %s", r.HybridConfigFile, err)
-		}
-	}
 
 	if r.IsLegacySaaS && r.ManagementBase == DefaultManagementBase {
 		r.ManagementBase = LegacySaaSManagementBase
@@ -192,12 +191,12 @@ type OverrideEnv struct {
 	HostAlias string `yaml:"hostAlias"`
 }
 
-func (r *RootArgs) loadOverrideConfig() error {
-	if r.HybridConfigFile == "" {
+func (r *RootArgs) loadConfig() error {
+	if r.ConfigPath == "" {
 		return nil
 	}
-	c := &overrideConfig{}
-	yamlFile, err := ioutil.ReadFile(r.HybridConfigFile)
+	c := &server.Config{}
+	yamlFile, err := ioutil.ReadFile(r.ConfigPath)
 	if err == nil {
 		err = yaml.Unmarshal(yamlFile, c)
 	}
@@ -205,21 +204,20 @@ func (r *RootArgs) loadOverrideConfig() error {
 		return err
 	}
 
-	if r.Org == "" {
-		r.Org = c.Org
-	}
+	r.ServerConfig = c
+	r.ManagementBase = c.Tenant.ManagementAPI
+	r.RuntimeBase = strings.Split(c.Tenant.RemoteServiceAPI, remoteServicePath)[0]
 
-	if len(c.Envs) == 1 {
-		loadEnv(r, c.Envs[0])
-	} else {
-		for _, e := range c.Envs {
-			loadEnv(r, e)
-			break
-		}
-	}
+	r.Org = c.Tenant.OrgName
+	r.Env = c.Tenant.EnvName
 
-	if r.Env == "" {
-		return fmt.Errorf("--hybrid-config %s has multiple envs, --env required", r.HybridConfigFile)
+	switch r.ManagementBase {
+	case LegacySaaSManagementBase:
+		r.IsLegacySaaS = true
+	case GCPExperienceBase:
+		r.IsGCPManaged = true
+	default:
+		r.IsOPDK = true
 	}
 
 	return nil
@@ -232,4 +230,11 @@ func loadEnv(r *RootArgs, env OverrideEnv) {
 	if r.RuntimeBase == "" {
 		r.RuntimeBase = fmt.Sprintf("https://%s", env.HostAlias)
 	}
+}
+
+func (r *RootArgs) PrintMissingFlags(missingFlagNames []string) error {
+	if len(missingFlagNames) > 0 {
+		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
+	}
+	return nil
 }

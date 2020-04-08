@@ -121,6 +121,22 @@ func cmdRotateCert(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 		Args:  cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
+			if t.ServerConfig != nil {
+				t.clientID = t.ServerConfig.Tenant.Key
+				t.clientSecret = t.ServerConfig.Tenant.Secret
+			}
+
+			missingFlagNames := []string{}
+			if t.clientID == "" {
+				missingFlagNames = append(missingFlagNames, "key")
+			}
+			if t.clientSecret == "" {
+				missingFlagNames = append(missingFlagNames, "secret")
+			}
+			if err := t.PrintMissingFlags(missingFlagNames); err != nil {
+				fatalf(err.Error())
+			}
+
 			t.rotateCert(printf, fatalf)
 		},
 	}
@@ -134,8 +150,8 @@ func cmdRotateCert(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 	c.Flags().StringVarP(&t.clientID, "key", "k", "", "provision key")
 	c.Flags().StringVarP(&t.clientSecret, "secret", "s", "", "provision secret")
 
-	c.MarkFlagRequired("key")
-	c.MarkFlagRequired("secret")
+	// c.MarkFlagRequired("key")
+	// c.MarkFlagRequired("secret")
 
 	return c
 }
