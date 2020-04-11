@@ -238,3 +238,16 @@ func (r *RootArgs) PrintMissingFlags(missingFlagNames []string) error {
 	}
 	return nil
 }
+
+type KubernetesCRD struct {
+	APIVersion string            `yaml:"apiVersion"`
+	Kind       string            `yaml:"kind"`
+	Metadata   Metadata          `yaml:"metadata"`
+	Type       string            `yaml:"type,omitempty"`
+	Data       map[string]string `yaml:"data"`
+}
+
+type Metadata struct {
+	Name      string `yaml:"name"`
+	Namespace string `yaml:"namespace"`
+}

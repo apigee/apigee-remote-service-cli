@@ -728,10 +728,10 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 
 	// ConfigMap
 	data := map[string]string{"config.yaml": configYAML}
-	crd := kubernetesCRD{
+	crd := shared.KubernetesCRD{
 		APIVersion: "v1",
 		Kind:       "ConfigMap",
-		Metadata: metadata{
+		Metadata: shared.Metadata{
 			Name:      "apigee-remote-service-envoy",
 			Namespace: p.namespace,
 		},
@@ -1022,18 +1022,6 @@ func zipDir(source, file string) error {
 	}
 
 	return w.Close()
-}
-
-type kubernetesCRD struct {
-	APIVersion string            `yaml:"apiVersion"`
-	Kind       string            `yaml:"kind"`
-	Metadata   metadata          `yaml:"metadata"`
-	Data       map[string]string `yaml:"data"`
-}
-
-type metadata struct {
-	Name      string `yaml:"name"`
-	Namespace string `yaml:"namespace"`
 }
 
 type credential struct {
