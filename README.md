@@ -64,7 +64,11 @@ valid token:
 
     TOKEN=$(gcloud auth print-access-token);echo $TOKEN
 
-Then, run provision to get your configuration:
+Next, install a certificate in your Kuberentes environment:
+
+apigee-remote-service-cli token create-secret --organization $ORG --environment $ENV --token $TOKEN
+
+Finally, run provision to get your configuration:
 
     apigee-remote-service-cli provision --organization $ORG --environment $ENV --developer-email $EMAIL --runtime $RUNTIME --token $TOKEN
 
