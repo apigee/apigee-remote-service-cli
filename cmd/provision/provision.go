@@ -24,7 +24,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"encoding/pem"
 	"encoding/xml"
 	"fmt"
@@ -242,8 +241,10 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 			fatalf("error generating credential: %v", err)
 		}
 
-		if err := p.getOrCreateKVM(cred, verbosef); err != nil {
-			fatalf("error retrieving or creating kvm: %v", err)
+		if !p.IsGCPManaged {
+			if err := p.getOrCreateKVM(cred, verbosef); err != nil {
+				fatalf("error retrieving or creating kvm: %v", err)
+			}
 		}
 
 	} else { // verifyOnly == true
@@ -593,33 +594,6 @@ func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) err
 		return fmt.Errorf("error creating kvm %s, status code: %v", kvmName, resp.StatusCode)
 	}
 	printf("kvm %s created", kvmName)
-
-	if p.IsGCPManaged { // GCP requires an additional call to set the certificate
-
-		rotateReq := rotateRequest{
-			PrivateKey:  privateKey,
-			Certificate: cert,
-			KeyID:       "1",
-		}
-
-		body := new(bytes.Buffer)
-		if err = json.NewEncoder(body).Encode(rotateReq); err != nil {
-			return err
-		}
-		rotateURL := fmt.Sprintf(rotateURLFormat, p.RemoteServiceProxyURL)
-		req, err := http.NewRequest(http.MethodPost, rotateURL, body)
-		if err != nil {
-			return err
-		}
-		req.SetBasicAuth(cred.Key, cred.Secret)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
-
-		if resp, err = p.Client.Do(req, nil); err != nil {
-			return err
-		}
-		resp.Body.Close()
-	}
 
 	printf("registered a new key and cert for JWTs:\n")
 	printf("certificate:\n%s", cert)
