@@ -43,8 +43,8 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 
 	c := &cobra.Command{
 		Use:   "bindings",
-		Short: "Manage Apigee Product to Remote Service bindings",
-		Long:  "Manage Apigee Product to Remote Service bindings.",
+		Short: "Manage Apigee Product to Remote Target bindings",
+		Long:  "Manage Apigee Product to Remote Target bindings.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return rootArgs.Resolve(false, true)
 		},
@@ -69,8 +69,8 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 func cmdBindingsList(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "list",
-		Short: "List Apigee Product to Remote Service bindings",
-		Long:  "List Apigee Product to Remote Service bindings",
+		Short: "List Apigee Product to Remote Target bindings",
+		Long:  "List Apigee Product to Remote Target bindings",
 		Args:  cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
@@ -84,12 +84,12 @@ func cmdBindingsList(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command
 func cmdBindingsAdd(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "add [target name] [product name]",
-		Short: "Add Remote Service binding to Apigee Product",
-		Long:  "Add Remote Service binding to Apigee Product",
+		Short: "Add Remote Target binding to Apigee Product",
+		Long:  "Add Remote Target binding to Apigee Product",
 		Args:  cobra.ExactArgs(2),
 
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceName := args[0]
+			targetName := args[0]
 			productName := args[1]
 			p, err := b.getProduct(productName)
 			if err != nil {
@@ -99,7 +99,7 @@ func cmdBindingsAdd(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command 
 				fatalf("invalid product name: %s", productName)
 			}
 
-			b.bindService(p, serviceName, printf, fatalf)
+			b.bindTarget(p, targetName, printf, fatalf)
 		},
 	}
 
@@ -114,7 +114,7 @@ func cmdBindingsRemove(b *bindings, printf, fatalf shared.FormatFn) *cobra.Comma
 		Args:  cobra.ExactArgs(2),
 
 		Run: func(cmd *cobra.Command, args []string) {
-			serviceName := args[0]
+			targetName := args[0]
 			productName := args[1]
 			p, err := b.getProduct(productName)
 			if err != nil {
@@ -124,7 +124,7 @@ func cmdBindingsRemove(b *bindings, printf, fatalf shared.FormatFn) *cobra.Comma
 				fatalf("invalid product name: %s", productName)
 			}
 
-			b.unbindService(p, serviceName, printf, fatalf)
+			b.unbindTarget(p, targetName, printf, fatalf)
 		},
 	}
 
@@ -180,7 +180,7 @@ func (b *bindings) cmdList(printf, fatalf shared.FormatFn) error {
 		if p.QuotaLimit == "null" {
 			p.QuotaLimit = ""
 		}
-		p.Targets = p.GetBoundServices()
+		p.Targets = p.GetBoundTargets()
 		if p.Targets == nil {
 			unbound = append(unbound, p)
 		} else {
@@ -213,33 +213,33 @@ func (b *bindings) cmdList(printf, fatalf shared.FormatFn) error {
 	return nil
 }
 
-func (b *bindings) bindService(p *product.APIProduct, service string, printf, fatalf shared.FormatFn) {
-	boundServices := p.GetBoundServices()
-	if _, ok := indexOf(boundServices, service); ok {
-		fatalf("service %s is already bound to %s", service, p.Name)
+func (b *bindings) bindTarget(p *product.APIProduct, target string, printf, fatalf shared.FormatFn) {
+	boundTargets := p.GetBoundTargets()
+	if _, ok := indexOf(boundTargets, target); ok {
+		fatalf("target %s is already bound to %s", target, p.Name)
 	}
-	err := b.updateServiceBindings(p, append(boundServices, service))
+	err := b.updateTargetBindings(p, append(boundTargets, target))
 	if err != nil {
-		fatalf("error binding service %s to %s: %v", service, p.Name, err)
+		fatalf("error binding target %s to %s: %v", target, p.Name, err)
 	}
-	printf("product %s is now bound to: %s", p.Name, service)
+	printf("product %s is now bound to: %s", p.Name, target)
 }
 
-func (b *bindings) unbindService(p *product.APIProduct, service string, printf, fatalf shared.FormatFn) {
-	boundServices := p.GetBoundServices()
-	i, ok := indexOf(boundServices, service)
+func (b *bindings) unbindTarget(p *product.APIProduct, target string, printf, fatalf shared.FormatFn) {
+	boundTargets := p.GetBoundTargets()
+	i, ok := indexOf(boundTargets, target)
 	if !ok {
-		fatalf("service %s is not bound to %s", service, p.Name)
+		fatalf("target %s is not bound to %s", target, p.Name)
 	}
-	boundServices = append(boundServices[:i], boundServices[i+1:]...)
-	err := b.updateServiceBindings(p, boundServices)
+	boundTargets = append(boundTargets[:i], boundTargets[i+1:]...)
+	err := b.updateTargetBindings(p, boundTargets)
 	if err != nil {
-		fatalf("error removing service %s from %s: %v", service, p.Name, err)
+		fatalf("error removing target %s from %s: %v", target, p.Name, err)
 	}
-	printf("product %s is no longer bound to: %s", p.Name, service)
+	printf("product %s is no longer bound to: %s", p.Name, target)
 }
 
-func (b *bindings) updateServiceBindings(p *product.APIProduct, bindings []string) error {
+func (b *bindings) updateTargetBindings(p *product.APIProduct, bindings []string) error {
 	bindingsString := strings.Join(bindings, ",")
 	var attributes []product.Attribute
 	for _, a := range p.Attributes {
@@ -297,7 +297,7 @@ const productsTemplate = `
   Quota: {{.QuotaLimit}} requests every {{.QuotaInterval}} {{.QuotaTimeUnit}} 
  {{- end}}
  {{- if .Targets}}
-  Service bindings:
+  Target bindings:
   {{- range .Targets}}
     {{.}}
   {{- end}}
