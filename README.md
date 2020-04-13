@@ -64,13 +64,18 @@ valid token:
 
     TOKEN=$(gcloud auth print-access-token);echo $TOKEN
 
-Next, install a certificate in your Kuberentes environment:
+Run provision to get your configuration and store it in a file:
 
-apigee-remote-service-cli token create-secret --organization $ORG --environment $ENV --token $TOKEN
+    apigee-remote-service-cli provision --organization $ORG --environment $ENV --developer-email $EMAIL --runtime $RUNTIME --token $TOKEN > config.yaml
 
-Finally, run provision to get your configuration:
+Install a certificate in your Kuberentes environment:
 
-    apigee-remote-service-cli provision --organization $ORG --environment $ENV --developer-email $EMAIL --runtime $RUNTIME --token $TOKEN
+    apigee-remote-service-cli token create-secret --config config.yaml --truncate 1 --token $TOKEN > secret.yaml
+    kubenetes apply -f secret.yaml
+
+Verify your proxy and certificate. The following should succeed with a valid JSON:
+
+    curl --http1.1 -i $RUNTIME/remote-service/certs
 
 ### Apigee OPDK
 
