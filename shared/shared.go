@@ -215,6 +215,8 @@ func (r *RootArgs) loadConfig() error {
 	case LegacySaaSManagementBase:
 		r.IsLegacySaaS = true
 	case GCPExperienceBase:
+	case "":
+		r.ManagementBase = GCPExperienceBase
 		r.IsGCPManaged = true
 	default:
 		r.IsOPDK = true
@@ -232,6 +234,7 @@ func loadEnv(r *RootArgs, env OverrideEnv) {
 	}
 }
 
+// PrintMissingFlags will aggregate and print an error for the passed set of flags
 func (r *RootArgs) PrintMissingFlags(missingFlagNames []string) error {
 	if len(missingFlagNames) > 0 {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
@@ -239,6 +242,7 @@ func (r *RootArgs) PrintMissingFlags(missingFlagNames []string) error {
 	return nil
 }
 
+// KubernetesCRD has generic Kubernetes headers for CRD generation
 type KubernetesCRD struct {
 	APIVersion string            `yaml:"apiVersion"`
 	Kind       string            `yaml:"kind"`
@@ -247,6 +251,7 @@ type KubernetesCRD struct {
 	Data       map[string]string `yaml:"data"`
 }
 
+// Metadata is for Kubernetes CRD generation
 type Metadata struct {
 	Name      string `yaml:"name"`
 	Namespace string `yaml:"namespace"`
