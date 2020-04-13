@@ -7,6 +7,10 @@
             <Description/>
             <Request>
                 <Step>
+                    <Name>Raise-Fault-Missing-Secret</Name>
+                    <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
+                </Step>
+                <Step>
                     <Name>Verify-API-Key</Name>
                 </Step>
                 <Step>
@@ -27,9 +31,6 @@
                 </Step>
                 <Step>
                     <Name>Products-to-JSON</Name>
-                </Step>
-                <Step>
-                    <Name>Get-Private-Key</Name>
                 </Step>
                 <Step>
                     <Name>Set-JWT-Variables</Name>
@@ -63,6 +64,10 @@
             <Description/>
             <Request>
                 <Step>
+                    <Name>Raise-Fault-Missing-Secret</Name>
+                    <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
+                </Step>
+                <Step>
                     <Name>Clear-API-Key</Name>
                 </Step>
                 <Step>
@@ -95,9 +100,6 @@
                     <Name>Set-JWT-Variables</Name>
                 </Step>
                 <Step>
-                    <Name>Get-Private-Key</Name>
-                </Step>
-                <Step>
                     <Name>Generate-Access-Token</Name>
                 </Step>
             </Request>
@@ -111,6 +113,10 @@
         <Flow name="Refresh Access Token">
             <Description/>
             <Request>
+                <Step>
+                    <Name>Raise-Fault-Missing-Secret</Name>
+                    <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
+                </Step>
                 <Step>
                     <Name>Clear-API-Key</Name>
                 </Step>
@@ -135,9 +141,6 @@
                 </Step>
                 <Step>
                     <Name>Set-JWT-Variables</Name>
-                </Step>
-                <Step>
-                    <Name>Get-Private-Key</Name>
                 </Step>
                 <Step>
                     <Name>Generate-Access-Token</Name>
@@ -171,19 +174,17 @@
             <Description>This flow returns public keys as JWK</Description>
             <Request>
                 <Step>
-                    <Name>Get-Public-Keys</Name>
+                    <Name>Assign-Debug</Name>
                 </Step>
                 <Step>
-                    <Name>Raise-Fault-Unknown-Request</Name>
-                    <Condition>private.certificate1 is null or private.certificate1_kid is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Generate-JWK</Name>
+                    <!-- .crt is actually JWKs JSON -->
+                    <Name>Raise-Fault-Missing-Secret</Name>
+                    <Condition>private.secret.remote-service.crt is null</Condition>
                 </Step>
             </Request>
             <Response>
                 <Step>
-                    <Name>Send-JWK-Message</Name>
+                    <Name>Send-JWKs-Message</Name>
                 </Step>
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/certs") and (request.verb = "GET")</Condition>
@@ -197,29 +198,6 @@
                 </Step>
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/version") and (request.verb = "GET")</Condition>
-        </Flow>
-        <Flow name="Rotate Key">
-            <Description/>
-            <Request>
-                <Step>
-                    <Name>Verify-API-Key</Name>
-                </Step>
-                <Step>
-                    <Name>Extract-Rotate-Variables</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Unknown-Request</Name>
-                    <Condition>certificate1 is null or certificate1_kid is null or private_key is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Retrieve-Cert</Name>
-                </Step>
-                <Step>
-                    <Name>Update-Keys</Name>
-                </Step>
-            </Request>
-            <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/rotate") and (request.verb = "POST")</Condition>
         </Flow>
         <Flow name="DistributedQuota">
             <Request>

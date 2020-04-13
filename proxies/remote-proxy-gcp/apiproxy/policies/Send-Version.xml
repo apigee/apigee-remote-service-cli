@@ -7,9 +7,7 @@
             <Header name="Cache-Control">public, max-age=604800</Header>
             <Header name="Content-Type">application/json</Header>
         </Headers>
-        <Payload contentType="application/json">
-        {"version":"1.0.0"}
-    </Payload>
+        <Payload contentType="application/json">{"version":"1.0.0"}</Payload>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <AssignTo createNew="false" transport="http" type="request"/>

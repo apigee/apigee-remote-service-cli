@@ -3,7 +3,9 @@
 #
 # If you change any proxies:
 # 1. update the returned version(s) in the Send-Version.xml of the affected proxies
-# 2. run this script to generate proxies.go and check in your changes.
+# 2. run this script to generate proxies.go 
+# 3. run `go mod tidy` to remove the go-bindata dep from your mod and sum files
+# 4. check in your changes
 #
 
 SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

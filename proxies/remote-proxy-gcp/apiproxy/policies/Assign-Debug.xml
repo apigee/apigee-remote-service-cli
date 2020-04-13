@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="Assign-Debug">
+    <DisplayName>Assign Debug</DisplayName>
+    <Properties/>
+    <AssignVariable>
+        <Name>key</Name>
+        <Ref>private.secret.remote-service.key</Ref>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>crt</Name>
+        <Ref>private.secret.remote-service.crt</Ref>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>kid</Name>
+        <Ref>private.secret.remote-service.properties.kid</Ref>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew="false" transport="http" type="request"/>
+</AssignMessage>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="Send-JWKs-Message">
+    <DisplayName>Send JWKs Message</DisplayName>
+    <Properties/>
+    <Set>
+        <Headers/>
+        <!-- .crt is actually JWKs JSON -->
+        <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">@private.secret.remote-service.crt#</Payload>
+        <StatusCode>200</StatusCode>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

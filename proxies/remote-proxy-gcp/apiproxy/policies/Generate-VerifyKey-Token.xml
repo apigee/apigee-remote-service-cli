@@ -3,8 +3,8 @@
     <DisplayName>Generate VerifyKey Token</DisplayName>
     <Algorithm>RS256</Algorithm>
     <PrivateKey>
-        <Value ref="private.privateKey"/>
-        <Id ref="private.certificate1_kid"/>
+        <Value ref="private.secret.remote-service.key"/>
+        <Id ref="private.secret.remote-service.properties.kid"/>
     </PrivateKey>
     <Issuer ref="iss"/>
     <Audience>remote-service-client</Audience>
