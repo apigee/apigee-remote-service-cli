@@ -50,6 +50,15 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 		},
 	}
 
+	c.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "", false,
+		"Apigee SaaS (sets management and runtime URL)")
+	c.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t", "",
+		"Apigee OAuth or SAML token (hybrid only)")
+	c.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u", "",
+		"Apigee username (legacy or OPDK only)")
+	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "",
+		"Apigee password (legacy or OPDK only)")
+
 	c.AddCommand(cmdBindingsList(cfg, printf, fatalf))
 	c.AddCommand(cmdBindingsAdd(cfg, printf, fatalf))
 	c.AddCommand(cmdBindingsRemove(cfg, printf, fatalf))
@@ -74,7 +83,7 @@ func cmdBindingsList(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command
 
 func cmdBindingsAdd(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "add [service name] [product name]",
+		Use:   "add [target name] [product name]",
 		Short: "Add Remote Service binding to Apigee Product",
 		Long:  "Add Remote Service binding to Apigee Product",
 		Args:  cobra.ExactArgs(2),
@@ -99,9 +108,9 @@ func cmdBindingsAdd(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command 
 
 func cmdBindingsRemove(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "remove [service name] [product name]",
-		Short: "Remove Remote Service binding from Apigee Product",
-		Long:  "Remove Remote Service binding from Apigee Product",
+		Use:   "remove [target name] [product name]",
+		Short: "Remove target binding from Apigee Product",
+		Long:  "Remove target binding from Apigee Product",
 		Args:  cobra.ExactArgs(2),
 
 		Run: func(cmd *cobra.Command, args []string) {

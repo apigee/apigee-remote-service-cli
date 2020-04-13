@@ -115,11 +115,15 @@ to your organization and environment.`,
 			err := rootArgs.Resolve(false, true)
 			if err == nil {
 				if p.IsGCPManaged && !p.verifyOnly {
+					missingFlagNames := []string{}
 					if p.Token == "" {
-						fatalf("--token is required")
+						missingFlagNames = append(missingFlagNames, "token")
 					}
 					if p.developerEmail == "" {
-						fatalf("--developer-email is required")
+						missingFlagNames = append(missingFlagNames, "developer-email")
+					}
+					if err := p.PrintMissingFlags(missingFlagNames); err != nil {
+						fatalf(err.Error())
 					}
 				}
 			}
@@ -133,6 +137,20 @@ to your organization and environment.`,
 			p.run(printf, fatalf)
 		},
 	}
+
+	c.Flags().StringVarP(&rootArgs.ManagementBase, "management", "m",
+		shared.DefaultManagementBase, "Apigee management base URL")
+	c.Flags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "", false,
+		"Apigee SaaS (sets management and runtime URL)")
+	c.Flags().BoolVarP(&rootArgs.IsOPDK, "opdk", "", false,
+		"Apigee opdk")
+
+	c.Flags().StringVarP(&rootArgs.Token, "token", "t", "",
+		"Apigee OAuth or SAML token (hybrid only)")
+	c.Flags().StringVarP(&rootArgs.Username, "username", "u", "",
+		"Apigee username (legacy or OPDK only)")
+	c.Flags().StringVarP(&rootArgs.Password, "password", "p", "",
+		"Apigee password (legacy or OPDK only)")
 
 	c.Flags().StringVarP(&p.developerEmail, "developer-email", "d", "",
 		"email used to create a developer (ignored for --legacy or --opdk)")

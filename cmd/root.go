@@ -52,27 +52,14 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 		for _, subC := range cmds {
 			subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
 				"", "Apigee runtime base URL (required for hybrid or opdk)")
-			subC.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m",
-				shared.DefaultManagementBase, "Apigee management base URL")
+
 			subC.PersistentFlags().BoolVarP(&rootArgs.Verbose, "verbose", "v",
 				false, "verbose output")
-
-			subC.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "",
-				false, "Apigee SaaS (sets management URL)")
-			subC.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "",
-				false, "Apigee opdk")
 
 			subC.PersistentFlags().StringVarP(&rootArgs.Org, "organization", "o",
 				"", "Apigee organization name")
 			subC.PersistentFlags().StringVarP(&rootArgs.Env, "environment", "e",
 				"", "Apigee environment name")
-
-			subC.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u",
-				"", "Apigee username (legacy or OPDK only)")
-			subC.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p",
-				"", "Apigee password (legacy or OPDK only)")
-			subC.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t",
-				"", "Apigee OAuth or SAML token (hybrid only)")
 
 			subC.PersistentFlags().StringVarP(&rootArgs.ConfigPath, "config", "c",
 				"", "Path to Apigee Remote Service config file")

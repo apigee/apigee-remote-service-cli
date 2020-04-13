@@ -146,17 +146,6 @@ func cmdCreateSecret(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 				t.clientSecret = t.ServerConfig.Tenant.Secret
 			}
 
-			missingFlagNames := []string{}
-			if t.clientID == "" {
-				missingFlagNames = append(missingFlagNames, "key")
-			}
-			if t.clientSecret == "" {
-				missingFlagNames = append(missingFlagNames, "secret")
-			}
-			if err := t.PrintMissingFlags(missingFlagNames); err != nil {
-				fatalf(err.Error())
-			}
-
 			t.keyID = time.Now().Format(time.RFC3339)
 
 			t.createSecret(printf, fatalf)
@@ -165,9 +154,6 @@ func cmdCreateSecret(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 
 	c.Flags().IntVarP(&t.certExpirationInYears, "years", "", 1, "number of years before the cert expires")
 	c.Flags().IntVarP(&t.certKeyStrength, "strength", "", 2048, "key strength")
-
-	c.Flags().StringVarP(&t.clientID, "key", "k", "", "provision key")
-	c.Flags().StringVarP(&t.clientSecret, "secret", "s", "", "provision secret")
 
 	c.Flags().StringVarP(&t.namespace, "namespace", "n", "apigee", "emit Secret in the specified namespace")
 	c.Flags().IntVarP(&t.truncate, "truncate", "", 2, "number of certs to keep in jwks")
@@ -178,11 +164,16 @@ func cmdCreateSecret(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 func cmdRotateCert(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "rotate-cert",
-		Short: "rotate JWT certificate",
-		Long:  "Deploys a new private and public key while maintaining the current public key for existing tokens.",
+		Short: "rotate JWT certificate (legacy or opdk)",
+		Long:  "Deploys a new private and public key while maintaining the current public key for existing tokens (legacy or opdk).",
 		Args:  cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
+
+			if t.IsGCPManaged {
+				fatalf("only valid for legacy or hybrid, use create-secret for hybrid")
+			}
+
 			if t.ServerConfig != nil {
 				t.clientID = t.ServerConfig.Tenant.Key
 				t.clientSecret = t.ServerConfig.Tenant.Secret
@@ -242,7 +233,6 @@ func (t *token) createToken(printf, fatalf shared.FormatFn) (string, error) {
 }
 
 func (t *token) inspectToken(printf, fatalf shared.FormatFn) error {
-	// Print JWT
 	var file = os.Stdin
 	if t.file != "" {
 		var err error

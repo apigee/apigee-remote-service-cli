@@ -247,23 +247,20 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	c.Proxies = &ProxiesServiceOp{client: c}
 	c.KVMService = &KVMServiceOp{client: c}
 
-	var e error
-	if o.Auth == nil {
-		c.auth, e = retrieveAuthFromNetrc("", baseURL.Host)
-	} else if o.Auth.SkipAuth {
-		// do nothing
-	} else if o.Auth.Password == "" && o.Auth.BearerToken == "" {
-		c.auth, e = retrieveAuthFromNetrc(o.Auth.NetrcPath, baseURL.Host)
-	} else {
-		c.auth = &EdgeAuth{
-			Username:    o.Auth.Username,
-			Password:    o.Auth.Password,
-			BearerToken: o.Auth.BearerToken,
+	if !o.Auth.SkipAuth {
+		var e error
+		if o.Auth == nil || (o.Auth.Password == "" && o.Auth.BearerToken == "") {
+			c.auth, e = retrieveAuthFromNetrc(o.Auth.NetrcPath, baseURL.Host)
+		} else {
+			c.auth = &EdgeAuth{
+				Username:    o.Auth.Username,
+				Password:    o.Auth.Password,
+				BearerToken: o.Auth.BearerToken,
+			}
 		}
-	}
-
-	if e != nil {
-		return nil, e
+		if e != nil {
+			return nil, e
+		}
 	}
 
 	if o.Debug {
@@ -273,60 +270,8 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 		}
 	}
 
-	// c.Account = &AccountServiceOp{client: c}
-	// c.Actions = &ActionsServiceOp{client: c}
-	// c.Domains = &DomainsServiceOp{client: c}
-	// c.Droplets = &DropletsServiceOp{client: c}
-	// c.DropletActions = &DropletActionsServiceOp{client: c}
-	// c.Images = &ImagesServiceOp{client: c}
-	// c.ImageActions = &ImageActionsServiceOp{client: c}
-	// c.Keys = &KeysServiceOp{client: c}
-	// c.Regions = &RegionsServiceOp{client: c}
-	// c.Sizes = &SizesServiceOp{client: c}
-	// c.FloatingIPs = &FloatingIPsServiceOp{client: c}
-	// c.FloatingIPActions = &FloatingIPActionsServiceOp{client: c}
-	// c.Storage = &StorageServiceOp{client: c}
-	// c.StorageActions = &StorageActionsServiceOp{client: c}
-	// c.Tags = &TagsServiceOp{client: c}
-
 	return c, nil
 }
-
-// // ClientOpt are options for New.
-// type ClientOpt func(*EdgeClient) error
-//
-// // New returns a new instance of the client for the Apigee Edge Admin API
-// func New(httpClient *http.Client, opts ...ClientOpt) (*EdgeClient, error) {
-//   c := NewClient(httpClient)
-//   for _, opt := range opts {
-//     if err := opt(c); err != nil {
-//       return nil, err
-//     }
-//   }
-//
-//   return c, nil
-// }
-//
-// // SetBaseURL is a client option for setting the base URL.
-// func SetBaseURL(baseurl string) ClientOpt {
-//   return func(c *Client) error {
-//     u, err := url.Parse(baseurl)
-//     if err != nil {
-//       return err
-//     }
-//
-//     c.BaseURL = u
-//     return nil
-//   }
-// }
-//
-// // SetUserAgent is a client option for adding a string to the user agent.
-// func SetUserAgent(ua string) ClientOpt {
-//   return func(c *Client) error {
-//     c.UserAgent = fmt.Sprintf("%s+%s", ua, c.UserAgent)
-//     return nil
-//   }
-// }
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
 // which will be resolved to the BaseURL of the Client. Relative URLS should

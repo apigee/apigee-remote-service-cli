@@ -124,6 +124,10 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 
 	r.RemoteServiceProxyURL = fmt.Sprintf(remoteServiceProxyURLFormat, r.RuntimeBase)
 
+	if r.IsGCPManaged && !skipAuth && r.Token == "" {
+		return fmt.Errorf("--token is required for hybrid")
+	}
+
 	r.ClientOpts = &apigee.EdgeClientOptions{
 		MgmtURL: r.ManagementBase,
 		Org:     r.Org,
