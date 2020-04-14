@@ -710,7 +710,7 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 		if verifyErrors != nil {
 			printf("# WARNING: verification of provision failed. May not be valid.")
 		}
-		print(config)
+		printf(config)
 		return nil
 	}
 
