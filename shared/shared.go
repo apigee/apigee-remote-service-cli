@@ -83,7 +83,9 @@ type RootArgs struct {
 // Resolve is used to populate shared args, it's automatically called prior when creating the root command
 func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 
-	r.loadConfig()
+	if err := r.loadConfig(); err != nil {
+		return err
+	}
 
 	if r.IsLegacySaaS && r.IsOPDK {
 		return errors.New("--legacy and --opdk options are exclusive")
@@ -199,10 +201,22 @@ func (r *RootArgs) loadConfig() error {
 	if r.ConfigPath == "" {
 		return nil
 	}
-	c := &server.Config{}
+
 	yamlFile, err := ioutil.ReadFile(r.ConfigPath)
+	if err != nil {
+		return err
+	}
+
+	// load as either CRD or raw config
+	cm := &KubernetesCRD{}
+	c := &server.Config{}
+	err = yaml.Unmarshal(yamlFile, cm)
 	if err == nil {
-		err = yaml.Unmarshal(yamlFile, c)
+		if cm.Data == nil {
+			err = yaml.Unmarshal(yamlFile, c)
+		} else {
+			err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), c)
+		}
 	}
 	if err != nil {
 		return err
