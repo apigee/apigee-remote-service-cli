@@ -84,7 +84,10 @@ const ( // modern
 
 	remoteServiceAPIURLFormat = "https://apigee-runtime-%s-%s.%s:8443/remote-service" // org, env, namespace
 
-	fluentdConfigFile = "/opt/apigee/customer/default.properties"
+	fluentdInternalFormat = "apigee-udca-%s-%s.%s:20001" // org, env, namespace
+	defaultApigeeCAFile   = "/opt/apigee/tls/ca.crt"
+	defaultApigeeCertFile = "/opt/apigee/tls/tls.crt"
+	defaultApigeeKeyFile  = "/opt/apigee/tls/tls.key"
 )
 
 type provision struct {
@@ -679,15 +682,17 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 
 	if p.IsGCPManaged {
 		config.Tenant.ManagementAPI = ""
-		config.Tenant.FluentdConfigFile = fluentdConfigFile
 		config.Analytics.CollectionInterval = 10 * time.Second
 
-		// // Inside a mesh, we could use an internal address...
-		// // BUT it would have to be the same mesh. So, removing for now.
-		// if p.namespace != "" {
-		// 	config.Tenant.RemoteServiceAPI = fmt.Sprintf(remoteServiceAPIURLFormat, p.Org, p.Env, p.namespace)
-		// 	config.Tenant.AllowUnverifiedSSLCert = true
-		// }
+		// assumes the same mesh and tls files are mounted properly
+		fluentdNS := p.namespace
+		if fluentdNS == "" {
+			fluentdNS = "apigee"
+		}
+		config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalFormat, p.Org, p.Env, fluentdNS)
+		config.Analytics.TLS.CAFile = defaultApigeeCAFile
+		config.Analytics.TLS.CertFile = defaultApigeeCertFile
+		config.Analytics.TLS.KeyFile = defaultApigeeKeyFile
 	}
 
 	if p.IsOPDK {
