@@ -671,7 +671,7 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 
 	config := server.Config{
 		Tenant: server.TenantConfig{
-			ManagementAPI:    p.ManagementBase,
+			InternalAPI:      p.ManagementBase, // TODO
 			RemoteServiceAPI: p.RemoteServiceProxyURL,
 			OrgName:          p.Org,
 			EnvName:          p.Env,
@@ -681,7 +681,7 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 	}
 
 	if p.IsGCPManaged {
-		config.Tenant.ManagementAPI = ""
+		config.Tenant.InternalAPI = "" // no internal API for GCP
 		config.Analytics.CollectionInterval = 10 * time.Second
 
 		// assumes the same mesh and tls files are mounted properly

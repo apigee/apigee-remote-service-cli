@@ -223,19 +223,17 @@ func (r *RootArgs) loadConfig() error {
 	}
 
 	r.ServerConfig = c
-	r.ManagementBase = c.Tenant.ManagementAPI
 	r.RuntimeBase = strings.Split(c.Tenant.RemoteServiceAPI, remoteServicePath)[0]
-
 	r.Org = c.Tenant.OrgName
 	r.Env = c.Tenant.EnvName
 
-	switch r.ManagementBase {
-	case LegacySaaSManagementBase:
-		r.IsLegacySaaS = true
-	case GCPExperienceBase:
+	switch c.Tenant.InternalAPI {
 	case "":
 		r.ManagementBase = GCPExperienceBase
 		r.IsGCPManaged = true
+	case "https://istioservices.apigee.net/edgemicro":
+		r.ManagementBase = LegacySaaSManagementBase
+		r.IsLegacySaaS = true
 	default:
 		r.IsOPDK = true
 	}
