@@ -46,15 +46,6 @@ into your environment if one already exists. If you are upgrading from a
 prior release, add the `--forceProxyInstall` option to the commands below
 to ensure that the latest proxy is installed into your environment.
 
-### Apigee SaaS
-
-    apigee-remote-service-cli provision --legacy --user $USER --password $PASSWORD --organization $ORG --environment $ENV
-
-_Tip_ 
-The CLI will automatically pick up a username and password from a 
-[.netrc](https://ec.haxx.se/usingcurl-netrc.html) file in your home 
-directory if you have an entry for `api.enterprise.apigee.com`.
-
 ### Apigee Hybrid
 
 Apigee Hybrid 
@@ -66,16 +57,27 @@ valid token:
 
 Run provision to get your configuration and store it in a file:
 
-    apigee-remote-service-cli provision --organization $ORG --environment $ENV --developer-email $EMAIL --runtime $RUNTIME --token $TOKEN > config.yaml
+    apigee-remote-service-cli provision --organization $ORG --environment $ENV --developer-email $EMAIL \
+        --runtime $RUNTIME --namespace apigee --token $TOKEN > config.yaml
 
 Install a certificate in your Kuberentes environment:
 
     apigee-remote-service-cli token create-secret --config config.yaml --truncate 1 --token $TOKEN > secret.yaml
     kubenetes apply -f secret.yaml
 
-Verify your proxy and certificate. The following should succeed with a valid JSON:
+Verify your proxy and certificate. The following should return valid JSON:
 
     curl --http1.1 -i $RUNTIME/remote-service/certs
+
+### Apigee SaaS
+
+    apigee-remote-service-cli provision --legacy --user $USER --password $PASSWORD \
+        --organization $ORG --environment $ENV
+
+_Tip_ 
+The CLI will automatically pick up a username and password from a 
+[.netrc](https://ec.haxx.se/usingcurl-netrc.html) file in your home 
+directory if you have an entry for `api.enterprise.apigee.com`.
 
 ### Apigee OPDK
 
@@ -83,7 +85,8 @@ If you are running Apigee Private Cloud (OPDK), you'll need to specify
 your private server's `--management` and `--runtime` options in the 
 command. The URIs must be reachable from your Istio mesh.  
 
-    apigee-remote-service-cli provision --opdk --user $USER --password $PASSWORD --organization $ORG --environment $ENV
+    apigee-remote-service-cli provision --opdk --user $USER --password $PASSWORD \
+        --organization $ORG --environment $ENV
 
 _Tip_  
 The CLI will automatically pick up a username and password from a 
