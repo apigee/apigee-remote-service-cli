@@ -11,7 +11,8 @@ proxy istalled into Apigee Runtime.
 
 ## Prerequisite: Apigee
 
-You must have an [Apigee](https://cloud.google.com/apigee/) account. [Try it free](https://login.apigee.com/sign__up) if you don't!
+You must have an [Apigee](https://cloud.google.com/apigee/) account. 
+[Try it free](https://login.apigee.com/sign__up) if you don't!
 
 ## Download a release
 
@@ -57,12 +58,13 @@ valid token:
 
 Run provision to get your configuration and store it in a file:
 
-    apigee-remote-service-cli provision --organization $ORG --environment $ENV --developer-email $EMAIL \
-        --runtime $RUNTIME --namespace apigee --token $TOKEN > config.yaml
+    apigee-remote-service-cli provision --organization $ORG --environment $ENV \
+        --developer-email $EMAIL --runtime $RUNTIME --namespace apigee --token $TOKEN > config.yaml
 
 Install a certificate in your Kuberentes environment:
 
-    apigee-remote-service-cli token create-secret --config config.yaml --truncate 1 --token $TOKEN > secret.yaml
+    apigee-remote-service-cli token create-secret --config config.yaml --truncate 1 \
+        --namespace apigee > secret.yaml
     kubenetes apply -f secret.yaml
 
 Verify your proxy and certificate. The following should return valid JSON:
@@ -72,7 +74,7 @@ Verify your proxy and certificate. The following should return valid JSON:
 ### Apigee SaaS
 
     apigee-remote-service-cli provision --legacy --user $USER --password $PASSWORD \
-        --organization $ORG --environment $ENV
+        --organization $ORG --environment $ENV > config.yaml
 
 _Tip_ 
 The CLI will automatically pick up a username and password from a 
@@ -86,7 +88,7 @@ your private server's `--management` and `--runtime` options in the
 command. The URIs must be reachable from your Istio mesh.  
 
     apigee-remote-service-cli provision --opdk --user $USER --password $PASSWORD \
-        --organization $ORG --environment $ENV
+        --organization $ORG --environment $ENV > config.yaml
 
 _Tip_  
 The CLI will automatically pick up a username and password from a 
