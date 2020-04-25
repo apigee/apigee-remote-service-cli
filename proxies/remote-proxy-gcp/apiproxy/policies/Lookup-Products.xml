@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LookupCache async="false" continueOnError="false" enabled="true" name="Lookup-Products">
+    <DisplayName>Lookup Products</DisplayName>
+    <CacheKey>
+        <KeyFragment ref="request.uri"/>
+    </CacheKey>
+    <Scope>Exclusive</Scope>
+    <AssignTo>productlist</AssignTo>
+    <CacheResource>apigee-remote-service</CacheResource>
+</LookupCache>

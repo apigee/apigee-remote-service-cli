@@ -52,10 +52,22 @@
                 <Step>
                     <Name>Verify-API-Key</Name>
                 </Step>
+                <Step>
+                    <Name>Lookup-Products</Name>
+                </Step>
             </Request>
             <Response>
                 <Step>
                     <Name>JavaCallout</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
+                    <Name>Populate-Product-List</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
+                    <Name>Send-Product-List</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = true</Condition>
                 </Step>
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/products") and (request.verb = "GET")</Condition>
