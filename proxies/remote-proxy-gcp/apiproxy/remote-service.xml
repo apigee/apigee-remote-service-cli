@@ -1,4 +1,4 @@
-<APIProxy revision="5" name="remote-service">
+<APIProxy revision="1" name="remote-service">
     <DisplayName>remote-service</DisplayName>
     <Description>remote-service</Description>
     <CreatedAt>1587832719075</CreatedAt>
