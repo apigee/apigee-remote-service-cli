@@ -9,7 +9,7 @@
     <CacheResource>apigee-remote-service</CacheResource>
     <Scope>Exclusive</Scope>
     <ExpirySettings>
-        <TimeoutInSec>3600</TimeoutInSec>
+        <TimeoutInSec>120</TimeoutInSec>
     </ExpirySettings>
     <Source>response.content</Source>
 </PopulateCache>
