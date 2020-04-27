@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PopulateCache async="false" continueOnError="false" enabled="true" name="Populate-Product-List">
+    <DisplayName>Populate Product List</DisplayName>
+    <Properties/>
+    <CacheKey>
+        <Prefix/>
+        <KeyFragment ref="request.uri"/>
+    </CacheKey>
+    <CacheResource>apigee-remote-service</CacheResource>
+    <Scope>Exclusive</Scope>
+    <ExpirySettings>
+        <TimeoutInSec>120</TimeoutInSec>
+    </ExpirySettings>
+    <Source>response.content</Source>
+</PopulateCache>
