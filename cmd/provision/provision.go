@@ -823,14 +823,14 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 		if err != nil && (resp == nil || resp.StatusCode != http.StatusConflict) { // http.StatusConflict == already exists
 			return err
 		}
+		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
+			return fmt.Errorf("error creating cache %s, status code: %v", cacheName, resp.StatusCode)
+		}
 		if resp.StatusCode == http.StatusConflict {
 			printf("cache %s already exists", cacheName)
-			return nil
+		} else {
+			printf("cache %s created", cacheName)
 		}
-		if resp.StatusCode != http.StatusCreated {
-			return fmt.Errorf("error creating cache %s, status code: %v", cache, resp.StatusCode)
-		}
-		printf("cache %s created", cacheName)
 	}
 
 	printf("deploying proxy %s revision %d to env %s...", name, newRev, p.Env)
