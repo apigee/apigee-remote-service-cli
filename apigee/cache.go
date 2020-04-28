@@ -28,21 +28,22 @@ type CacheService interface {
 	Create(cache Cache) (*Response, error)
 }
 
+// Cache represents a cache definition
 type Cache struct {
-  Name string `json:"-,omitempty"`
-  Description string `json:"description,omitempty"`
-  ExpirySettings *expirySettings `json:"expirySettings,omitempty"`
-  OverflowToDisk *bool `json:"overflowToDisk,omitempty"`
-  SkipCacheIfElementSizeInKBExceeds *string `json:"skipCacheIfElementSizeInKBExceeds,omitempty"`
+	Name                              string          `json:"-,omitempty"`
+	Description                       string          `json:"description,omitempty"`
+	ExpirySettings                    *expirySettings `json:"expirySettings,omitempty"`
+	OverflowToDisk                    *bool           `json:"overflowToDisk,omitempty"`
+	SkipCacheIfElementSizeInKBExceeds *string         `json:"skipCacheIfElementSizeInKBExceeds,omitempty"`
 }
 
 type expirySettings struct {
-  ExpiryDate expiryDate `json:"expiryDate,omitempty"`
-  ValuesNull string `json:"valuesNull,omitempty"`
+	ExpiryDate expiryDate `json:"expiryDate,omitempty"`
+	ValuesNull string     `json:"valuesNull,omitempty"`
 }
 
 type expiryDate struct {
-  Value string `json:"value,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 // CacheServiceOp represents a cache service operation
