@@ -6,7 +6,7 @@
         <Prefix/>
         <KeyFragment ref="request.uri"/>
     </CacheKey>
-    <CacheResource>apigee-remote-service</CacheResource>
+    <CacheResource>remote-service</CacheResource>
     <Scope>Exclusive</Scope>
     <ExpirySettings>
         <TimeoutInSec>120</TimeoutInSec>

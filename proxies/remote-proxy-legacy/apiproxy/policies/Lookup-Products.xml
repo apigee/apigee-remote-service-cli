@@ -6,5 +6,5 @@
     </CacheKey>
     <Scope>Exclusive</Scope>
     <AssignTo>productlist</AssignTo>
-    <CacheResource>apigee-remote-service</CacheResource>
+    <CacheResource>remote-service</CacheResource>
 </LookupCache>
