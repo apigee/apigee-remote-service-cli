@@ -519,7 +519,7 @@ func (s *ProxiesServiceOp) GetDeployedRevision(proxy string) (*Revision, error) 
 	if err != nil && (resp == nil || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusNotFound {
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusBadRequest {
 		return nil, nil
 	}
 	for _, rev := range deployment.Revision {

@@ -1,38 +1,41 @@
 <APIProxy revision="1" name="remote-service">
     <DisplayName>remote-service</DisplayName>
     <Description>remote-service</Description>
-    <CreatedAt>1586561070679</CreatedAt>
-    <LastModifiedAt>1586561070679</LastModifiedAt>
+    <CreatedAt>1587832719075</CreatedAt>
+    <LastModifiedAt>1587832876047</LastModifiedAt>
     <BasePaths>/remote-service</BasePaths>
     <Policies>
-        <Policy>Clear-API-Key</Policy>
-        <Policy>Set-Quota-Response</Policy>
-        <Policy>Create-Refresh-Request</Policy>
-        <Policy>Set-Quota-Variables</Policy>
-        <Policy>RevokeRefreshToken</Policy>
-        <Policy>Extract-API-Key</Policy>
-        <Policy>RefreshAccessToken</Policy>
-        <Policy>JavaCallout</Policy>
-        <Policy>Extract-Refresh-Params</Policy>
-        <Policy>Generate-VerifyKey-Token</Policy>
-        <Policy>Create-OAuth-Request</Policy>
-        <Policy>Raise-Fault-Unknown-Request</Policy>
-        <Policy>Generate-Access-Token</Policy>
-        <Policy>Extract-OAuth-Params</Policy>
-        <Policy>Send-Version</Policy>
-        <Policy>Set-Response</Policy>
-        <Policy>Extract-Revoke-Params</Policy>
-        <Policy>Set-JWT-Variables</Policy>
-        <Policy>Decode-Basic-Authentication</Policy>
-        <Policy>Products-to-JSON</Policy>
-        <Policy>Verify-API-Key</Policy>
-        <Policy>AccessTokenRequest</Policy>
         <Policy>Access-App-Info</Policy>
-        <Policy>Eval-Quota-Result</Policy>
+        <Policy>JavaCallout</Policy>
+        <Policy>Set-Quota-Response</Policy>
+        <Policy>Generate-VerifyKey-Token</Policy>
         <Policy>DistributedQuota</Policy>
-        <Policy>Send-JWKs-Message</Policy>
+        <Policy>RevokeRefreshToken</Policy>
+        <Policy>Create-Refresh-Request</Policy>
+        <Policy>Set-JWT-Variables</Policy>
+        <Policy>Clear-API-Key</Policy>
+        <Policy>Set-Response</Policy>
+        <Policy>AccessTokenRequest</Policy>
+        <Policy>Raise-Fault-Unknown-Request</Policy>
         <Policy>Raise-Fault-Missing-Secret</Policy>
+        <Policy>RefreshAccessToken</Policy>
+        <Policy>Eval-Quota-Result</Policy>
+        <Policy>Extract-API-Key</Policy>
+        <Policy>Verify-API-Key</Policy>
+        <Policy>Products-to-JSON</Policy>
+        <Policy>Create-OAuth-Request</Policy>
+        <Policy>Extract-Revoke-Params</Policy>
+        <Policy>Set-Quota-Variables</Policy>
+        <Policy>Generate-Access-Token</Policy>
+        <Policy>Extract-Refresh-Params</Policy>
+        <Policy>Extract-OAuth-Params</Policy>
         <Policy>Assign-Debug</Policy>
+        <Policy>Send-JWKs-Message</Policy>
+        <Policy>Decode-Basic-Authentication</Policy>
+        <Policy>Send-Version</Policy>
+        <Policy>Lookup-Products</Policy>
+        <Policy>Populate-Product-List</Policy>
+        <Policy>Send-Product-List</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>
@@ -40,9 +43,9 @@
     <Resources>
         <Resource>java://products-javacallout-2.0.0.jar</Resource>
         <Resource>jsc://set-quota-variables.js</Resource>
+        <Resource>jsc://set-jwt-variables.js</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
         <Resource>jsc://set-response.js</Resource>
-        <Resource>jsc://set-jwt-variables.js</Resource>
     </Resources>
     <TargetServers></TargetServers>
     <TargetEndpoints></TargetEndpoints>

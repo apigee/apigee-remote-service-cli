@@ -63,6 +63,8 @@ type EdgeClient struct {
 	Proxies ProxiesService
 
 	KVMService KVMService
+
+	CacheService CacheService
 	// Account           AccountService
 	// Actions           ActionsService
 	// Domains           DomainsService
@@ -246,6 +248,7 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	}
 	c.Proxies = &ProxiesServiceOp{client: c}
 	c.KVMService = &KVMServiceOp{client: c}
+	c.CacheService = &CacheServiceOp{client: c}
 
 	if !o.Auth.SkipAuth {
 		var e error

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="2" name="remote-service">
+<APIProxy revision="1" name="remote-service">
     <Basepaths>/remote-service</Basepaths>
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
-    <CreatedAt>1529864810874</CreatedAt>
-    <CreatedBy>srinandans@google.com</CreatedBy>
+    <CreatedAt>1588029837478</CreatedAt>
+    <CreatedBy>defaultUser</CreatedBy>
     <Description>remote-service</Description>
     <DisplayName>remote-service</DisplayName>
-    <LastModifiedAt>1544596340972</LastModifiedAt>
+    <LastModifiedAt>1588030137312</LastModifiedAt>
     <LastModifiedBy>defaultUser</LastModifiedBy>
-    <ManifestVersion>SHA-512:35f8d4ae9a0f1a3ae63cda4936914fb71ede499a50e6f0e7746e11cafd32e4991d804524468928ebd15f1af698f52239bc26ebedaa78f7be4b8271ee0fa97ece</ManifestVersion>
+    <ManifestVersion>SHA-512:e21a46e8880a3e08b3fee9ca094b204c8c9ebe0d4298f00fee128c12f5bbb35fc5845775bc5efae349a8df5c299f61d60bfeb430dc5fd8e415b2db415b71ea98</ManifestVersion>
     <Policies>
         <Policy>Access-App-Info-2</Policy>
         <Policy>Access-App-Info</Policy>
@@ -18,6 +18,7 @@
         <Policy>Create-OAuth-Request</Policy>
         <Policy>Create-Refresh-Request</Policy>
         <Policy>DistributedQuota</Policy>
+        <Policy>Eval-Quota-Result</Policy>
         <Policy>Extract-API-Key</Policy>
         <Policy>Extract-OAuth-Params</Policy>
         <Policy>Extract-Refresh-Params</Policy>
@@ -29,6 +30,8 @@
         <Policy>Get-Private-Key</Policy>
         <Policy>Get-Public-Keys</Policy>
         <Policy>JavaCallout</Policy>
+        <Policy>Lookup-Products</Policy>
+        <Policy>Populate-Product-List</Policy>
         <Policy>Products-to-JSON-2</Policy>
         <Policy>Products-to-JSON</Policy>
         <Policy>Raise-Fault-Unknown-Request</Policy>
@@ -36,8 +39,10 @@
         <Policy>Retrieve-Cert</Policy>
         <Policy>RevokeRefreshToken</Policy>
         <Policy>Send-JWK-Message</Policy>
+        <Policy>Send-Product-List</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-JWT-Variables</Policy>
+        <Policy>Set-Quota-Response</Policy>
         <Policy>Set-Quota-Variables</Policy>
         <Policy>Set-Response</Policy>
         <Policy>Update-Keys</Policy>
@@ -48,6 +53,7 @@
     </ProxyEndpoints>
     <Resources>
         <Resource>java://products-javacallout-2.0.0.jar</Resource>
+        <Resource>jsc://eval-quota-result.js</Resource>
         <Resource>jsc://generate-jwk.js</Resource>
         <Resource>jsc://jsrsasign-all-min.js</Resource>
         <Resource>jsc://jwt-initialization.js</Resource>
