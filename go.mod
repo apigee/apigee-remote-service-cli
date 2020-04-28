@@ -16,7 +16,9 @@ require (
 	github.com/apigee/apigee-remote-service-envoy v0.0.0-00000000000000-000000000000
 	github.com/apigee/apigee-remote-service-golib v0.0.0-00010101000000-000000000000
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
+	github.com/go-bindata/go-bindata v3.1.2+incompatible // indirect
 	github.com/google/go-querystring v1.0.0
+	github.com/jteeuwen/go-bindata v3.0.7+incompatible // indirect
 	github.com/lestrrat-go/jwx v0.9.1
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.0
