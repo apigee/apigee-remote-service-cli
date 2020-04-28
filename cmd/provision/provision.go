@@ -65,6 +65,7 @@ const ( // legacy
 
 const ( // modern
 	kvmName       = "remote-service"
+	cacheName     = "remote-service"
 	encryptKVM    = true
 	authProxyName = "remote-service"
 
@@ -110,8 +111,8 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 	c := &cobra.Command{
 		Use:   "provision",
 		Short: "Provision your Apigee environment for remote services",
-		Long: `The provision command will set up your Apigee environment for remote services. This includes creating 
-and installing a remote-service kvm with certificates, creating credentials, and deploying a remote-service proxy 
+		Long: `The provision command will set up your Apigee environment for remote services. This includes creating
+and installing a remote-service kvm with certificates, creating credentials, and deploying a remote-service proxy
 to your organization and environment.`,
 		Args: cobra.NoArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -812,6 +813,24 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 		if err != nil {
 			return errors.Wrapf(err, "error undeploying proxy %s", name)
 		}
+	}
+
+	if !p.IsGCPManaged {
+		cache := apigee.Cache{
+			Name: cacheName,
+		}
+		resp, err = p.Client.CacheService.Create(cache)
+		if err != nil && (resp == nil || resp.StatusCode != http.StatusConflict) { // http.StatusConflict == already exists
+			return err
+		}
+		if resp.StatusCode == http.StatusConflict {
+			printf("cache %s already exists", cacheName)
+			return nil
+		}
+		if resp.StatusCode != http.StatusCreated {
+			return fmt.Errorf("error creating cache %s, status code: %v", cache, resp.StatusCode)
+		}
+		printf("cache %s created", cacheName)
 	}
 
 	printf("deploying proxy %s revision %d to env %s...", name, newRev, p.Env)
