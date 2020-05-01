@@ -16,7 +16,7 @@
         <Claim name="api_product_list" ref="apiProductList" type="string" array="true"/>
         <Claim name="application_name" ref="apigee.developer.app.name"/>
         <Claim name="developer_email" ref="apigee.developer.email"/>
-        <Claim name="scopes" ref="scope" type="string" array="true"/>
+        <Claim name="scope" ref="scope"/>
     </AdditionalClaims>
     <OutputVariable>jwtmessage</OutputVariable>
 </GenerateJWT>

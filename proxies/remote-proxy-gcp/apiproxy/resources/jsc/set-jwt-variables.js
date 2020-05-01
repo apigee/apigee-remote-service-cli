@@ -30,14 +30,7 @@ try {
     print(err);
 }
 
-var scope = context.getVariable("oauthv2accesstoken.AccessTokenRequest.scope");
-if (scope) {
-    var scopearr = scope.split(" ");
-    context.setVariable("scope", scopearr.join());
-} else {
-    context.setVariable("scope", "");
-}
-
+context.setVariable("scope", context.getVariable("oauthv2accesstoken.AccessTokenRequest.scope"));
 context.setVariable("apiProductList", apiProductsList.join());
 context.setVariable("nbf", new Date().toUTCString());
 context.setVariable("iss", context.getVariable("proxyProto") + "://" + context.getVariable("proxyHost") + context.getVariable("proxy.basepath") + context.getVariable("proxy.pathsuffix"));
