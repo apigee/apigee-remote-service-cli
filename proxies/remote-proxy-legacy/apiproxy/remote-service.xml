@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="1" name="remote-service">
+<APIProxy revision="16" name="remote-service">
     <Basepaths>/remote-service</Basepaths>
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
-    <CreatedAt>1588029837478</CreatedAt>
-    <CreatedBy>defaultUser</CreatedBy>
+    <CreatedAt>1585868518843</CreatedAt>
+    <CreatedBy>theganyo+1@google.com</CreatedBy>
     <Description>remote-service</Description>
     <DisplayName>remote-service</DisplayName>
-    <LastModifiedAt>1588030137312</LastModifiedAt>
-    <LastModifiedBy>defaultUser</LastModifiedBy>
-    <ManifestVersion>SHA-512:e21a46e8880a3e08b3fee9ca094b204c8c9ebe0d4298f00fee128c12f5bbb35fc5845775bc5efae349a8df5c299f61d60bfeb430dc5fd8e415b2db415b71ea98</ManifestVersion>
+    <LastModifiedAt>1588365650380</LastModifiedAt>
+    <LastModifiedBy>theganyo+1@google.com</LastModifiedBy>
+    <ManifestVersion>SHA-512:44390fc451508cc60266d7d3fd2f8abe5b5c7d8b46bc25d787ea551992bad5dd7538fe9e2b16f66f2ece3d2be6e08f595351f6f6863e2ce477fe3f1f2f8b33e3</ManifestVersion>
     <Policies>
         <Policy>Access-App-Info-2</Policy>
         <Policy>Access-App-Info</Policy>
@@ -42,6 +42,7 @@
         <Policy>Send-Product-List</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-JWT-Variables</Policy>
+        <Policy>Set-Products-Filter</Policy>
         <Policy>Set-Quota-Response</Policy>
         <Policy>Set-Quota-Variables</Policy>
         <Policy>Set-Response</Policy>

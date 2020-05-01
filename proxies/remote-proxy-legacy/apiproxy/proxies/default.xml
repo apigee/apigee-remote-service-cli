@@ -65,6 +65,9 @@
                     <Name>Authenticate-Call</Name>
                 </Step>
                 <Step>
+                    <Name>Set-Products-Filter</Name>
+                </Step>
+                <Step>
                     <Name>Lookup-Products</Name>
                 </Step>
             </Request>
@@ -292,6 +295,7 @@
         <BasePath>/remote-service</BasePath>
         <Properties/>
         <VirtualHost>default</VirtualHost>
+        <VirtualHost>secure</VirtualHost>
     </HTTPProxyConnection>
     <RouteRule name="noroute"/>
 </ProxyEndpoint>
