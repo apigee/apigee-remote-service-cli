@@ -61,6 +61,10 @@ Run provision to get your configuration and store it in a file:
     apigee-remote-service-cli provision --organization $ORG --environment $ENV \
         --developer-email $EMAIL --runtime $RUNTIME --namespace apigee --token $TOKEN > config.yaml
 
+Notes:
+- A `developer-email` is required for provisioning to create an `apigee-remote` Developer in Apigee. It can be whatever you want.
+- The `runtime` parameter should start with `https://` and be one of the `hostAliases` in your `virtualhosts`.
+
 Install a certificate in your Kuberentes environment:
 
     apigee-remote-service-cli token create-secret --config config.yaml --truncate 1 \
@@ -89,6 +93,10 @@ command. The URIs must be reachable from your Istio mesh.
 
     apigee-remote-service-cli provision --opdk --user $USER --password $PASSWORD \
         --organization $ORG --environment $ENV > config.yaml
+
+
+Notes:
+- The `runtime` parameter should be the virtual host base URL to reach your runtime.
 
 _Tip_  
 The CLI will automatically pick up a username and password from a 
