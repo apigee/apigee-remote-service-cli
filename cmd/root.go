@@ -104,11 +104,13 @@ func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.C
 			var version versionResponse
 			resp, err := rootArgs.Client.Do(req, &version)
 			if err != nil {
-				fatalf("error getting proxy version: %v", err)
-			}
-			if err != nil {
-				body, _ := ioutil.ReadAll(resp.Body)
-				fatalf("error getting proxy version. response code: %d, body: %s", resp.StatusCode, string(body))
+				if resp == nil {
+					fatalf("error getting proxy version: %v", err)
+				} else {
+					body, _ := ioutil.ReadAll(resp.Body)
+					fatalf("error getting proxy version. response code: %d, body: %s", resp.StatusCode, string(body))
+				}
+				return
 			}
 			printf("remote-service proxy version: %v", version.Version)
 		},
