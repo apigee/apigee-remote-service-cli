@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -121,7 +122,7 @@ func cmdInspectToken(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 		Args:  cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
-			err := t.inspectToken(printf, fatalf)
+			err := t.inspectToken(cmd.InOrStdin(), printf, fatalf)
 			if err != nil {
 				fatalf("error inspecting token: %v", err)
 			}
@@ -232,8 +233,8 @@ func (t *token) createToken(printf, fatalf shared.FormatFn) (string, error) {
 	return tokenRes.Token, nil
 }
 
-func (t *token) inspectToken(printf, fatalf shared.FormatFn) error {
-	var file = os.Stdin
+func (t *token) inspectToken(in io.Reader, printf, fatalf shared.FormatFn) error {
+	var file = in
 	if t.file != "" {
 		var err error
 		file, err = os.Open(t.file)

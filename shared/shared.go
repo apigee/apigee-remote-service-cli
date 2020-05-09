@@ -24,6 +24,7 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
@@ -78,6 +79,27 @@ type RootArgs struct {
 	RemoteServiceProxyURL string
 	Client                *apigee.EdgeClient
 	ClientOpts            *apigee.EdgeClientOptions
+}
+
+// AddCommandWithFlags adds to the root command with standard flags
+func AddCommandWithFlags(c *cobra.Command, rootArgs *RootArgs, cmds ...*cobra.Command) {
+	for _, subC := range cmds {
+		subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
+			"", "Apigee runtime base URL (required for hybrid or opdk)")
+
+		subC.PersistentFlags().BoolVarP(&rootArgs.Verbose, "verbose", "v",
+			false, "verbose output")
+
+		subC.PersistentFlags().StringVarP(&rootArgs.Org, "organization", "o",
+			"", "Apigee organization name")
+		subC.PersistentFlags().StringVarP(&rootArgs.Env, "environment", "e",
+			"", "Apigee environment name")
+
+		subC.PersistentFlags().StringVarP(&rootArgs.ConfigPath, "config", "c",
+			"", "Path to Apigee Remote Service config file")
+
+		c.AddCommand(subC)
+	}
 }
 
 // Resolve is used to populate shared args, it's automatically called prior when creating the root command

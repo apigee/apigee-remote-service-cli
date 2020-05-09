@@ -22,9 +22,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/apigee/apigee-remote-service-cli/cmd/bindings"
-	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
-	"github.com/apigee/apigee-remote-service-cli/cmd/token"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/spf13/cobra"
 )
@@ -38,8 +35,6 @@ func init() {
 
 // GetRootCmd returns the root of the cobra command-tree.
 func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
-	rootArgs := &shared.RootArgs{}
-
 	c := &cobra.Command{
 		Use:   "apigee-remote-service-cli",
 		Short: "Utility to work with Apigee Remote Service.",
@@ -48,30 +43,7 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 	c.SetArgs(args)
 	c.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 
-	var addCommand = func(cmds ...*cobra.Command) {
-		for _, subC := range cmds {
-			subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
-				"", "Apigee runtime base URL (required for hybrid or opdk)")
-
-			subC.PersistentFlags().BoolVarP(&rootArgs.Verbose, "verbose", "v",
-				false, "verbose output")
-
-			subC.PersistentFlags().StringVarP(&rootArgs.Org, "organization", "o",
-				"", "Apigee organization name")
-			subC.PersistentFlags().StringVarP(&rootArgs.Env, "environment", "e",
-				"", "Apigee environment name")
-
-			subC.PersistentFlags().StringVarP(&rootArgs.ConfigPath, "config", "c",
-				"", "Path to Apigee Remote Service config file")
-
-			c.AddCommand(subC)
-		}
-	}
-
-	addCommand(provision.Cmd(rootArgs, printf, fatalf))
-	addCommand(bindings.Cmd(rootArgs, printf, fatalf))
-	addCommand(token.Cmd(rootArgs, printf, fatalf))
-
+	rootArgs := &shared.RootArgs{}
 	c.AddCommand(version(rootArgs, printf, fatalf))
 
 	return c

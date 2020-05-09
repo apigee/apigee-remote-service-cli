@@ -18,6 +18,9 @@ import (
 	"os"
 
 	"github.com/apigee/apigee-remote-service-cli/cmd"
+	"github.com/apigee/apigee-remote-service-cli/cmd/bindings"
+	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
+	"github.com/apigee/apigee-remote-service-cli/cmd/token"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 )
 
@@ -37,7 +40,13 @@ func init() {
 }
 
 func main() {
+
 	rootCmd := cmd.GetRootCmd(os.Args[1:], shared.Printf, shared.Fatalf)
+
+	rootArgs := &shared.RootArgs{}
+	shared.AddCommandWithFlags(rootCmd, rootArgs, provision.Cmd(rootArgs, shared.Printf, shared.Fatalf))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, bindings.Cmd(rootArgs, shared.Printf, shared.Fatalf))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, token.Cmd(rootArgs, shared.Printf, shared.Fatalf))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(-1)

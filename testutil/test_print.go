@@ -46,7 +46,7 @@ func (tp *TestPrint) Check(t *testing.T, want []string) {
 	}
 
 	if len(want) != len(tp.Prints) {
-		t.Fatalf("%s want %d prints, got %d: %v", tp.Name, len(want), len(tp.Prints), tp.Prints)
+		t.Errorf("%s want %d prints, got %d: %v", tp.Name, len(want), len(tp.Prints), tp.Prints)
 	}
 
 	for i, got := range tp.Prints {
