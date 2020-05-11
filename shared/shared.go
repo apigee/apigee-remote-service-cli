@@ -41,6 +41,9 @@ const (
 	// RuntimeBaseFormat is a format for base of the organization runtime URL (legacy SaaS and OPDK)
 	RuntimeBaseFormat = "https://%s-%s.apigee.net"
 
+	// LegacySaaSInternalBase is the internal API used for auth and analytics
+	LegacySaaSInternalBase = "https://istioservices.apigee.net/edgemicro"
+
 	internalProxyURLFormat      = "%s://istioservices.%s/edgemicro" // runtime scheme, runtime domain (legacy SaaS and OPDK)
 	internalProxyURLFormatOPDK  = "%s/edgemicro"                    // runtimeBase
 	remoteServicePath           = "/remote-service"
@@ -258,7 +261,7 @@ func (r *RootArgs) loadConfig() error {
 	case "":
 		r.ManagementBase = GCPExperienceBase
 		r.IsGCPManaged = true
-	case "https://istioservices.apigee.net/edgemicro":
+	case LegacySaaSInternalBase:
 		r.ManagementBase = LegacySaaSManagementBase
 		r.IsLegacySaaS = true
 	default:

@@ -672,7 +672,7 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 
 	config := server.Config{
 		Tenant: server.TenantConfig{
-			InternalAPI:      p.ManagementBase, // TODO
+			InternalAPI:      p.InternalProxyURL,
 			RemoteServiceAPI: p.RemoteServiceProxyURL,
 			OrgName:          p.Org,
 			EnvName:          p.Env,
