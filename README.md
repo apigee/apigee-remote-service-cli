@@ -77,7 +77,7 @@ Verify your proxy and certificate. The following should return valid JSON:
 
 ### Apigee SaaS
 
-    apigee-remote-service-cli provision --legacy --user $USER --password $PASSWORD \
+    apigee-remote-service-cli provision --legacy --username $USER --password $PASSWORD \
         --organization $ORG --environment $ENV > config.yaml
 
 _Tip_ 
