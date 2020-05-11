@@ -59,20 +59,22 @@ var BuildInfo BuildInfoType
 
 // RootArgs is the base struct to hold all command arguments
 type RootArgs struct {
-	RuntimeBase    string // "https://org-env.apigee.net"
-	ManagementBase string // "https://api.enterprise.apigee.com"
-	Verbose        bool
-	Org            string
-	Env            string
-	Username       string
-	Password       string
-	Token          string
-	NetrcPath      string
-	IsOPDK         bool
-	IsLegacySaaS   bool
-	IsGCPManaged   bool
-	ConfigPath     string
-	ServerConfig   *server.Config // config loaded from ConfigPath
+	RuntimeBase        string // "https://org-env.apigee.net"
+	ManagementBase     string // "https://api.enterprise.apigee.com"
+	Verbose            bool
+	Org                string
+	Env                string
+	Username           string
+	Password           string
+	Token              string
+	NetrcPath          string
+	IsOPDK             bool
+	IsLegacySaaS       bool
+	IsGCPManaged       bool
+	ConfigPath         string
+	InsecureSkipVerify bool
+
+	ServerConfig *server.Config // config loaded from ConfigPath
 
 	// the following is derived in Resolve()
 	InternalProxyURL      string
@@ -97,6 +99,9 @@ func AddCommandWithFlags(c *cobra.Command, rootArgs *RootArgs, cmds ...*cobra.Co
 
 		subC.PersistentFlags().StringVarP(&rootArgs.ConfigPath, "config", "c",
 			"", "Path to Apigee Remote Service config file")
+
+		subC.PersistentFlags().BoolVarP(&rootArgs.InsecureSkipVerify, "insecure", "",
+			false, "Allow insecure server connections when using SSL")
 
 		c.AddCommand(subC)
 	}

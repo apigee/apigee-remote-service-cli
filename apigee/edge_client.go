@@ -17,6 +17,7 @@ package apigee
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -148,7 +149,6 @@ func addOptions(s string, opt interface{}) (string, error) {
 
 // EdgeClientOptions sets options for accessing edge APIs
 type EdgeClientOptions struct {
-	httpClient *http.Client
 
 	// MgmtURL is the Admin base URL. Optional. For example, if using OPDK this might be
 	// http://192.168.10.56:8080. It defaults to https://api.enterprise.apigee.com.
@@ -168,6 +168,9 @@ type EdgeClientOptions struct {
 
 	// Optional. For hybrid and NG must be true.
 	GCPManaged bool
+
+	// Optional. Skip cert verification.
+	InsecureSkipVerify bool
 }
 
 // EdgeAuth holds information about how to authenticate to the Edge Management server.
@@ -219,10 +222,14 @@ func retrieveAuthFromNetrc(netrcPath, host string) (*EdgeAuth, error) {
 
 // NewEdgeClient returns a new EdgeClient.
 func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
-	httpClient := o.httpClient
-	if o.httpClient == nil {
-		httpClient = http.DefaultClient
+	httpClient := http.DefaultClient
+
+	if o.InsecureSkipVerify {
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		httpClient = &http.Client{Transport: tr}
 	}
+
 	mgmtURL := o.MgmtURL
 	if o.MgmtURL == "" {
 		mgmtURL = defaultBaseURL
