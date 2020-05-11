@@ -413,10 +413,6 @@ func (c *EdgeClient) Do(req *http.Request, v interface{}) (*Response, error) {
 }
 
 func (r *ErrorResponse) Error() string {
-	// if r.RequestID != "" {
-	//   return fmt.Sprintf("%v %v: %d (request %q) %v",
-	//     r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.Message)
-	// }
 	return fmt.Sprintf("%v %v: %d %v",
 		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message)
 }
@@ -436,7 +432,9 @@ func CheckResponse(r *http.Response) error {
 	if err == nil && len(data) > 0 {
 		err := json.Unmarshal(data, errorResponse)
 		if err != nil {
-			return err
+			errorResponse.Message = ResponseErrorMessage{
+				Message: string(data),
+			}
 		}
 	}
 
