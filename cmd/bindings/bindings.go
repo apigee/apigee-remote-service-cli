@@ -17,13 +17,13 @@ package bindings
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-golib/product"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +38,7 @@ type bindings struct {
 }
 
 // Cmd returns base command
-func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Command {
+func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	cfg := &bindings{RootArgs: rootArgs}
 
 	c := &cobra.Command{
@@ -52,6 +52,8 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 
 	c.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "", false,
 		"Apigee SaaS (sets management and runtime URL)")
+	c.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "", false,
+		"Apigee opdk")
 	c.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t", "",
 		"Apigee OAuth or SAML token (hybrid only)")
 	c.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u", "",
@@ -59,14 +61,14 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "",
 		"Apigee password (legacy or OPDK only)")
 
-	c.AddCommand(cmdBindingsList(cfg, printf, fatalf))
-	c.AddCommand(cmdBindingsAdd(cfg, printf, fatalf))
-	c.AddCommand(cmdBindingsRemove(cfg, printf, fatalf))
+	c.AddCommand(cmdBindingsList(cfg, printf))
+	c.AddCommand(cmdBindingsAdd(cfg, printf))
+	c.AddCommand(cmdBindingsRemove(cfg, printf))
 
 	return c
 }
 
-func cmdBindingsList(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
+func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "list",
 		Short: "List Apigee Product to Remote Target bindings",
@@ -74,57 +76,63 @@ func cmdBindingsList(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command
 		Args:  cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
-			b.cmdList(printf, fatalf)
+			b.cmdList(printf)
 		},
 	}
 
 	return c
 }
 
-func cmdBindingsAdd(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
+func cmdBindingsAdd(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "add [target name] [product name]",
 		Short: "Add Remote Target binding to Apigee Product",
 		Long:  "Add Remote Target binding to Apigee Product",
 		Args:  cobra.ExactArgs(2),
 
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			targetName := args[0]
 			productName := args[1]
 			p, err := b.getProduct(productName)
 			if err != nil {
-				fatalf("%v", err)
+				return fmt.Errorf("%v", err)
 			}
 			if p == nil {
-				fatalf("invalid product name: %s", productName)
+				cmd.SilenceUsage = true
+				return fmt.Errorf("invalid product name: %s", productName)
 			}
 
-			b.bindTarget(p, targetName, printf, fatalf)
+			err = b.bindTarget(p, targetName, printf)
+			if err != nil {
+				return fmt.Errorf("%v", err)
+			}
+			return nil
 		},
 	}
 
 	return c
 }
 
-func cmdBindingsRemove(b *bindings, printf, fatalf shared.FormatFn) *cobra.Command {
+func cmdBindingsRemove(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "remove [target name] [product name]",
 		Short: "Remove target binding from Apigee Product",
 		Long:  "Remove target binding from Apigee Product",
 		Args:  cobra.ExactArgs(2),
 
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			targetName := args[0]
 			productName := args[1]
 			p, err := b.getProduct(productName)
 			if err != nil {
-				fatalf("%v", err)
+				return err
 			}
 			if p == nil {
-				fatalf("invalid product name: %s", productName)
+				printf("invalid product name: %s", productName)
+				return nil
 			}
 
-			b.unbindTarget(p, targetName, printf, fatalf)
+			return b.unbindTarget(p, targetName, printf)
 		},
 	}
 
@@ -150,7 +158,7 @@ func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	}
 	req, err := b.Client.NewRequest(http.MethodGet, "", nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
+		return nil, errors.Wrap(err, "creating request")
 	}
 	req.URL.Path = fmt.Sprintf(productsURLFormat, b.Org) // hack: negate client's base URL
 	req.URL.RawQuery = "expand=true"
@@ -158,17 +166,17 @@ func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	var res product.APIResponse
 	resp, err := b.Client.Do(req, &res)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving products: %v", err)
+		return nil, errors.Wrap(err, "retrieving products")
 	}
 	defer resp.Body.Close()
 
 	return res.APIProducts, nil
 }
 
-func (b *bindings) cmdList(printf, fatalf shared.FormatFn) error {
+func (b *bindings) cmdList(printf shared.FormatFn) error {
 	products, err := b.getProducts()
 	if err != nil {
-		fatalf("%v", err)
+		return err
 	}
 	var bound, unbound []product.APIProduct
 	for _, p := range products {
@@ -203,40 +211,42 @@ func (b *bindings) cmdList(printf, fatalf shared.FormatFn) error {
 	})
 	tmp, err = tmp.Parse(productsTemplate)
 	if err != nil {
-		fatalf("failed to create template: %v", err)
+		return errors.Wrap(err, "creating template")
 	}
-	err = tmp.Execute(os.Stdout, data)
+	err = tmp.Execute(shared.FormatFnWriter(printf), data)
 	if err != nil {
-		fatalf("failed to execute template: %v", err)
+		return errors.Wrap(err, "executing template")
 	}
 
 	return nil
 }
 
-func (b *bindings) bindTarget(p *product.APIProduct, target string, printf, fatalf shared.FormatFn) {
+func (b *bindings) bindTarget(p *product.APIProduct, target string, printf shared.FormatFn) error {
 	boundTargets := p.GetBoundTargets()
 	if _, ok := indexOf(boundTargets, target); ok {
-		fatalf("target %s is already bound to %s", target, p.Name)
+		printf("target %s is already bound to %s", target, p.Name)
+		return nil
 	}
-	err := b.updateTargetBindings(p, append(boundTargets, target))
-	if err != nil {
-		fatalf("error binding target %s to %s: %v", target, p.Name, err)
+	if err := b.updateTargetBindings(p, append(boundTargets, target)); err != nil {
+		return errors.Wrapf(err, "binding target %s to %s", target, p.Name)
 	}
 	printf("product %s is now bound to: %s", p.Name, target)
+	return nil
 }
 
-func (b *bindings) unbindTarget(p *product.APIProduct, target string, printf, fatalf shared.FormatFn) {
+func (b *bindings) unbindTarget(p *product.APIProduct, target string, printf shared.FormatFn) error {
 	boundTargets := p.GetBoundTargets()
 	i, ok := indexOf(boundTargets, target)
 	if !ok {
-		fatalf("target %s is not bound to %s", target, p.Name)
+		printf("target %s is not bound to %s", target, p.Name)
+		return nil
 	}
 	boundTargets = append(boundTargets[:i], boundTargets[i+1:]...)
-	err := b.updateTargetBindings(p, boundTargets)
-	if err != nil {
-		fatalf("error removing target %s from %s: %v", target, p.Name, err)
+	if err := b.updateTargetBindings(p, boundTargets); err != nil {
+		return errors.Wrapf(err, "removing target %s from %s", target, p.Name)
 	}
 	printf("product %s is no longer bound to: %s", p.Name, target)
+	return nil
 }
 
 func (b *bindings) updateTargetBindings(p *product.APIProduct, bindings []string) error {

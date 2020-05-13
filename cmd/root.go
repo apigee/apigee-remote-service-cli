@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +35,7 @@ func init() {
 }
 
 // GetRootCmd returns the root of the cobra command-tree.
-func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
+func GetRootCmd(args []string, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "apigee-remote-service-cli",
 		Short: "Utility to work with Apigee Remote Service.",
@@ -44,47 +45,46 @@ func GetRootCmd(args []string, printf, fatalf shared.FormatFn) *cobra.Command {
 	c.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 
 	rootArgs := &shared.RootArgs{}
-	c.AddCommand(version(rootArgs, printf, fatalf))
+	c.AddCommand(version(rootArgs, printf))
 
 	return c
 }
 
 const versionAPIFormat = "%s/version" // internalProxyURL
 
-func version(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Command {
+func version(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	subC := &cobra.Command{
 		Use:   "version",
 		Short: "Prints build version - specify org and env to include proxy version",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return rootArgs.Resolve(true, false)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			printf("apigee-remote-service-cli version %s %s [%s]",
 				shared.BuildInfo.Version, shared.BuildInfo.Date, shared.BuildInfo.Commit)
 
 			if rootArgs.RuntimeBase == "" {
 				printf("proxy version unknown (specify --hybrid-config OR --runtime to check)")
-				return
+				return nil
 			}
 
 			// check proxy version
 			versionURL := fmt.Sprintf(versionAPIFormat, rootArgs.RemoteServiceProxyURL)
 			req, err := http.NewRequest(http.MethodGet, versionURL, nil)
 			if err != nil {
-				fatalf("error creating request: %v", err)
+				return errors.Wrap(err, "error creating request")
 			}
 			var version versionResponse
 			resp, err := rootArgs.Client.Do(req, &version)
 			if err != nil {
 				if resp == nil {
-					fatalf("error getting proxy version: %v", err)
-				} else {
-					body, _ := ioutil.ReadAll(resp.Body)
-					fatalf("error getting proxy version. response code: %d, body: %s", resp.StatusCode, string(body))
+					return errors.Wrap(err, "error getting proxy version")
 				}
-				return
+				body, _ := ioutil.ReadAll(resp.Body)
+				return errors.Wrapf(err, "getting proxy version. response code: %d, body: %s", resp.StatusCode, string(body))
 			}
 			printf("remote-service proxy version: %v", version.Version)
+			return nil
 		},
 	}
 

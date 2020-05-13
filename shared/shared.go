@@ -17,12 +17,15 @@ package shared
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
+	"github.com/apigee/apigee-remote-service-cli/testutil"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -122,21 +125,28 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 	r.IsGCPManaged = !(r.IsLegacySaaS || r.IsOPDK)
 
-	if r.IsLegacySaaS && r.ManagementBase == DefaultManagementBase {
-		r.ManagementBase = LegacySaaSManagementBase
+	if r.ManagementBase == "" {
+		r.ManagementBase = DefaultManagementBase
 	}
 
-	if r.RuntimeBase == "" {
-		if requireRuntime && (r.IsGCPManaged || r.IsOPDK) {
-			return errors.New("--runtime is required")
+	if r.ManagementBase == DefaultManagementBase {
+		if r.IsLegacySaaS {
+			r.ManagementBase = LegacySaaSManagementBase
 		}
+		if r.IsOPDK {
+			r.ManagementBase = r.RuntimeBase
+		}
+	}
 
+	if requireRuntime {
 		if r.IsLegacySaaS {
 			if r.Org != "" && r.Env != "" {
 				r.RuntimeBase = fmt.Sprintf(RuntimeBaseFormat, r.Org, r.Env)
 			} else if requireRuntime {
-				return fmt.Errorf("--environment and --organization are required")
+				return fmt.Errorf("--organization and --environment are required")
 			}
+		} else if r.RuntimeBase == "" {
+			return errors.New("--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
 		}
 	}
 
@@ -195,13 +205,6 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 // provided and executes some set of operations with the result.
 type FormatFn func(format string, args ...interface{})
 
-// Fatalf is a FormatFn that prints the formatted string to os.Stderr and then
-// calls os.Exit().
-func Fatalf(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
-	os.Exit(-1)
-}
-
 // Printf is a FormatFn that prints the formatted string to os.Stdout.
 func Printf(format string, args ...interface{}) {
 	fmt.Printf(format+"\n", args...)
@@ -214,6 +217,31 @@ func Errorf(format string, args ...interface{}) {
 
 // NoPrintf is a FormatFn that does nothing
 func NoPrintf(format string, args ...interface{}) {
+}
+
+// FormatFnWriter bridges io.Writer to FormatFn
+func FormatFnWriter(fn FormatFn) io.Writer {
+	return &formatFnWriter{fn}
+}
+
+type formatFnWriter struct {
+	formatFn FormatFn
+}
+
+func (w *formatFnWriter) Write(p []byte) (n int, err error) {
+	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(Printf).Pointer() {
+		fmt.Printf("%s", p)
+	}
+	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(Errorf).Pointer() {
+		fmt.Fprintf(os.Stderr, "%s", p)
+	}
+	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(NoPrintf).Pointer() {
+	}
+	tp := testutil.TestPrint{}
+	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(tp.Printf).Pointer() {
+		w.formatFn("%s", p)
+	}
+	return len(p), nil
 }
 
 type overrideConfig struct {
@@ -265,6 +293,7 @@ func (r *RootArgs) loadConfig() error {
 		r.ManagementBase = LegacySaaSManagementBase
 		r.IsLegacySaaS = true
 	default:
+		r.ManagementBase = r.RuntimeBase
 		r.IsOPDK = true
 	}
 

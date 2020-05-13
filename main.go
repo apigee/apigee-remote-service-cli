@@ -41,12 +41,12 @@ func init() {
 
 func main() {
 
-	rootCmd := cmd.GetRootCmd(os.Args[1:], shared.Printf, shared.Fatalf)
+	rootCmd := cmd.GetRootCmd(os.Args[1:], shared.Printf)
 
 	rootArgs := &shared.RootArgs{}
-	shared.AddCommandWithFlags(rootCmd, rootArgs, provision.Cmd(rootArgs, shared.Printf, shared.Fatalf))
-	shared.AddCommandWithFlags(rootCmd, rootArgs, bindings.Cmd(rootArgs, shared.Printf, shared.Fatalf))
-	shared.AddCommandWithFlags(rootCmd, rootArgs, token.Cmd(rootArgs, shared.Printf, shared.Fatalf))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, provision.Cmd(rootArgs, shared.Printf))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, bindings.Cmd(rootArgs, shared.Printf))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, token.Cmd(rootArgs, shared.Printf))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(-1)

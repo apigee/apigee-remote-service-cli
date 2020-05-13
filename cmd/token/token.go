@@ -70,7 +70,7 @@ type token struct {
 }
 
 // Cmd returns base command
-func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Command {
+func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	t := &token{RootArgs: rootArgs}
 
 	c := &cobra.Command{
@@ -82,26 +82,28 @@ func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Comma
 		},
 	}
 
-	c.AddCommand(cmdCreateToken(t, printf, fatalf))
-	c.AddCommand(cmdInspectToken(t, printf, fatalf))
-	c.AddCommand(cmdRotateCert(t, printf, fatalf))
-	c.AddCommand(cmdCreateSecret(t, printf, fatalf))
+	c.AddCommand(cmdCreateToken(t, printf))
+	c.AddCommand(cmdInspectToken(t, printf))
+	c.AddCommand(cmdRotateCert(t, printf))
+	c.AddCommand(cmdCreateSecret(t, printf))
 
 	return c
 }
 
-func cmdCreateToken(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
+func cmdCreateToken(t *token, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "create",
 		Short: "Create a new OAuth token",
 		Long:  "Create a new OAuth token",
 		Args:  cobra.NoArgs,
 
-		Run: func(cmd *cobra.Command, _ []string) {
-			_, err := t.createToken(printf, fatalf)
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			token, err := t.createToken(printf)
 			if err != nil {
-				fatalf("error creating token: %v", err)
+				return errors.Wrap(err, "creating token")
 			}
+			printf(token)
+			return nil
 		},
 	}
 
@@ -114,18 +116,19 @@ func cmdCreateToken(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 	return c
 }
 
-func cmdInspectToken(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
+func cmdInspectToken(t *token, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "inspect",
 		Short: "Inspect a JWT token",
 		Long:  "Inspect a JWT token",
 		Args:  cobra.NoArgs,
 
-		Run: func(cmd *cobra.Command, _ []string) {
-			err := t.inspectToken(cmd.InOrStdin(), printf, fatalf)
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			err := t.inspectToken(cmd.InOrStdin(), printf)
 			if err != nil {
-				fatalf("error inspecting token: %v", err)
+				return errors.Wrap(err, "inspecting token")
 			}
+			return nil
 		},
 	}
 
@@ -134,7 +137,7 @@ func cmdInspectToken(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 	return c
 }
 
-func cmdCreateSecret(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
+func cmdCreateSecret(t *token, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "create-secret",
 		Short: "create Kubernetes CRDs for JWT tokens (hybrid only)",
@@ -149,7 +152,7 @@ func cmdCreateSecret(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 
 			t.keyID = time.Now().Format(time.RFC3339)
 
-			t.createSecret(printf, fatalf)
+			t.createSecret(printf)
 		},
 	}
 
@@ -162,17 +165,17 @@ func cmdCreateSecret(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 	return c
 }
 
-func cmdRotateCert(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
+func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "rotate-cert",
 		Short: "rotate JWT certificate (legacy or opdk)",
 		Long:  "Deploys a new private and public key while maintaining the current public key for existing tokens (legacy or opdk).",
 		Args:  cobra.NoArgs,
 
-		Run: func(cmd *cobra.Command, _ []string) {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 
 			if t.IsGCPManaged {
-				fatalf("only valid for legacy or hybrid, use create-secret for hybrid")
+				return fmt.Errorf("only valid for legacy or hybrid, use create-secret for hybrid")
 			}
 
 			if t.ServerConfig != nil {
@@ -188,10 +191,11 @@ func cmdRotateCert(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 				missingFlagNames = append(missingFlagNames, "secret")
 			}
 			if err := t.PrintMissingFlags(missingFlagNames); err != nil {
-				fatalf(err.Error())
+				return err
 			}
 
-			t.rotateCert(printf, fatalf)
+			t.rotateCert(printf)
+			return nil
 		},
 	}
 
@@ -205,7 +209,7 @@ func cmdRotateCert(t *token, printf, fatalf shared.FormatFn) *cobra.Command {
 	return c
 }
 
-func (t *token) createToken(printf, fatalf shared.FormatFn) (string, error) {
+func (t *token) createToken(printf shared.FormatFn) (string, error) {
 	tokenReq := &tokenRequest{
 		ClientID:     t.clientID,
 		ClientSecret: t.clientSecret,
@@ -217,7 +221,7 @@ func (t *token) createToken(printf, fatalf shared.FormatFn) (string, error) {
 	tokenURL := fmt.Sprintf(tokenURLFormat, t.RemoteServiceProxyURL)
 	req, err := http.NewRequest(http.MethodPost, tokenURL, body)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "creating request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -225,40 +229,39 @@ func (t *token) createToken(printf, fatalf shared.FormatFn) (string, error) {
 	var tokenRes tokenResponse
 	resp, err := t.Client.Do(req, &tokenRes)
 	if err != nil {
-		return "", fmt.Errorf("error creating token: %v", err)
+		return "", errors.Wrap(err, "creating token")
 	}
 	defer resp.Body.Close()
 
-	printf(tokenRes.Token)
 	return tokenRes.Token, nil
 }
 
-func (t *token) inspectToken(in io.Reader, printf, fatalf shared.FormatFn) error {
+func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 	var file = in
 	if t.file != "" {
 		var err error
 		file, err = os.Open(t.file)
 		if err != nil {
-			fatalf("error opening file: %v", err)
+			return errors.Wrapf(err, "opening file %s", t.file)
 		}
 	}
 
 	jwtBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return errors.Wrap(err, "error reading jwt token")
+		return errors.Wrap(err, "reading jwt token")
 	}
 	token, err := jwt.ParseBytes(jwtBytes)
 	if err != nil {
-		return errors.Wrap(err, "error parsing jwt token")
+		return errors.Wrap(err, "parsing jwt token")
 	}
 	jsonBytes, err := token.MarshalJSON()
 	if err != nil {
-		return errors.Wrap(err, "error printing jwt token")
+		return errors.Wrap(err, "printing jwt token")
 	}
 	var prettyJSON bytes.Buffer
 	err = json.Indent(&prettyJSON, jsonBytes, "", "\t")
 	if err != nil {
-		return errors.Wrap(err, "error printing jwt token")
+		return errors.Wrap(err, "printing jwt token")
 	}
 	printf(prettyJSON.String())
 
@@ -268,25 +271,22 @@ func (t *token) inspectToken(in io.Reader, printf, fatalf shared.FormatFn) error
 	url := fmt.Sprintf(certsURLFormat, t.RemoteServiceProxyURL)
 	jwkSet, err := jwk.FetchHTTP(url)
 	if err != nil {
-		fatalf("error fetching certs: %v", err)
+		return errors.Wrap(err, "fetching certs")
 	}
-	_, err = jws.VerifyWithJWKSet(jwtBytes, jwkSet, nil)
-	if err != nil {
-		fatalf("certificate error: %v", err)
+	if _, err = jws.VerifyWithJWKSet(jwtBytes, jwkSet, nil); err != nil {
+		return errors.Wrap(err, "verifying cert")
 	}
-	err = token.Verify(
-		jwt.WithAcceptableSkew(time.Minute),
-	)
-	if err != nil {
-		fatalf("verification error: %v", err)
+	if err := token.Verify(jwt.WithAcceptableSkew(time.Minute)); err != nil {
+		printf("invalid token: %s", err)
+		return nil
 	}
 
-	printf("token ok.")
+	printf("valid token")
 	return nil
 }
 
 // rotateCert is called by `token rotate-cert`
-func (t *token) rotateCert(printf, fatalf shared.FormatFn) {
+func (t *token) rotateCert(printf shared.FormatFn) error {
 	var verbosef = shared.NoPrintf
 	if t.Verbose {
 		verbosef = printf
@@ -295,7 +295,7 @@ func (t *token) rotateCert(printf, fatalf shared.FormatFn) {
 	verbosef("generating a new key and cert...")
 	cert, privateKey, err := provision.GenKeyCert(t.certKeyStrength, t.certExpirationInYears)
 	if err != nil {
-		fatalf("error generating new cert: %v", err)
+		return errors.Wrap(err, "generating cert")
 	}
 
 	rotateReq := rotateRequest{
@@ -309,13 +309,13 @@ func (t *token) rotateCert(printf, fatalf shared.FormatFn) {
 	body := new(bytes.Buffer)
 	err = json.NewEncoder(body).Encode(rotateReq)
 	if err != nil {
-		fatalf("encoding error: %v", err)
+		return errors.Wrap(err, "encoding")
 	}
 
 	rotateURL := fmt.Sprintf(rotateURLFormat, t.RemoteServiceProxyURL)
 	req, err := http.NewRequest(http.MethodPost, rotateURL, body)
 	if err != nil {
-		fatalf("unable to create request: %v", err)
+		return errors.Wrap(err, "creating request")
 	}
 	req.SetBasicAuth(t.clientID, t.clientSecret)
 	req.Header.Set("Content-Type", "application/json")
@@ -324,9 +324,9 @@ func (t *token) rotateCert(printf, fatalf shared.FormatFn) {
 	resp, err := t.Client.Do(req, nil)
 	if err != nil {
 		if resp != nil && resp.StatusCode == 401 {
-			fatalf("authentication failed, check your key and secret")
+			return errors.Wrap(err, "authentication failed, check your key and secret")
 		}
-		fatalf("rotation request error: %v", err)
+		return errors.Wrap(err, "rotating cert")
 	}
 	defer resp.Body.Close()
 
@@ -334,10 +334,11 @@ func (t *token) rotateCert(printf, fatalf shared.FormatFn) {
 	verbosef("new private key:\n%s", privateKey)
 
 	printf("certificate successfully rotated")
+	return nil
 }
 
 // createSecret is called by `token create-secret`
-func (t *token) createSecret(printf, fatalf shared.FormatFn) {
+func (t *token) createSecret(printf shared.FormatFn) error {
 	var verbosef = shared.NoPrintf
 	if t.Verbose {
 		verbosef = printf
@@ -352,11 +353,11 @@ func (t *token) createSecret(printf, fatalf shared.FormatFn) {
 		jwksURL := fmt.Sprintf(certsURLFormat, t.RemoteServiceProxyURL)
 		jwkSet, err = jwk.FetchHTTP(jwksURL)
 		if err != nil {
-			fatalf("fetch jwks: %v", err)
+			return errors.Wrap(err, "fetching jwks")
 		}
 		jwksBytes, err := json.Marshal(jwkSet)
 		if err != nil {
-			fatalf("marshal JSON: %v", err)
+			return errors.Wrap(err, "marshalling JSON")
 		}
 		verbosef("old jkws...\n%s", string(jwksBytes))
 	}
@@ -364,13 +365,13 @@ func (t *token) createSecret(printf, fatalf shared.FormatFn) {
 	t.keyID = time.Now().Format(time.RFC3339)
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		fatalf("generate key: %v", err)
+		return errors.Wrap(err, "generating key")
 	}
 
 	// jwks
 	key, err := jwk.New(&privateKey.PublicKey)
 	if err != nil {
-		fatalf("generate jwk: %v", err)
+		return errors.Wrap(err, "generating jwks")
 	}
 	key.Set(jwk.KeyIDKey, t.keyID)
 	key.Set(jwk.AlgorithmKey, jwa.RS256.String())
@@ -385,7 +386,7 @@ func (t *token) createSecret(printf, fatalf shared.FormatFn) {
 
 	jwksBytes, err := json.Marshal(jwkSet)
 	if err != nil {
-		fatalf("marshal JSON: %v", err)
+		return errors.Wrap(err, "marshalling JSON")
 	}
 	verbosef("new jkws...\n%s", string(jwksBytes))
 
@@ -420,12 +421,13 @@ func (t *token) createSecret(printf, fatalf shared.FormatFn) {
 	yamlEncoder.SetIndent(2)
 	err = yamlEncoder.Encode(crd)
 	if err != nil {
-		fatalf("encode: %v", err)
+		return errors.Wrap(err, "encoding YAML")
 	}
 
 	printf("# Secret for apigee-remote-service-envoy")
 	printf("# generated by apigee-remote-service-cli provision on %s", time.Now().Format("2006-01-02 15:04:05"))
 	printf(yamlBuffer.String())
+	return nil
 }
 
 type rotateRequest struct {

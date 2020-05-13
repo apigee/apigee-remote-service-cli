@@ -105,7 +105,7 @@ type provision struct {
 }
 
 // Cmd returns base command
-func Cmd(rootArgs *shared.RootArgs, printf, fatalf shared.FormatFn) *cobra.Command {
+func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	p := &provision{RootArgs: rootArgs}
 
 	c := &cobra.Command{
@@ -126,19 +126,17 @@ to your organization and environment.`,
 					if p.developerEmail == "" {
 						missingFlagNames = append(missingFlagNames, "developer-email")
 					}
-					if err := p.PrintMissingFlags(missingFlagNames); err != nil {
-						fatalf(err.Error())
-					}
+					err = p.PrintMissingFlags(missingFlagNames)
 				}
 			}
 			return err
 		},
 
-		Run: func(cmd *cobra.Command, _ []string) {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			if p.verifyOnly && (p.provisionKey == "" || p.provisionSecret == "") {
-				fatalf("--verify-only requires values for --key and --secret")
+				return fmt.Errorf("--verify-only requires values for --key and --secret")
 			}
-			p.run(printf, fatalf)
+			return p.run(printf)
 		},
 	}
 
@@ -177,7 +175,7 @@ to your organization and environment.`,
 	return c
 }
 
-func (p *provision) run(printf, fatalf shared.FormatFn) {
+func (p *provision) run(printf shared.FormatFn) error {
 
 	var cred *credential
 
@@ -190,7 +188,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 
 		tempDir, err := ioutil.TempDir("", "apigee")
 		if err != nil {
-			fatalf("error creating temp dir: %v", err)
+			return errors.Wrap(err, "creating temp dir")
 		}
 		defer os.RemoveAll(tempDir)
 
@@ -198,7 +196,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 			proxiesFile := filepath.Join(proxyDir, "proxies", "default.xml")
 			bytes, err := ioutil.ReadFile(proxiesFile)
 			if err != nil {
-				return errors.Wrapf(err, "error reading file %s", proxiesFile)
+				return errors.Wrapf(err, "reading file %s", proxiesFile)
 			}
 			newVH := ""
 			for _, vh := range strings.Split(p.virtualHosts, ",") {
@@ -208,7 +206,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 			}
 			bytes = []byte(strings.Replace(string(bytes), virtualHostReplaceText, newVH, 1))
 			if err := ioutil.WriteFile(proxiesFile, bytes, 0); err != nil {
-				return errors.Wrapf(err, "error writing %s", proxiesFile)
+				return errors.Wrapf(err, "writing file %s", proxiesFile)
 			}
 			return nil
 		}
@@ -222,12 +220,12 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 				policiesFile := filepath.Join(proxyDir, "policies", "Authenticate-Call.xml")
 				bytes, err := ioutil.ReadFile(policiesFile)
 				if err != nil {
-					return errors.Wrapf(err, "error reading file %s", policiesFile)
+					return errors.Wrapf(err, "reading file %s", policiesFile)
 				}
 				oldTarget := "https://edgemicroservices.apigee.net"
 				bytes = []byte(strings.Replace(string(bytes), oldTarget, p.RuntimeBase, 1))
 				if err := ioutil.WriteFile(policiesFile, bytes, 0); err != nil {
-					return errors.Wrapf(err, "error writing %s", policiesFile)
+					return errors.Wrapf(err, "writing file %s", policiesFile)
 				}
 			}
 			return nil
@@ -235,7 +233,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 
 		if p.IsOPDK {
 			if err := p.deployInternalProxy(replaceVH, tempDir, verbosef); err != nil {
-				fatalf("error deploying internal proxy: %v", err)
+				return errors.Wrap(err, "deploying internal proxy")
 			}
 		}
 
@@ -247,11 +245,11 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 			customizedProxy, err = getCustomizedProxy(tempDir, legacyAuthProxyZip, replaceVHAndAuthTarget)
 		}
 		if err != nil {
-			fatalf(err.Error())
+			return err
 		}
 
 		if err := p.checkAndDeployProxy(authProxyName, customizedProxy, verbosef); err != nil {
-			fatalf("error deploying %s proxy: %v", authProxyName, err)
+			return errors.Wrapf(err, "deploying proxy %s", authProxyName)
 		}
 
 		if p.IsGCPManaged {
@@ -260,12 +258,12 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 			cred, err = p.createLegacyCredential(verbosef)
 		}
 		if err != nil {
-			fatalf("error generating credential: %v", err)
+			return errors.Wrapf(err, "generating credential")
 		}
 
 		if !p.IsGCPManaged {
 			if err := p.getOrCreateKVM(cred, verbosef); err != nil {
-				fatalf("error retrieving or creating kvm: %v", err)
+				return errors.Wrapf(err, "retrieving or creating kvm")
 			}
 		}
 
@@ -285,18 +283,18 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 		}
 		var err error
 		if p.Client, err = apigee.NewEdgeClient(&opts); err != nil {
-			fatalf("can't create new client: %v", err)
+			return errors.Wrapf(err, "creating new client")
 		}
 	}
 
 	var verifyErrors error
 	if p.IsLegacySaaS || p.IsOPDK {
 		verbosef("verifying internal proxy...")
-		verifyErrors = p.verifyInternalProxy(opts.Auth, verbosef, fatalf)
+		verifyErrors = p.verifyInternalProxy(opts.Auth, verbosef)
 	}
 
 	verbosef("verifying remote-service proxy...")
-	verifyErrors = multierr.Combine(verifyErrors, p.verifyRemoteServiceProxy(opts.Auth, verbosef, fatalf))
+	verifyErrors = multierr.Combine(verifyErrors, p.verifyRemoteServiceProxy(opts.Auth, verbosef))
 
 	if verifyErrors != nil {
 		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
@@ -309,7 +307,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 
 	if !p.verifyOnly {
 		if err := p.printConfig(cred, printf, verifyErrors); err != nil {
-			fatalf("error generating config: %v", err)
+			return errors.Wrapf(err, "generating config")
 		}
 	}
 
@@ -318,6 +316,7 @@ func (p *provision) run(printf, fatalf shared.FormatFn) {
 	}
 
 	verbosef("provisioning verified OK")
+	return nil
 }
 
 // ensures that there's a product, developer, and app
@@ -437,11 +436,11 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 		calloutFile := filepath.Join(proxyDir, "policies", "Callout.xml")
 		bytes, err := ioutil.ReadFile(calloutFile)
 		if err != nil {
-			return errors.Wrapf(err, "error reading file %s", calloutFile)
+			return errors.Wrapf(err, "reading file %s", calloutFile)
 		}
 		var callout JavaCallout
 		if err := xml.Unmarshal(bytes, &callout); err != nil {
-			return errors.Wrapf(err, "error unmarshalling %s", calloutFile)
+			return errors.Wrapf(err, "unmarshalling %s", calloutFile)
 		}
 		setMgmtURL := false
 		for i, cp := range callout.Properties {
@@ -463,18 +462,18 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 
 		writer, err := os.OpenFile(calloutFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0)
 		if err != nil {
-			return errors.Wrapf(err, "error writing %s", calloutFile)
+			return errors.Wrapf(err, "writing file %s", calloutFile)
 		}
 		writer.WriteString(xml.Header)
 		encoder := xml.NewEncoder(writer)
 		encoder.Indent("", "  ")
 		err = encoder.Encode(callout)
 		if err != nil {
-			return errors.Wrapf(err, "error encoding xml to %s", calloutFile)
+			return errors.Wrapf(err, "encoding xml to %s", calloutFile)
 		}
 		err = writer.Close()
 		if err != nil {
-			return errors.Wrapf(err, "error closing file %s", calloutFile)
+			return errors.Wrapf(err, "closing file %s", calloutFile)
 		}
 
 		return replaceVirtualHosts(proxyDir)
@@ -491,7 +490,7 @@ type proxyModFunc func(name string) error
 // returns filename of zipped proxy
 func getCustomizedProxy(tempDir, name string, modFunc proxyModFunc) (string, error) {
 	if err := proxies.RestoreAsset(tempDir, name); err != nil {
-		return "", errors.Wrapf(err, "error restoring asset %s", name)
+		return "", errors.Wrapf(err, "restoring asset %s", name)
 	}
 	zipFile := filepath.Join(tempDir, name)
 	if modFunc == nil {
@@ -500,10 +499,10 @@ func getCustomizedProxy(tempDir, name string, modFunc proxyModFunc) (string, err
 
 	extractDir, err := ioutil.TempDir(tempDir, "proxy")
 	if err != nil {
-		return "", errors.Wrap(err, "error creating temp dir")
+		return "", errors.Wrap(err, "creating temp dir")
 	}
 	if err := unzipFile(zipFile, extractDir); err != nil {
-		return "", errors.Wrapf(err, "error extracting %s to %s", zipFile, extractDir)
+		return "", errors.Wrapf(err, "extracting %s to %s", zipFile, extractDir)
 	}
 
 	if err := modFunc(filepath.Join(extractDir, "apiproxy")); err != nil {
@@ -513,7 +512,7 @@ func getCustomizedProxy(tempDir, name string, modFunc proxyModFunc) (string, err
 	// write zip
 	customizedZip := filepath.Join(tempDir, "customized.zip")
 	if err := zipDir(extractDir, customizedZip); err != nil {
-		return "", errors.Wrapf(err, "error zipping %s to %s", extractDir, customizedZip)
+		return "", errors.Wrapf(err, "zipping dir %s to file %s", extractDir, customizedZip)
 	}
 
 	return customizedZip, nil
@@ -538,13 +537,13 @@ func newHash() string {
 func GenKeyCert(keyStrength, certExpirationInYears int) (string, string, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, keyStrength)
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to generate private key")
+		return "", "", errors.Wrap(err, "generating private key")
 	}
 	now := time.Now()
 	subKeyIDHash := sha256.New()
 	_, err = subKeyIDHash.Write(privateKey.N.Bytes())
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to generate key id")
+		return "", "", errors.Wrap(err, "generating key id")
 	}
 	subKeyID := subKeyIDHash.Sum(nil)
 	template := x509.Certificate{
@@ -563,7 +562,7 @@ func GenKeyCert(keyStrength, certExpirationInYears int) (string, string, error) 
 	derBytes, err := x509.CreateCertificate(
 		rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to create CA certificate")
+		return "", "", errors.Wrap(err, "creating CA certificate")
 	}
 
 	certBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
@@ -613,7 +612,7 @@ func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) err
 		return nil
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("error creating kvm %s, status code: %v", kvmName, resp.StatusCode)
+		return fmt.Errorf("creating kvm %s, status code: %v", kvmName, resp.StatusCode)
 	}
 	printf("kvm %s created", kvmName)
 
@@ -647,7 +646,7 @@ func (p *provision) createLegacyCredential(printf shared.FormatFn) (*credential,
 		return nil, err
 	}
 	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf("failed to create credential, status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("creating credential, status: %d", resp.StatusCode)
 	}
 	printf("credential created")
 	return cred, nil
@@ -800,18 +799,23 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 	}
 
 	printf("creating new proxy %s revision: %d...", name, newRev)
-	_, resp, err := noDebugClient.Proxies.Import(name, file)
-	if err != nil {
-		return errors.Wrapf(err, "error importing proxy %s", name)
+	_, res, err := noDebugClient.Proxies.Import(name, file)
+	if res != nil {
+		defer res.Body.Close()
 	}
-	defer resp.Body.Close()
+	if err != nil {
+		return errors.Wrapf(err, "importing proxy %s", name)
+	}
 
 	if oldRev != nil && !p.IsGCPManaged { // it's not necessary to undeploy first with GCP
 		printf("undeploying proxy %s revision %d on env %s...",
 			name, oldRev, p.Env)
-		_, resp, err = p.Client.Proxies.Undeploy(name, p.Env, *oldRev)
+		_, res, err = p.Client.Proxies.Undeploy(name, p.Env, *oldRev)
+		if res != nil {
+			defer res.Body.Close()
+		}
 		if err != nil {
-			return errors.Wrapf(err, "error undeploying proxy %s", name)
+			return errors.Wrapf(err, "undeploying proxy %s", name)
 		}
 	}
 
@@ -819,14 +823,14 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 		cache := apigee.Cache{
 			Name: cacheName,
 		}
-		resp, err = p.Client.CacheService.Create(cache)
-		if err != nil && (resp == nil || resp.StatusCode != http.StatusConflict) { // http.StatusConflict == already exists
+		res, err = p.Client.CacheService.Create(cache)
+		if err != nil && (res == nil || res.StatusCode != http.StatusConflict) { // http.StatusConflict == already exists
 			return err
 		}
-		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
-			return fmt.Errorf("error creating cache %s, status code: %v", cacheName, resp.StatusCode)
+		if res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusConflict {
+			return fmt.Errorf("creating cache %s, status code: %v", cacheName, res.StatusCode)
 		}
-		if resp.StatusCode == http.StatusConflict {
+		if res.StatusCode == http.StatusConflict {
 			printf("cache %s already exists", cacheName)
 		} else {
 			printf("cache %s created", cacheName)
@@ -834,34 +838,31 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 	}
 
 	printf("deploying proxy %s revision %d to env %s...", name, newRev, p.Env)
-	_, resp, err = p.Client.Proxies.Deploy(name, p.Env, newRev)
-	if err != nil {
-		return errors.Wrapf(err, "error deploying proxy %s", name)
+	_, res, err = p.Client.Proxies.Deploy(name, p.Env, newRev)
+	if res != nil {
+		defer res.Body.Close()
 	}
-	defer resp.Body.Close()
+	if err != nil {
+		return errors.Wrapf(err, "deploying proxy %s", name)
+	}
 
 	return nil
 }
 
 // verify POST internalProxyURL/analytics/organization/%s/environment/%s
 // verify POST internalProxyURL/quotas/organization/%s/environment/%s
-func (p *provision) verifyInternalProxy(auth *apigee.EdgeAuth, printf, fatalf shared.FormatFn) error {
+func (p *provision) verifyInternalProxy(auth *apigee.EdgeAuth, printf shared.FormatFn) error {
 	var verifyErrors error
 
 	var req *http.Request
 	var err error
+	var res *apigee.Response
 	if p.IsOPDK {
 		analyticsURL := fmt.Sprintf(legacyAnalyticURLFormat, p.InternalProxyURL, p.Org, p.Env)
 		req, err = http.NewRequest(http.MethodPost, analyticsURL, strings.NewReader("{}"))
-		if err != nil {
-			fatalf("unable to create request", err)
-		}
 	} else {
 		analyticsURL := fmt.Sprintf(analyticsURLFormat, p.InternalProxyURL, p.Org, p.Env)
 		req, err = http.NewRequest(http.MethodGet, analyticsURL, nil)
-		if err != nil {
-			fatalf("unable to create request", err)
-		}
 		q := req.URL.Query()
 		q.Add("tenant", fmt.Sprintf("%s~%s", p.Org, p.Env))
 		q.Add("relative_file_path", "fake")
@@ -869,12 +870,13 @@ func (p *provision) verifyInternalProxy(auth *apigee.EdgeAuth, printf, fatalf sh
 		q.Add("encrypt", "true")
 		req.URL.RawQuery = q.Encode()
 	}
-	auth.ApplyTo(req)
-	resp, err := p.Client.Do(req, nil)
-	if err != nil && resp == nil {
-		fatalf("%s", err)
+	if err != nil {
+		auth.ApplyTo(req)
+		res, err = p.Client.Do(req, nil)
+		if res != nil {
+			defer res.Body.Close()
+		}
 	}
-	defer resp.Body.Close()
 	if err != nil {
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
@@ -886,22 +888,22 @@ func (p *provision) verifyInternalProxy(auth *apigee.EdgeAuth, printf, fatalf sh
 // verify GET RemoteServiceProxyURL/products
 // verify POST RemoteServiceProxyURL/verifyApiKey
 // verify POST RemoteServiceProxyURL/quotas
-func (p *provision) verifyRemoteServiceProxy(auth *apigee.EdgeAuth, printf, fatalf shared.FormatFn) error {
+func (p *provision) verifyRemoteServiceProxy(auth *apigee.EdgeAuth, printf shared.FormatFn) error {
 
 	verifyGET := func(targetURL string) error {
 		req, err := http.NewRequest(http.MethodGet, targetURL, nil)
 		if err != nil {
-			fatalf("unable to create request", err)
+			return errors.Wrapf(err, "creating request")
 		}
 		auth.ApplyTo(req)
-		resp, err := p.Client.Do(req, nil)
-		if err != nil && resp == nil {
-			fatalf("%s", err)
+		res, err := p.Client.Do(req, nil)
+		if res != nil {
+			defer res.Body.Close()
 		}
-		defer resp.Body.Close()
 		return err
 	}
 
+	var res *apigee.Response
 	var verifyErrors error
 	certsURL := fmt.Sprintf(certsURLFormat, p.RemoteServiceProxyURL)
 	err := verifyGET(certsURL)
@@ -914,31 +916,28 @@ func (p *provision) verifyRemoteServiceProxy(auth *apigee.EdgeAuth, printf, fata
 	verifyAPIKeyURL := fmt.Sprintf(verifyAPIKeyURLFormat, p.RemoteServiceProxyURL)
 	body := fmt.Sprintf(`{ "apiKey": "%s" }`, auth.Username)
 	req, err := http.NewRequest(http.MethodPost, verifyAPIKeyURL, strings.NewReader(body))
-	if err != nil {
-		fatalf("unable to create request", err)
+	if err == nil {
+		req.Header.Add("Content-Type", "application/json")
+		auth.ApplyTo(req)
+		res, err = p.Client.Do(req, nil)
+		if res != nil {
+			defer res.Body.Close()
+		}
 	}
-	req.Header.Add("Content-Type", "application/json")
-	auth.ApplyTo(req)
-	resp, err := p.Client.Do(req, nil)
-	if err != nil && resp == nil {
-		fatalf("%s", err)
-	}
-	if resp.StatusCode != 401 { // 401 is ok, we don't actually have a valid api key to test
+	if err != nil && (res == nil || res.StatusCode != 401) { // 401 is ok, we don't actually have a valid api key to test
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
 
 	quotasURL := fmt.Sprintf(quotasURLFormat, p.RemoteServiceProxyURL)
 	req, err = http.NewRequest(http.MethodPost, quotasURL, strings.NewReader("{}"))
-	if err != nil {
-		fatalf("unable to create request", err)
+	if err == nil {
+		req.Header.Add("Content-Type", "application/json")
+		auth.ApplyTo(req)
+		res, err = p.Client.Do(req, nil)
+		if res != nil {
+			defer res.Body.Close()
+		}
 	}
-	req.Header.Add("Content-Type", "application/json")
-	auth.ApplyTo(req)
-	resp, err = p.Client.Do(req, nil)
-	if err != nil && resp == nil {
-		fatalf("%s", err)
-	}
-	defer resp.Body.Close()
 	if err != nil {
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}

@@ -15,12 +15,13 @@
 package cmd
 
 import (
-	"os"
-	"strings"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
-	"encoding/json"
+
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
 )
@@ -49,13 +50,12 @@ func TestVersion(t *testing.T) {
 	shared.BuildInfo.Version = "/version/"
 
 	// run without --runtime
-	print := testutil.Printer("TestVersion:print:no runtime")
-	fatal := testutil.Printer("TestVersion:fatal:no runtime")
+	print := testutil.Printer("TestVersion:no runtime")
 
 	flags := []string{"version"}
-	rootCmd := GetRootCmd(flags, print.Printf, fatal.Printf)
+	rootCmd := GetRootCmd(flags, print.Printf)
 
-	err := rootCmd.Execute(); 
+	err := rootCmd.Execute()
 	if err != nil {
 		t.Fatalf("want no error: %v", err)
 	}
@@ -65,17 +65,15 @@ func TestVersion(t *testing.T) {
 		"proxy version unknown (specify --hybrid-config OR --runtime to check)",
 	}
 
-	fatal.Check(t, nil)
 	print.Check(t, want)
 
 	// run with --runtime
-	print = testutil.Printer("TestVersion:print:runtime")
-	fatal = testutil.Printer("TestVersion:fatal:runtime")
+	print = testutil.Printer("TestVersion:runtime")
 
 	flags = []string{"version", "--runtime", ts.URL}
-	rootCmd = GetRootCmd(flags, print.Printf, fatal.Printf)
+	rootCmd = GetRootCmd(flags, print.Printf)
 
-	err = rootCmd.Execute(); 
+	err = rootCmd.Execute()
 	if err != nil {
 		t.Fatalf("want no error: %v", err)
 	}
@@ -85,28 +83,23 @@ func TestVersion(t *testing.T) {
 		"remote-service proxy version: 1.2.42",
 	}
 
-	fatal.Check(t, nil)
 	print.Check(t, want)
 
 	// bad runtime url
-	print = testutil.Printer("TestVersion:print:bad url")
-	fatal = testutil.Printer("TestVersion:fatal:bad url")
+	print = testutil.Printer("TestVersion:bad url")
 
 	flags = []string{"version", "--runtime", "badurl"}
-	rootCmd = GetRootCmd(flags, print.Printf, fatal.Printf)
+	rootCmd = GetRootCmd(flags, print.Printf)
 
-	err = rootCmd.Execute(); 
-	if err != nil {
-		t.Fatalf("want no error: %v", err)
+	wantErr := `error getting proxy version: Get "badurl/remote-service/version": unsupported protocol scheme ""`
+	err = rootCmd.Execute()
+	if err == nil || err.Error() != wantErr {
+		t.Fatalf("want error: %v", wantErr)
 	}
 
 	wantPrint := []string{
 		"apigee-remote-service-cli version /version/ /date/ [/commit/]",
 	}
-	wantFatal := []string{
-		`error getting proxy version: Get "badurl/remote-service/version": unsupported protocol scheme ""`,
-	}
 
-	fatal.Check(t, wantFatal)
 	print.Check(t, wantPrint)
 }

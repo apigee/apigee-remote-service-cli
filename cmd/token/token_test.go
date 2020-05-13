@@ -42,13 +42,12 @@ func TestTokenCreate(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	print := testutil.Printer("TestCreateToken:print")
-	fatal := testutil.Printer("TestCreateToken:fatal")
+	print := testutil.Printer("TestCreateToken")
 
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"token", "create", "--runtime", ts.URL, "--id", "/id/", "--secret", "/secret/"}
-	rootCmd := cmd.GetRootCmd(flags, print.Printf, fatal.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf, fatal.Printf))
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -56,7 +55,6 @@ func TestTokenCreate(t *testing.T) {
 
 	want := []string{"/token/"}
 
-	fatal.Check(t, nil)
 	print.Check(t, want)
 }
 
@@ -77,13 +75,12 @@ func TestTokenInspect(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	print := testutil.Printer("TestCreateToken:print")
-	fatal := testutil.Printer("TestCreateToken:fatal")
+	print := testutil.Printer("TestCreateToken")
 
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"token", "inspect", "--runtime", ts.URL, "-v"}
-	rootCmd := cmd.GetRootCmd(flags, print.Printf, fatal.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf, fatal.Printf))
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	token, err := generateJWT(privateKey)
 	if err != nil {
@@ -110,10 +107,9 @@ func TestTokenInspect(t *testing.T) {
 	"scope": "scope1 scope2"
 }`,
 		"\nverifying...",
-		"token ok.",
+		"valid token",
 	}
 
-	fatal.Check(t, nil)
 	print.Check(t, want)
 }
 

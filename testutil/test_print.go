@@ -40,7 +40,6 @@ func (tp *TestPrint) Printf(format string, args ...interface{}) {
 
 // Check is for checking test output
 func (tp *TestPrint) Check(t *testing.T, want []string) {
-
 	if want == nil {
 		want = []string{}
 	}
@@ -52,7 +51,7 @@ func (tp *TestPrint) Check(t *testing.T, want []string) {
 	for i, got := range tp.Prints {
 		w := want[i]
 		if w != got {
-			t.Errorf("%s want[%d]:\n%s, got: \n%s", tp.Name, i, w, got)
+			t.Errorf("%s want[%d]:\n'%s', got: \n'%s'", tp.Name, i, w, got)
 		}
 	}
 
