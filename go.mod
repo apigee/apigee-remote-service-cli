@@ -2,10 +2,6 @@ module github.com/apigee/apigee-remote-service-cli
 
 go 1.13
 
-replace github.com/apigee/apigee-remote-service-golib => github.com/theganyo/apigee-remote-service-golib v0.0.4-dev.0.20200508224846-ca63c647648e
-
-replace github.com/apigee/apigee-remote-service-envoy => github.com/theganyo/apigee-remote-service-envoy v0.0.4-dev.0.20200508225600-b1e6866976de
-
 // replace github.com/apigee/apigee-remote-service-golib => ../apigee-remote-service-golib
 
 // replace github.com/apigee/apigee-remote-service-envoy => ../apigee-remote-service-envoy
@@ -13,8 +9,8 @@ replace github.com/apigee/apigee-remote-service-envoy => github.com/theganyo/api
 replace github.com/apigee/apigee-remote-service-cli => ./
 
 require (
-	github.com/apigee/apigee-remote-service-envoy v0.0.0-00000000000000-000000000000
-	github.com/apigee/apigee-remote-service-golib v0.0.0-00010101000000-000000000000
+	github.com/apigee/apigee-remote-service-envoy v0.0.5-dev
+	github.com/apigee/apigee-remote-service-golib v0.0.5-dev
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/google/go-querystring v1.0.0
 	github.com/lestrrat-go/jwx v0.9.1

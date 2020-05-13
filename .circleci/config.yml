@@ -82,11 +82,12 @@ workflows:
   version: 2
   build-and-release:
     jobs:
-      - build :
+      - build:
           filters:  # required since `release` has tag filters AND requires `build`
             tags:
               only: /.*/
       - release:
+          context: apigee-remote-service
           requires:
             - build
           filters: # Only run on git tag pushes
