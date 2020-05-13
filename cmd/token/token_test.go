@@ -96,14 +96,14 @@ func TestTokenInspect(t *testing.T) {
 	"aud": [
 		"remote-service-client"
 	],
-	"iss": "https://theganyo1-eval-test.apigee.net/remote-service/token",
-	"jti": "29e2320b-787c-4625-8599-acc5e05c68d0",
-	"access_token": "8E7Az3ZgPHKrgzcQA54qAzXT3Z1G",
+	"iss": "https://org-env.apigee.net/remote-service/token",
+	"jti": "/id/",
+	"access_token": "/token/",
 	"api_product_list": [
-		"TestProduct"
+		"/product/"
 	],
-	"application_name": "61cd4d83-06b5-4270-a9ee-cf9255ef45c3",
-	"client_id": "yBQ5eXZA8rSoipYEi1Rmn0Z8RKtkGI4H",
+	"application_name": "/appname/",
+	"client_id": "/clientid/",
 	"scope": "scope1 scope2"
 }`,
 		"\nverifying...",
@@ -117,13 +117,13 @@ func generateJWT(privateKey *rsa.PrivateKey) (string, error) {
 
 	token := jwt.New()
 	token.Set(jwt.AudienceKey, "remote-service-client")
-	token.Set(jwt.JwtIDKey, "29e2320b-787c-4625-8599-acc5e05c68d0")
-	token.Set(jwt.IssuerKey, "https://theganyo1-eval-test.apigee.net/remote-service/token")
-	token.Set("access_token", "8E7Az3ZgPHKrgzcQA54qAzXT3Z1G")
-	token.Set("client_id", "yBQ5eXZA8rSoipYEi1Rmn0Z8RKtkGI4H")
-	token.Set("application_name", "61cd4d83-06b5-4270-a9ee-cf9255ef45c3")
+	token.Set(jwt.JwtIDKey, "/id/")
+	token.Set(jwt.IssuerKey, "https://org-env.apigee.net/remote-service/token")
+	token.Set("access_token", "/token/")
+	token.Set("client_id", "/clientid/")
+	token.Set("application_name", "/appname/")
 	token.Set("scope", "scope1 scope2")
-	token.Set("api_product_list", []string{"TestProduct"})
+	token.Set("api_product_list", []string{"/product/"})
 	payload, err := token.Sign(jwa.RS256, privateKey)
 
 	return string(payload), err
