@@ -105,26 +105,13 @@ directory if you have an entry for your management host machine.
 
 ## Using Apigee Remote Service 
 
-Now check out [apigee-remote-proxy-envoy](../../../apigee-remote-service-envoy) 
+See [apigee-remote-proxy-envoy](../../../apigee-remote-service-envoy)
 to put Apigee Remote Service to use with Envoy as an API proxy.
 
-Also, check out the additional capabilities of the CLI including
-binding Apigee products to target APIs and manipulating JWT tokens.
+## Support
 
-        $ apigee-remote-service-cli -h
-        This command lets you interact with Apigee Remote Service
+Issues filed on Github are not subject to service level agreements (SLAs) and responses should be
+assumed to be on an ad-hoc volunteer basis. The [Apigee community board](https://community.apigee.com/) 
+is recommended as for community support and is regularly checked by Apigee experts.
 
-        Usage:
-        apigee-remote-service-cli [command]
-
-        Available Commands:
-        bindings    Manage Apigee Product to Remote Service bindings
-        help        Help about any command
-        provision   Provision your Apigee environment for remote services
-        token       JWT Token Utilities
-        version     Prints build version - specify org and env to include proxy version
-
-        Flags:
-        -h, --help   help for apigee-remote-service-cli
-
-        Use "apigee-remote-service-cli [command] --help" for more information about a command.
+Apigee customers should use [formal support channels](https://cloud.google.com/apigee/support).
