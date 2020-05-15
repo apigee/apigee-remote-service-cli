@@ -292,8 +292,6 @@
         <BasePath>/remote-service</BasePath>
         <Properties/>
         <VirtualHost>default</VirtualHost>
-        <VirtualHost>secure</VirtualHost>
-        <VirtualHost>secure</VirtualHost>
     </HTTPProxyConnection>
     <RouteRule name="noroute"/>
 </ProxyEndpoint>
