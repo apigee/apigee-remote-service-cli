@@ -1,8 +1,8 @@
-<APIProxy revision="27" name="remote-service">
+<APIProxy revision="34" name="remote-service">
     <DisplayName>remote-service</DisplayName>
     <Description>remote-service</Description>
-    <CreatedAt>1588366304617</CreatedAt>
-    <LastModifiedAt>1588366304617</LastModifiedAt>
+    <CreatedAt>1589561093501</CreatedAt>
+    <LastModifiedAt>1589561093501</LastModifiedAt>
     <BasePaths>/remote-service</BasePaths>
     <Policies>
         <Policy>Send-JWKs-Message</Policy>
@@ -36,7 +36,6 @@
         <Policy>Eval-Quota-Result</Policy>
         <Policy>DistributedQuota</Policy>
         <Policy>Populate-Product-List</Policy>
-        <Policy>Set-Products-Filter</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>

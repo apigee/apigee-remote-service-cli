@@ -6,8 +6,6 @@ go 1.13
 
 // replace github.com/apigee/apigee-remote-service-envoy => ../apigee-remote-service-envoy
 
-replace github.com/apigee/apigee-remote-service-cli => ./
-
 require (
 	github.com/apigee/apigee-remote-service-envoy v0.0.5-dev
 	github.com/apigee/apigee-remote-service-golib v0.0.5-dev

@@ -2,7 +2,9 @@
 <JavaCallout async="false" continueOnError="false" enabled="true" name="JavaCallout">
     <DisplayName>JavaCallout</DisplayName>
     <FaultRules/>
-    <Properties/>
+    <Properties>
+        <Property name="products.filter.attributes">apigee-remote-service-targets</Property>
+    </Properties>
     <ClassName>io.apigee.microgateway.javacallout.Callout</ClassName>
     <ResourceURL>java://products-javacallout-2.0.0.jar</ResourceURL>
 </JavaCallout>

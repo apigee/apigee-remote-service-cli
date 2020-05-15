@@ -211,21 +211,39 @@ func (p *provision) run(printf shared.FormatFn) error {
 			return nil
 		}
 
+		replaceInFile := func(file, old, new string) error {
+			bytes, err := ioutil.ReadFile(file)
+			if err != nil {
+				return errors.Wrapf(err, "reading file %s", file)
+			}
+			bytes = []byte(strings.Replace(string(bytes), old, new, 1))
+			if err := ioutil.WriteFile(file, bytes, 0); err != nil {
+				return errors.Wrapf(err, "writing file %s", file)
+			}
+			return nil
+		}
+
 		replaceVHAndAuthTarget := func(proxyDir string) error {
 			if err := replaceVH(proxyDir); err != nil {
 				return err
 			}
 
 			if p.IsOPDK {
-				policiesFile := filepath.Join(proxyDir, "policies", "Authenticate-Call.xml")
-				bytes, err := ioutil.ReadFile(policiesFile)
-				if err != nil {
-					return errors.Wrapf(err, "reading file %s", policiesFile)
-				}
+				// OPDK must target local internal proxy
+				authFile := filepath.Join(proxyDir, "policies", "Authenticate-Call.xml")
 				oldTarget := "https://edgemicroservices.apigee.net"
-				bytes = []byte(strings.Replace(string(bytes), oldTarget, p.RuntimeBase, 1))
-				if err := ioutil.WriteFile(policiesFile, bytes, 0); err != nil {
-					return errors.Wrapf(err, "writing file %s", policiesFile)
+				newTarget := p.RuntimeBase
+				if err := replaceInFile(authFile, oldTarget, newTarget); err != nil {
+					return err
+				}
+
+				// OPDK must have org.noncps = true for products callout
+				calloutFile := filepath.Join(proxyDir, "policies", "JavaCallout.xml")
+				oldValue := "</Properties>"
+				newValue := `<Property name="org.noncps">true</Property>
+				</Properties>`
+				if err := replaceInFile(calloutFile, oldValue, newValue); err != nil {
+					return err
 				}
 			}
 			return nil
