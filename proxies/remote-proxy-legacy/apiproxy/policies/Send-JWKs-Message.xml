@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="Send-JWKs-Message">
+    <DisplayName>Send JWKs Message</DisplayName>
+    <Properties/>
+    <Set>
+        <Headers/>
+        <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">@private.jwks#</Payload>
+        <StatusCode>200</StatusCode>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

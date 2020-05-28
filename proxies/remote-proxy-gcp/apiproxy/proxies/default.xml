@@ -122,72 +122,9 @@
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/token") and (request.verb = "POST")</Condition>
         </Flow>
-        <Flow name="Refresh Access Token">
-            <Description/>
-            <Request>
-                <Step>
-                    <Name>Raise-Fault-Missing-Secret</Name>
-                    <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Clear-API-Key</Name>
-                </Step>
-                <Step>
-                    <Name>Extract-Refresh-Params</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Unknown-Request</Name>
-                    <Condition>client_id is null or client_secret is null or grant_type is null or refresh_token is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Create-Refresh-Request</Name>
-                </Step>
-                <Step>
-                    <Name>Access-App-Info</Name>
-                </Step>
-                <Step>
-                    <Name>Products-to-JSON</Name>
-                </Step>
-                <Step>
-                    <Name>RefreshAccessToken</Name>
-                </Step>
-                <Step>
-                    <Name>Set-JWT-Variables</Name>
-                </Step>
-                <Step>
-                    <Name>Generate-Access-Token</Name>
-                </Step>
-            </Request>
-            <Response>
-                <Step>
-                    <Name>Set-Response</Name>
-                </Step>
-            </Response>
-            <Condition>(proxy.pathsuffix MatchesPath "/refresh") and (request.verb = "POST")</Condition>
-        </Flow>
-        <Flow name="Revoke Refresh Token">
-            <Description>Revokes a refresh token</Description>
-            <Request>
-                <Step>
-                    <Name>Extract-Revoke-Params</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Unknown-Request</Name>
-                    <Condition>client_id is null or client_secret is null or token is null or token_type_hint != "refresh_token"</Condition>
-                </Step>
-                <Step>
-                    <Name>RevokeRefreshToken</Name>
-                </Step>
-            </Request>
-            <Response/>
-            <Condition>(proxy.pathsuffix MatchesPath "/revoke") and (request.verb = "POST")</Condition>
-        </Flow>
         <Flow name="Get JWK Public Keys">
             <Description>This flow returns public keys as JWK</Description>
             <Request>
-                <Step>
-                    <Name>Assign-Debug</Name>
-                </Step>
                 <Step>
                     <!-- .crt is actually JWKs JSON -->
                     <Name>Raise-Fault-Missing-Secret</Name>

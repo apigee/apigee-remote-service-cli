@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="25" name="remote-service">
+<APIProxy revision="29" name="remote-service">
     <Basepaths>/remote-service</Basepaths>
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
-    <CreatedAt>1589560974867</CreatedAt>
+    <CreatedAt>1590622040560</CreatedAt>
     <CreatedBy>theganyo+1@google.com</CreatedBy>
     <Description>remote-service</Description>
     <DisplayName>remote-service</DisplayName>
-    <LastModifiedAt>1589560974867</LastModifiedAt>
+    <LastModifiedAt>1590622040560</LastModifiedAt>
     <LastModifiedBy>theganyo+1@google.com</LastModifiedBy>
-    <ManifestVersion>SHA-512:d1619ed3eaa2f1de8773d140dab7e788361314b055a476772f380f192767290950ffdfff21cf0426430e2a1ccacb2b9c05a01d1ec9e996c49135dae8a3d41589</ManifestVersion>
+    <ManifestVersion>SHA-512:37446f74525a919ffba7b539a7aac8529d22097b7c64a4ccef99a663aaf02d6e3e0e772141753364e5fc950b8bcb9dd17ef710d384c800aafb116ed940e8c760</ManifestVersion>
     <Policies>
         <Policy>Access-App-Info-2</Policy>
         <Policy>Access-App-Info</Policy>
@@ -16,29 +16,22 @@
         <Policy>Authenticate-Call</Policy>
         <Policy>AuthenticationError</Policy>
         <Policy>Create-OAuth-Request</Policy>
-        <Policy>Create-Refresh-Request</Policy>
         <Policy>DistributedQuota</Policy>
         <Policy>Eval-Quota-Result</Policy>
         <Policy>Extract-API-Key</Policy>
         <Policy>Extract-OAuth-Params</Policy>
-        <Policy>Extract-Refresh-Params</Policy>
-        <Policy>Extract-Revoke-Params</Policy>
         <Policy>Extract-Rotate-Variables</Policy>
         <Policy>Generate-Access-Token</Policy>
-        <Policy>Generate-JWK</Policy>
         <Policy>Generate-VerifyKey-Token</Policy>
+        <Policy>Get-JWKS</Policy>
         <Policy>Get-Private-Key</Policy>
-        <Policy>Get-Public-Keys</Policy>
         <Policy>JavaCallout</Policy>
         <Policy>Lookup-Products</Policy>
         <Policy>Populate-Product-List</Policy>
         <Policy>Products-to-JSON-2</Policy>
         <Policy>Products-to-JSON</Policy>
-        <Policy>Raise-Fault-Unknown-Request</Policy>
-        <Policy>RefreshAccessToken</Policy>
-        <Policy>Retrieve-Cert</Policy>
-        <Policy>RevokeRefreshToken</Policy>
-        <Policy>Send-JWK-Message</Policy>
+        <Policy>Raise-Fault-Missing-JWKS</Policy>
+        <Policy>Send-JWKs-Message</Policy>
         <Policy>Send-Product-List</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-JWT-Variables</Policy>
@@ -54,10 +47,6 @@
     <Resources>
         <Resource>java://products-javacallout-2.0.0.jar</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
-        <Resource>jsc://generate-jwk.js</Resource>
-        <Resource>jsc://jsrsasign-all-min.js</Resource>
-        <Resource>jsc://jwt-initialization.js</Resource>
-        <Resource>jsc://send-jwk-response.js</Resource>
         <Resource>jsc://set-jwt-variables.js</Resource>
         <Resource>jsc://set-quota-variables.js</Resource>
         <Resource>jsc://set-response.js</Resource>

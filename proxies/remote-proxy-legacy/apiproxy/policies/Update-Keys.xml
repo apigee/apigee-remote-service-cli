@@ -6,27 +6,15 @@
     <ExpiryTimeInSecs>2</ExpiryTimeInSecs>
     <Put override="true">
         <Key>
-            <Parameter>certificate2</Parameter>
+            <Parameter>kid</Parameter>
         </Key>
-        <Value ref="private.certificate1"/>
+        <Value ref="kid"/>
     </Put>
     <Put override="true">
         <Key>
-            <Parameter>certificate2_kid</Parameter>
+            <Parameter>jwks</Parameter>
         </Key>
-        <Value ref="private.certificate1_kid"/>
-    </Put>
-    <Put override="true">
-        <Key>
-            <Parameter>certificate1</Parameter>
-        </Key>
-        <Value ref="certificate1"/>
-    </Put>
-    <Put override="true">
-        <Key>
-            <Parameter>certificate1_kid</Parameter>
-        </Key>
-        <Value ref="certificate1_kid"/>
+        <Value ref="jwks"/>
     </Put>
     <Put override="true">
         <Key>

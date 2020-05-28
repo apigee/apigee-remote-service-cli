@@ -16,23 +16,16 @@ package token
 
 import (
 	"bytes"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"sort"
 	"time"
 
-	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
 	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -59,14 +52,11 @@ const (
 
 type token struct {
 	*shared.RootArgs
-	clientID              string
-	clientSecret          string
-	file                  string
-	keyID                 string
-	certExpirationInYears int
-	certKeyStrength       int
-	namespace             string
-	truncate              int
+	clientID     string
+	clientSecret string
+	file         string
+	namespace    string
+	truncate     int
 }
 
 // Cmd returns base command
@@ -150,14 +140,9 @@ func cmdCreateSecret(t *token, printf shared.FormatFn) *cobra.Command {
 				t.clientSecret = t.ServerConfig.Tenant.Secret
 			}
 
-			t.keyID = time.Now().Format(time.RFC3339)
-
 			t.createSecret(printf)
 		},
 	}
-
-	c.Flags().IntVarP(&t.certExpirationInYears, "years", "", 1, "number of years before the cert expires")
-	c.Flags().IntVarP(&t.certKeyStrength, "strength", "", 2048, "key strength")
 
 	c.Flags().StringVarP(&t.namespace, "namespace", "n", "apigee", "emit Secret in the specified namespace")
 	c.Flags().IntVarP(&t.truncate, "truncate", "", 2, "number of certs to keep in jwks")
@@ -199,10 +184,7 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 		},
 	}
 
-	c.Flags().StringVarP(&t.keyID, "kid", "", "1", "new key id")
-	c.Flags().IntVarP(&t.certExpirationInYears, "years", "", 1, "number of years before the cert expires")
-	c.Flags().IntVarP(&t.certKeyStrength, "strength", "", 2048, "key strength")
-
+	c.Flags().IntVarP(&t.truncate, "truncate", "", 2, "number of certs to keep in jwks")
 	c.Flags().StringVarP(&t.clientID, "key", "k", "", "provision key")
 	c.Flags().StringVarP(&t.clientSecret, "secret", "s", "", "provision secret")
 
@@ -292,16 +274,16 @@ func (t *token) rotateCert(printf shared.FormatFn) error {
 		verbosef = printf
 	}
 
-	verbosef("generating a new key and cert...")
-	cert, privateKey, err := provision.GenKeyCert(t.certKeyStrength, t.certExpirationInYears)
+	verbosef("generating key and jwks...")
+	kid, keyBytes, jwksBytes, err := t.CreateJWKS(t.truncate, verbosef)
 	if err != nil {
-		return errors.Wrap(err, "generating cert")
+		return err
 	}
 
 	rotateReq := rotateRequest{
-		PrivateKey:  privateKey,
-		Certificate: cert,
-		KeyID:       t.keyID,
+		PrivateKey: string(keyBytes),
+		JWKS:       string(jwksBytes),
+		KeyID:      kid,
 	}
 
 	verbosef("rotating certificate...")
@@ -330,8 +312,8 @@ func (t *token) rotateCert(printf shared.FormatFn) error {
 	}
 	defer resp.Body.Close()
 
-	verbosef("new certificate:\n%s", cert)
-	verbosef("new private key:\n%s", privateKey)
+	verbosef("new private key:\n%s", string(keyBytes))
+	verbosef("new jwks:\n%s", string(jwksBytes))
 
 	printf("certificate successfully rotated")
 	return nil
@@ -344,60 +326,13 @@ func (t *token) createSecret(printf shared.FormatFn) error {
 		verbosef = printf
 	}
 
-	jwkSet := &jwk.Set{}
-	verbosef("retrieving existing certificates...")
-
-	var err error
-	if t.truncate > 1 { // if 1, just skip old stuff
-		// old jwks
-		jwksURL := fmt.Sprintf(certsURLFormat, t.RemoteServiceProxyURL)
-		jwkSet, err = jwk.FetchHTTP(jwksURL)
-		if err != nil {
-			return errors.Wrap(err, "fetching jwks")
-		}
-		jwksBytes, err := json.Marshal(jwkSet)
-		if err != nil {
-			return errors.Wrap(err, "marshalling JSON")
-		}
-		verbosef("old jkws...\n%s", string(jwksBytes))
-	}
-
-	t.keyID = time.Now().Format(time.RFC3339)
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	kid, keyBytes, jwksBytes, err := t.CreateJWKS(t.truncate, verbosef)
 	if err != nil {
-		return errors.Wrap(err, "generating key")
+		return err
 	}
 
-	// jwks
-	key, err := jwk.New(&privateKey.PublicKey)
-	if err != nil {
-		return errors.Wrap(err, "generating jwks")
-	}
-	key.Set(jwk.KeyIDKey, t.keyID)
-	key.Set(jwk.AlgorithmKey, jwa.RS256.String())
-
-	jwkSet.Keys = append(jwkSet.Keys, key)
-
-	// sort increasing and truncate
-	sort.Sort(sort.Reverse(byKID(jwkSet.Keys)))
-	if t.truncate > 0 {
-		jwkSet.Keys = jwkSet.Keys[:t.truncate]
-	}
-
-	jwksBytes, err := json.Marshal(jwkSet)
-	if err != nil {
-		return errors.Wrap(err, "marshalling JSON")
-	}
-	verbosef("new jkws...\n%s", string(jwksBytes))
-
-	// private key
-	keyBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
-
-	// kid
-	kidProp := fmt.Sprintf(kidSecretPropFormat, t.keyID)
-
-	// Secret CRD
+	// create CRD for secret
+	kidProp := fmt.Sprintf(kidSecretPropFormat, kid)
 	data := map[string]string{
 		jwksSecretKey: base64.StdEncoding.EncodeToString(jwksBytes),
 		keySecretKey:  base64.StdEncoding.EncodeToString(keyBytes),
@@ -431,9 +366,9 @@ func (t *token) createSecret(printf shared.FormatFn) error {
 }
 
 type rotateRequest struct {
-	PrivateKey  string `json:"private_key"`
-	Certificate string `json:"certificate"`
-	KeyID       string `json:"kid"`
+	PrivateKey string `json:"private_key"`
+	JWKS       string `json:"jwks"`
+	KeyID      string `json:"kid"`
 }
 
 type tokenRequest struct {
@@ -445,9 +380,3 @@ type tokenRequest struct {
 type tokenResponse struct {
 	Token string `json:"token"`
 }
-
-type byKID []jwk.Key
-
-func (a byKID) Len() int           { return len(a) }
-func (a byKID) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byKID) Less(i, j int) bool { return a[i].KeyID() < a[j].KeyID() }

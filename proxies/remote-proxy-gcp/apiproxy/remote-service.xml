@@ -1,24 +1,19 @@
-<APIProxy revision="34" name="remote-service">
+<APIProxy revision="39" name="remote-service">
     <DisplayName>remote-service</DisplayName>
     <Description>remote-service</Description>
-    <CreatedAt>1589561093501</CreatedAt>
-    <LastModifiedAt>1589561093501</LastModifiedAt>
+    <CreatedAt>1590622108608</CreatedAt>
+    <LastModifiedAt>1590622108608</LastModifiedAt>
     <BasePaths>/remote-service</BasePaths>
     <Policies>
         <Policy>Send-JWKs-Message</Policy>
         <Policy>Clear-API-Key</Policy>
         <Policy>Lookup-Products</Policy>
         <Policy>Set-Quota-Response</Policy>
-        <Policy>Create-Refresh-Request</Policy>
-        <Policy>Assign-Debug</Policy>
         <Policy>Send-Product-List</Policy>
         <Policy>Set-Quota-Variables</Policy>
-        <Policy>RevokeRefreshToken</Policy>
         <Policy>Extract-API-Key</Policy>
-        <Policy>RefreshAccessToken</Policy>
         <Policy>Raise-Fault-Missing-Secret</Policy>
         <Policy>JavaCallout</Policy>
-        <Policy>Extract-Refresh-Params</Policy>
         <Policy>Generate-VerifyKey-Token</Policy>
         <Policy>Create-OAuth-Request</Policy>
         <Policy>Raise-Fault-Unknown-Request</Policy>
@@ -26,7 +21,6 @@
         <Policy>Extract-OAuth-Params</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-Response</Policy>
-        <Policy>Extract-Revoke-Params</Policy>
         <Policy>Set-JWT-Variables</Policy>
         <Policy>Decode-Basic-Authentication</Policy>
         <Policy>Products-to-JSON</Policy>

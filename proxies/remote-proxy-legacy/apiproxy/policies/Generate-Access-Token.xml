@@ -3,8 +3,8 @@
     <DisplayName>Generate Access Token</DisplayName>
     <Algorithm>RS256</Algorithm>
     <PrivateKey>
-        <Value ref="private.privateKey"/>
-        <Id ref="private.certificate1_kid"/>
+        <Value ref="private.private_key"/>
+        <Id ref="private.kid"/>
     </PrivateKey>
     <Issuer ref="iss"/>
     <Audience>remote-service-client</Audience>

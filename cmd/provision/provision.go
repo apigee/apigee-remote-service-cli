@@ -18,18 +18,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/pem"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/big"
 	rnd "math/rand"
 	"net/http"
 	"net/url"
@@ -56,6 +51,7 @@ const ( // legacy
 	legacyAuthProxyZip        = "remote-service-legacy.zip"
 
 	// virtualHost is only necessary for legacy
+	virtualHostDeleteText     = "<VirtualHost>secure</VirtualHost>"
 	virtualHostReplaceText    = "<VirtualHost>default</VirtualHost>"
 	virtualHostReplacementFmt = "<VirtualHost>%s</VirtualHost>" // each virtualHost
 
@@ -93,15 +89,13 @@ const ( // modern
 
 type provision struct {
 	*shared.RootArgs
-	certExpirationInYears int
-	certKeyStrength       int
-	forceProxyInstall     bool
-	virtualHosts          string
-	verifyOnly            bool
-	provisionKey          string
-	provisionSecret       string
-	developerEmail        string
-	namespace             string
+	forceProxyInstall bool
+	virtualHosts      string
+	verifyOnly        bool
+	provisionKey      string
+	provisionSecret   string
+	developerEmail    string
+	namespace         string
 }
 
 // Cmd returns base command
@@ -156,10 +150,6 @@ to your organization and environment.`,
 
 	c.Flags().StringVarP(&p.developerEmail, "developer-email", "d", "",
 		"email used to create a developer (ignored for --legacy or --opdk)")
-	c.Flags().IntVarP(&p.certExpirationInYears, "years", "", 1,
-		"number of years before the jwt cert expires")
-	c.Flags().IntVarP(&p.certKeyStrength, "strength", "", 2048,
-		"key strength")
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")
 	c.Flags().StringVarP(&p.virtualHosts, "virtual-hosts", "", "default,secure",
@@ -204,6 +194,9 @@ func (p *provision) run(printf shared.FormatFn) error {
 					newVH = newVH + fmt.Sprintf(virtualHostReplacementFmt, vh)
 				}
 			}
+			// remove all "secure" virtualhost
+			bytes = []byte(strings.ReplaceAll(string(bytes), virtualHostDeleteText, ""))
+			// replace the "default" virtualhost
 			bytes = []byte(strings.Replace(string(bytes), virtualHostReplaceText, newVH, 1))
 			if err := ioutil.WriteFile(proxiesFile, bytes, 0); err != nil {
 				return errors.Wrapf(err, "writing file %s", proxiesFile)
@@ -550,75 +543,32 @@ func newHash() string {
 	return str
 }
 
-// GenKeyCert generates a self signed key and certificate
-// returns certBytes, privateKeyBytes, error
-func GenKeyCert(keyStrength, certExpirationInYears int) (string, string, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, keyStrength)
-	if err != nil {
-		return "", "", errors.Wrap(err, "generating private key")
-	}
-	now := time.Now()
-	subKeyIDHash := sha256.New()
-	_, err = subKeyIDHash.Write(privateKey.N.Bytes())
-	if err != nil {
-		return "", "", errors.Wrap(err, "generating key id")
-	}
-	subKeyID := subKeyIDHash.Sum(nil)
-	template := x509.Certificate{
-		SerialNumber: new(big.Int).SetInt64(0),
-		Subject: pkix.Name{
-			CommonName:   kvmName,
-			Organization: []string{kvmName},
-		},
-		NotBefore:    now.Add(-5 * time.Minute).UTC(),
-		NotAfter:     now.AddDate(certExpirationInYears, 0, 0).UTC(),
-		IsCA:         true,
-		SubjectKeyId: subKeyID,
-		KeyUsage: x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature |
-			x509.KeyUsageDataEncipherment,
-	}
-	derBytes, err := x509.CreateCertificate(
-		rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
-	if err != nil {
-		return "", "", errors.Wrap(err, "creating CA certificate")
-	}
-
-	certBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-
-	keyBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
-
-	return string(certBytes), string(keyBytes), nil
-}
-
 //check if the KVM exists, if it doesn't, create a new one and sets certs for JWT
 func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) error {
 
-	cert, privateKey, err := GenKeyCert(p.certKeyStrength, p.certExpirationInYears)
+	kid, keyBytes, jwksBytes, err := p.CreateJWKS(1, printf)
 	if err != nil {
 		return err
 	}
 
 	kvm := apigee.KVM{
-		Name:      kvmName,
-		Encrypted: encryptKVM,
-	}
-
-	if !p.IsGCPManaged { // GCP API breaks with any initial entries
-		kvm.Entries = []apigee.Entry{
+		Name: kvmName,
+		// Encrypted: encryptKVM,
+		Encrypted: false,
+		Entries: []apigee.Entry{
 			{
 				Name:  "private_key",
-				Value: privateKey,
+				Value: string(keyBytes),
 			},
 			{
-				Name:  "certificate1",
-				Value: cert,
+				Name:  "jwks",
+				Value: string(jwksBytes),
 			},
 			{
-				Name:  "certificate1_kid",
-				Value: "1",
+				Name:  "kid",
+				Value: kid,
 			},
-		}
+		},
 	}
 
 	resp, err := p.Client.KVMService.Create(kvm)
@@ -634,9 +584,8 @@ func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) err
 	}
 	printf("kvm %s created", kvmName)
 
-	printf("registered a new key and cert for JWTs:\n")
-	printf("certificate:\n%s", cert)
-	printf("private key:\n%s", privateKey)
+	printf("new private key:\n%s", string(keyBytes))
+	printf("new jwks:\n%s", string(jwksBytes))
 
 	return nil
 }

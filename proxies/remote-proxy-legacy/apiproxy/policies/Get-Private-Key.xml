@@ -6,14 +6,14 @@
     <ExclusiveCache>false</ExclusiveCache>
     <ExpiryTimeInSecs>86400</ExpiryTimeInSecs>
     <InitialEntries/>
-    <Get assignTo="private.privateKey" index="1">
+    <Get assignTo="private.private_key" index="1">
         <Key>
             <Parameter>private_key</Parameter>
         </Key>
     </Get>
-    <Get assignTo="private.certificate1_kid" index="1">
+    <Get assignTo="private.kid" index="1">
         <Key>
-            <Parameter>certificate1_kid</Parameter>
+            <Parameter>kid</Parameter>
         </Key>
     </Get>
     <Scope>environment</Scope>

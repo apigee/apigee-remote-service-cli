@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<KeyValueMapOperations encrypted="false" mapIdentifier="remote-service" async="false" continueOnError="false" enabled="true" name="Get-JWKS">
+    <DisplayName>Get JWKS</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <ExclusiveCache>false</ExclusiveCache>
+    <ExpiryTimeInSecs>86400</ExpiryTimeInSecs>
+    <InitialEntries/>
+    <Get assignTo="private.jwks">
+        <Key>
+            <Parameter>jwks</Parameter>
+        </Key>
+    </Get>
+    <Scope>environment</Scope>
+</KeyValueMapOperations>
