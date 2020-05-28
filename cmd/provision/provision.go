@@ -552,9 +552,8 @@ func (p *provision) getOrCreateKVM(cred *credential, printf shared.FormatFn) err
 	}
 
 	kvm := apigee.KVM{
-		Name: kvmName,
-		// Encrypted: encryptKVM,
-		Encrypted: false,
+		Name:      kvmName,
+		Encrypted: encryptKVM,
 		Entries: []apigee.Entry{
 			{
 				Name:  "private_key",
