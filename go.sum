@@ -6,14 +6,10 @@ github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuy
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
-github.com/apigee/apigee-remote-service-envoy v0.0.5-dev h1:dZ04LkSLH1XwmUSb8eFWiLGf/58O4ZoD5Sml66gQMkY=
-github.com/apigee/apigee-remote-service-envoy v0.0.5-dev/go.mod h1:JSCycw4VnDh1DHIASbCYdH3Oi1n5k5i6XRkeEe55pfg=
-github.com/apigee/apigee-remote-service-envoy v1.0.0-beta.1 h1:xzAKdwx8GfjUpnGPETj/FuPsgnTKgtTZpWvaGYuHR6Y=
-github.com/apigee/apigee-remote-service-envoy v1.0.0-beta.1/go.mod h1:Ploi7NIeyNkPkLqQDSgMEjDLUlUXug9ZzPqFnOOC37k=
-github.com/apigee/apigee-remote-service-golib v0.0.5-dev h1:X/MHYEnJQMOpj1ly6aMrgjMxnZJa9a+MUaKre4Pz83A=
-github.com/apigee/apigee-remote-service-golib v0.0.5-dev/go.mod h1:1Y8IJBsjT19gv+pRgmvKNF2FoMguc181K9syiGq2IsY=
-github.com/apigee/apigee-remote-service-golib v1.0.0-beta.1 h1:B4QVZ/0tnOdjZ+5DWV1gJ+zV5KMDlrtRASI3pgIJyHE=
-github.com/apigee/apigee-remote-service-golib v1.0.0-beta.1/go.mod h1:1Y8IJBsjT19gv+pRgmvKNF2FoMguc181K9syiGq2IsY=
+github.com/apigee/apigee-remote-service-envoy v1.0.0-beta.2 h1:HuTTw3HZlB6z3ZOktVFW5njFBMaQ+ChZQRxm53gsvpU=
+github.com/apigee/apigee-remote-service-envoy v1.0.0-beta.2/go.mod h1:xghbhVX/sRxurf/vl2lv2T8ha3TWbI88MrB6GK6YeqQ=
+github.com/apigee/apigee-remote-service-golib v1.0.0-beta.2 h1:d8qTRKSCJZd49gNNmJQ7KD3xnlY2HE+eD8hg8lDFEcY=
+github.com/apigee/apigee-remote-service-golib v1.0.0-beta.2/go.mod h1:1Y8IJBsjT19gv+pRgmvKNF2FoMguc181K9syiGq2IsY=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
@@ -191,6 +187,7 @@ go.uber.org/multierr v1.5.0/go.mod h1:FeouvMocqHpRaaGuG9EjoKcStLC43Zu/fmqdUMPcKY
 go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee h1:0mgffUl7nfd+FpvXMVz4IDEaUSmT1ysygQC7qYo7sG4=
 go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee/go.mod h1:vJERXedbb3MVM5f9Ejo0C68/HhF8uaILCdgjnY+goOA=
 go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
+go.uber.org/zap v1.15.0/go.mod h1:Mb2vm2krFEG5DV0W9qcHBYFtp/Wku1cvYaqPsS/WYfc=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
