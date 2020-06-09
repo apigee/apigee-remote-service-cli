@@ -637,12 +637,13 @@ func (p *provision) printConfig(cred *credential, printf shared.FormatFn, verify
 
 	config := server.Config{
 		Tenant: server.TenantConfig{
-			InternalAPI:      p.InternalProxyURL,
-			RemoteServiceAPI: p.RemoteServiceProxyURL,
-			OrgName:          p.Org,
-			EnvName:          p.Env,
-			Key:              cred.Key,
-			Secret:           cred.Secret,
+			InternalAPI:            p.InternalProxyURL,
+			RemoteServiceAPI:       p.RemoteServiceProxyURL,
+			OrgName:                p.Org,
+			EnvName:                p.Env,
+			Key:                    cred.Key,
+			Secret:                 cred.Secret,
+			AllowUnverifiedSSLCert: p.InsecureSkipVerify,
 		},
 	}
 
