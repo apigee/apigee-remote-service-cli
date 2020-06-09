@@ -181,8 +181,9 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 			BearerToken: r.Token,
 			SkipAuth:    skipAuth,
 		},
-		GCPManaged: r.IsGCPManaged,
-		Debug:      r.Verbose,
+		GCPManaged:         r.IsGCPManaged,
+		Debug:              r.Verbose,
+		InsecureSkipVerify: r.InsecureSkipVerify,
 	}
 
 	var err error
