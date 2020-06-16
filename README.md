@@ -9,7 +9,7 @@ proxy into Apigee Runtime and provides certain runtime management functions on t
 
 ## Getting Started
 
-Documentation is available [here](https://github.com/apigee/apigee-remote-service-envoy/wiki/Getting-Started).
+Documentation is available [here](https://docs.apigee.com/api-platform/envoy-adapter/concepts).
 
 ## Support
 
