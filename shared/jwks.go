@@ -69,7 +69,7 @@ func (r *RootArgs) CreateJWKS(truncate int, verbosef FormatFn) (keyID string, pk
 		return fail(err, "generating jwks")
 	}
 	jwkKey.Set(jwk.KeyIDKey, keyID)
-	jwkKey.Set(jwk.AlgorithmKey, jwa.RS256.String())
+	jwkKey.Set(jwk.AlgorithmKey, jwa.RS256)
 
 	jwkSet.Keys = append(jwkSet.Keys, jwkKey)
 

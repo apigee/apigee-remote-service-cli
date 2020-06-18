@@ -236,16 +236,11 @@ func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 	if err != nil {
 		return errors.Wrap(err, "parsing jwt token")
 	}
-	jsonBytes, err := token.MarshalJSON()
+	buf, err := json.MarshalIndent(token, "", "\t")
 	if err != nil {
 		return errors.Wrap(err, "printing jwt token")
 	}
-	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, jsonBytes, "", "\t")
-	if err != nil {
-		return errors.Wrap(err, "printing jwt token")
-	}
-	printf(prettyJSON.String())
+	printf("%s", buf)
 
 	// verify JWT
 	printf("\nverifying...")
@@ -258,7 +253,7 @@ func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 	if _, err = jws.VerifyWithJWKSet(jwtBytes, jwkSet, nil); err != nil {
 		return errors.Wrap(err, "verifying cert")
 	}
-	if err := token.Verify(jwt.WithAcceptableSkew(time.Minute)); err != nil {
+	if err := jwt.Verify(token, jwt.WithAcceptableSkew(time.Minute)); err != nil {
 		printf("invalid token: %s", err)
 		return nil
 	}

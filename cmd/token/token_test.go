@@ -68,10 +68,21 @@ func TestTokenInspect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
+	key.Set(jwk.KeyIDKey, "kid")
+	key.Set(jwk.AlgorithmKey, jwa.RS256)
+
+	jwksBuf, err := json.MarshalIndent(key, "", "")
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	t.Logf("jwks: %s", jwksBuf)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(key)
+		_, err := w.Write(jwksBuf)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
 	}))
 	defer ts.Close()
 
@@ -124,7 +135,7 @@ func generateJWT(privateKey *rsa.PrivateKey) (string, error) {
 	token.Set("application_name", "/appname/")
 	token.Set("scope", "scope1 scope2")
 	token.Set("api_product_list", []string{"/product/"})
-	payload, err := token.Sign(jwa.RS256, privateKey)
+	payload, err := jwt.Sign(token, jwa.RS256, privateKey)
 
 	return string(payload), err
 }
