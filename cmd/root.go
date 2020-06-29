@@ -75,7 +75,7 @@ func version(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 				return errors.Wrap(err, "error creating request")
 			}
 			var version versionResponse
-			resp, err := rootArgs.Client.Do(req, &version)
+			resp, err := rootArgs.ApigeeClient.Do(req, &version)
 			if err != nil {
 				if resp == nil {
 					return errors.Wrap(err, "error getting proxy version")

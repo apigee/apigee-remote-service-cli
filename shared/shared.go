@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"reflect"
@@ -28,7 +27,6 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/testutil"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -43,9 +41,6 @@ const (
 
 	// RuntimeBaseFormat is a format for base of the organization runtime URL (legacy SaaS and OPDK)
 	RuntimeBaseFormat = "https://%s-%s.apigee.net"
-
-	// LegacySaaSInternalBase is the internal API used for auth and analytics
-	LegacySaaSInternalBase = "https://istioservices.apigee.net/edgemicro"
 
 	internalProxyURLFormat      = "%s://istioservices.%s/edgemicro" // runtime scheme, runtime domain (legacy SaaS and OPDK)
 	internalProxyURLFormatOPDK  = "%s/edgemicro"                    // runtimeBase
@@ -79,13 +74,14 @@ type RootArgs struct {
 	IsGCPManaged       bool
 	ConfigPath         string
 	InsecureSkipVerify bool
+	Namespace          string
 
 	ServerConfig *server.Config // config loaded from ConfigPath
 
 	// the following is derived in Resolve()
 	InternalProxyURL      string
 	RemoteServiceProxyURL string
-	Client                *apigee.EdgeClient
+	ApigeeClient          *apigee.EdgeClient
 	ClientOpts            *apigee.EdgeClientOptions
 }
 
@@ -187,7 +183,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 
 	var err error
-	r.Client, err = apigee.NewEdgeClient(r.ClientOpts)
+	r.ApigeeClient, err = apigee.NewEdgeClient(r.ClientOpts)
 	if err != nil {
 		if strings.Contains(err.Error(), ".netrc") { // no .netrc and no auth
 			baseURL, err := url.Parse(r.ManagementBase)
@@ -261,39 +257,33 @@ func (r *RootArgs) loadConfig() error {
 		return nil
 	}
 
-	yamlFile, err := ioutil.ReadFile(r.ConfigPath)
+	r.ServerConfig = &server.Config{}
+	err := r.ServerConfig.Load(r.ConfigPath, "")
 	if err != nil {
 		return err
 	}
 
-	// load as either CRD or raw config
-	cm := &KubernetesCRD{}
-	c := &server.Config{}
-	err = yaml.Unmarshal(yamlFile, cm)
-	if err == nil {
-		if cm.Data == nil {
-			err = yaml.Unmarshal(yamlFile, c)
-		} else {
-			err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), c)
-		}
-	}
-	if err != nil {
-		return err
-	}
+	r.RuntimeBase = strings.Split(r.ServerConfig.Tenant.RemoteServiceAPI, remoteServicePath)[0]
+	r.Org = r.ServerConfig.Tenant.OrgName
+	r.Env = r.ServerConfig.Tenant.EnvName
+	r.InsecureSkipVerify = r.ServerConfig.Tenant.AllowUnverifiedSSLCert
+	r.Namespace = r.ServerConfig.Global.Namespace
 
-	r.ServerConfig = c
-	r.RuntimeBase = strings.Split(c.Tenant.RemoteServiceAPI, remoteServicePath)[0]
-	r.Org = c.Tenant.OrgName
-	r.Env = c.Tenant.EnvName
-
-	switch c.Tenant.InternalAPI {
-	case "":
+	if r.ServerConfig.IsGCPManaged() {
 		r.ManagementBase = GCPExperienceBase
 		r.IsGCPManaged = true
-	case LegacySaaSInternalBase:
+
+		if r.ServerConfig.Tenant.PrivateKey == nil || r.ServerConfig.Tenant.PrivateKeyID == "" {
+			return fmt.Errorf("Secret CRD not found in file: %s", r.ConfigPath)
+		}
+	}
+
+	if r.ServerConfig.IsApigeeManaged() {
 		r.ManagementBase = LegacySaaSManagementBase
 		r.IsLegacySaaS = true
-	default:
+	}
+
+	if r.ServerConfig.IsOPDK() {
 		r.ManagementBase = r.RuntimeBase
 		r.IsOPDK = true
 	}
@@ -316,19 +306,4 @@ func (r *RootArgs) PrintMissingFlags(missingFlagNames []string) error {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
-}
-
-// KubernetesCRD has generic Kubernetes headers for CRD generation
-type KubernetesCRD struct {
-	APIVersion string            `yaml:"apiVersion"`
-	Kind       string            `yaml:"kind"`
-	Metadata   Metadata          `yaml:"metadata"`
-	Type       string            `yaml:"type,omitempty"`
-	Data       map[string]string `yaml:"data"`
-}
-
-// Metadata is for Kubernetes CRD generation
-type Metadata struct {
-	Name      string `yaml:"name"`
-	Namespace string `yaml:"namespace"`
 }

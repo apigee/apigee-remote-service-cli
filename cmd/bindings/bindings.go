@@ -156,7 +156,7 @@ func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	if b.products != nil {
 		return b.products, nil
 	}
-	req, err := b.Client.NewRequest(http.MethodGet, "", nil)
+	req, err := b.ApigeeClient.NewRequest(http.MethodGet, "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
 	}
@@ -164,7 +164,7 @@ func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	req.URL.RawQuery = "expand=true"
 
 	var res product.APIResponse
-	resp, err := b.Client.Do(req, &res)
+	resp, err := b.ApigeeClient.Do(req, &res)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving products")
 	}
@@ -264,14 +264,14 @@ func (b *bindings) updateTargetBindings(p *product.APIProduct, bindings []string
 	newAttrs := attrUpdate{
 		Attributes: attributes,
 	}
-	req, err := b.Client.NewRequest(http.MethodPost, "", newAttrs)
+	req, err := b.ApigeeClient.NewRequest(http.MethodPost, "", newAttrs)
 	if err != nil {
 		return err
 	}
 	path := fmt.Sprintf(productAttrPathFormat, b.Org, p.Name)
 	req.URL.Path = path // hack: negate client's base URL
 	var attrResult attrUpdate
-	_, err = b.Client.Do(req, &attrResult)
+	_, err = b.ApigeeClient.Do(req, &attrResult)
 	return err
 }
 

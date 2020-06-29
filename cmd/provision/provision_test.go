@@ -19,7 +19,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 )
 
@@ -32,32 +31,35 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 		count++
 	}))
 
-	auth := &apigee.EdgeAuth{}
-
 	// try without InsecureSkipVerify
 	p := &provision{
 		RootArgs: &shared.RootArgs{
 			RuntimeBase:        ts.URL,
 			Token:              "-",
 			InsecureSkipVerify: false,
+			IsLegacySaaS:       true,
 		},
-		verifyOnly: true,
 	}
 	if err := p.Resolve(false, false); err != nil {
 		t.Fatal(err)
 	}
-	if err := p.verifyRemoteServiceProxy(auth, shared.Printf); err == nil {
+	client, err := p.createAuthorizedClient(p.createConfig(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.verifyRemoteServiceProxy(client, shared.Printf); err == nil {
 		t.Errorf("got nil error, want TLS failure")
 	}
 
 	// try with InsecureSkipVerify
 	p.InsecureSkipVerify = true
+	client, err = p.createAuthorizedClient(p.createConfig(nil))
 	if err := p.Resolve(false, false); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := p.verifyRemoteServiceProxy(auth, shared.Printf); err != nil {
-		t.Errorf("unexpected error: %v", err)
+	if err := p.verifyRemoteServiceProxy(client, shared.Printf); err != nil {
+		t.Errorf("unexpected: %v", err)
 	}
 	if count != 4 {
 		t.Errorf("got %d, want %d", count, 4)

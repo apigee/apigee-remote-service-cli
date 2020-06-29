@@ -16,6 +16,7 @@ coverage.txt
 dist/
 
 # Misc
+/.vscode
 /apigee-remote-service-cli
 /config.yaml
 /configmap.yaml

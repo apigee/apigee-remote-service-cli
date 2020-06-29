@@ -32,64 +32,75 @@ import (
 const (
 	certsURLFormat = "%s/certs" // RemoteServiceProxyURL
 	certKeyLength  = 2048
+	pemType        = "RSA PRIVATE KEY"
 )
 
-// CreateJWKS returns keyID, private key, jwks, error
-func (r *RootArgs) CreateJWKS(truncate int, verbosef FormatFn) (keyID string, pkBytes, jwksBytes []byte, err error) {
-	jwkSet := &jwk.Set{}
-	verbosef("retrieving existing certificates...")
-	fail := func(err error, msg string) (string, []byte, []byte, error) {
-		return "", nil, nil, errors.Wrap(err, msg)
-	}
-
-	if truncate > 1 { // if 1, just skip old stuff
-		// get old jwks
-		jwksURL := fmt.Sprintf(certsURLFormat, r.RemoteServiceProxyURL)
-		jwkSet, err = jwk.FetchHTTP(jwksURL)
-		if err != nil {
-			return fail(err, "fetching jwks")
-		}
-		jwksBytes, err := json.Marshal(jwkSet)
-		if err != nil {
-			return fail(err, "marshalling JSON")
-		}
-		verbosef("old jkws...\n%s", string(jwksBytes))
-	}
-
-	// gen kid, key
+// CreateNewKey returns keyID, private key, jwks, error
+func (r *RootArgs) CreateNewKey() (keyID string, privateKey *rsa.PrivateKey, jwks *jwk.Set, err error) {
 	keyID = time.Now().Format(time.RFC3339)
-	privateKey, err := rsa.GenerateKey(rand.Reader, certKeyLength)
+	privateKey, err = rsa.GenerateKey(rand.Reader, certKeyLength)
 	if err != nil {
-		return fail(err, "generating key")
+		return
 	}
 
-	// update jwks with new key
-	jwkKey, err := jwk.New(&privateKey.PublicKey)
+	var jwkKey jwk.Key
+	jwkKey, err = jwk.New(&privateKey.PublicKey)
 	if err != nil {
-		return fail(err, "generating jwks")
+		return
 	}
 	jwkKey.Set(jwk.KeyIDKey, keyID)
 	jwkKey.Set(jwk.AlgorithmKey, jwa.RS256)
 
-	jwkSet.Keys = append(jwkSet.Keys, jwkKey)
+	jwks = &jwk.Set{
+		Keys: []jwk.Key{jwkKey},
+	}
+	return
+}
 
-	// sort ascending and truncate
-	sort.Sort(sort.Reverse(byKID(jwkSet.Keys)))
-	if truncate > 0 {
-		jwkSet.Keys = jwkSet.Keys[:truncate]
+// RotateJKWS returns a jwk.Set including passed keys and keys from existing endpoint,
+// sorted by key ID and truncated per the truncate param.
+func (r *RootArgs) RotateJKWS(jwks *jwk.Set, truncate int) (*jwk.Set, error) {
+
+	keys := jwks.Keys
+
+	if truncate > 1 { // if 1, just skip getting old
+		var oldJWKS *jwk.Set
+		var err error
+		certsURL := fmt.Sprintf(certsURLFormat, r.RemoteServiceProxyURL)
+		if oldJWKS, err = jwk.FetchHTTP(certsURL); err != nil {
+			return nil, errors.Wrapf(err, "retrieving JWKs from: %s", certsURL)
+		}
+		keys = append(keys, oldJWKS.Keys...)
 	}
 
-	jwksBytes, err = json.Marshal(jwkSet)
-	if err != nil {
-		return fail(err, "marshalling JSON")
+	sort.Sort(sort.Reverse(byKID(keys)))
+	if truncate > 0 && len(keys) > truncate {
+		keys = keys[:truncate]
+	}
+
+	return &jwk.Set{Keys: keys}, nil
+}
+
+// CreateJWKS returns keyID, private key, jwks, error
+func (r *RootArgs) CreateJWKS(truncate int, verbosef FormatFn) (keyID string, pkBytes, jwksBytes []byte, err error) {
+
+	var privateKey *rsa.PrivateKey
+	var jwks *jwk.Set
+	if keyID, privateKey, jwks, err = r.CreateNewKey(); err != nil {
+		return
+	}
+
+	if jwks, err = r.RotateJKWS(jwks, truncate); err != nil {
+		return
+	}
+
+	if jwksBytes, err = json.Marshal(jwks); err != nil {
+		return
 	}
 	verbosef("new jkws...\n%s", string(jwksBytes))
 
-	// get private key bytes
-	pkBytes = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
-
-	return keyID, pkBytes, jwksBytes, nil
+	pkBytes = pem.EncodeToMemory(&pem.Block{Type: pemType, Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
+	return
 }
 
 type byKID []jwk.Key
