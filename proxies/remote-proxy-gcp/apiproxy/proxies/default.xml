@@ -11,12 +11,6 @@
                     <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
                 </Step>
                 <Step>
-                    <Name>Verify-API-Key</Name>
-                </Step>
-                <Step>
-                    <Name>Clear-API-Key</Name>
-                </Step>
-                <Step>
                     <Name>Extract-API-Key</Name>
                 </Step>
                 <Step>
@@ -50,7 +44,7 @@
             <Description/>
             <Request>
                 <Step>
-                    <Name>Verify-API-Key</Name>
+                    <Name>Verify-Internal-JWT</Name>
                 </Step>
                 <Step>
                     <Name>Lookup-Products</Name>
@@ -78,9 +72,6 @@
                 <Step>
                     <Name>Raise-Fault-Missing-Secret</Name>
                     <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Clear-API-Key</Name>
                 </Step>
                 <Step>
                     <Name>Extract-OAuth-Params</Name>
@@ -151,7 +142,7 @@
         <Flow name="DistributedQuota">
             <Request>
                 <Step>
-                    <Name>Verify-API-Key</Name>
+                    <Name>Verify-Internal-JWT</Name>
                 </Step>
                 <Step>
                     <Name>Set-Quota-Variables</Name>
