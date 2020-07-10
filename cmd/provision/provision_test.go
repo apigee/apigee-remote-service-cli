@@ -123,11 +123,11 @@ func TestProvisionAll(t *testing.T) {
 			name:  "TestProvisionLegacySaaS",
 			flags: []string{"provision", "-o", mockOrg, "-e", mockEnv, "-u", mockUser, "-p", mockPassword, "--legacy"},
 		},
-		// {
-		// 	name: "TestProvisionHybrid",
-		// 	flags: []string{"provision", "-o", mockOrg, "-e", mockEnv,
-		// 		"-d", mockDevEmail, "-r", mockRuntimeURL, "-n", mockNameSapce, "-t", mockToken, "-v"},
-		// },
+		{
+			name: "TestProvisionHybrid",
+			flags: []string{"provision", "-o", mockOrg, "-e", mockEnv,
+				"-r", mockRuntimeURL, "-n", mockNameSapce, "-t", mockToken, "-v"},
+		},
 		{
 			name:  "TestProvisionOPDK",
 			flags: []string{"provision", "-o", mockOrg, "-e", mockEnv, "-u", mockUser, "-p", mockPassword, "-r", mockRuntimeURL, "-m", mockManagementURL, "--opdk"},
@@ -193,18 +193,7 @@ func activateMockServer() {
 		httpmock.NewStringResponder(http.StatusAccepted, "{}"))
 	httpmock.RegisterResponder("POST", fmt.Sprintf(deployURLNoEnv, hybridHost),
 		httpmock.NewStringResponder(http.StatusAccepted, "{}"))
-	httpmock.RegisterResponder("POST", fmt.Sprintf(cachesURLNoEnv, hybridHost),
-		httpmock.NewStringResponder(http.StatusCreated, "{}"))
 	httpmock.RegisterResponder("POST", fmt.Sprintf(deployURL, hybridHost),
-		httpmock.NewStringResponder(http.StatusCreated, "{}"))
-	httpmock.RegisterResponder("POST", fmt.Sprintf(apiProductURL, hybridHost, mockOrg),
-		httpmock.NewStringResponder(http.StatusCreated, "{}"))
-	httpmock.RegisterResponder("POST", fmt.Sprintf(developerURL, hybridHost, mockOrg),
-		httpmock.NewStringResponder(http.StatusCreated, "{}"))
-	httpmock.RegisterResponder("POST", fmt.Sprintf(appURL, hybridHost, mockOrg, mockDevEmail),
-		httpmock.NewStringResponder(http.StatusAccepted,
-			`{"credentials": [{"consumerKey":"fake-key","consumerSecret":"fake-secret"}]}`))
-	httpmock.RegisterResponder("POST", fmt.Sprintf(kvmURL, hybridHost),
 		httpmock.NewStringResponder(http.StatusCreated, "{}"))
 	httpmock.RegisterResponder("GET", fmt.Sprintf(hybridRemoteServiceURL, mockRuntime),
 		httpmock.NewStringResponder(http.StatusAccepted, "{}"))
