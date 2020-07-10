@@ -114,6 +114,7 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 
 func TestProvisionAll(t *testing.T) {
 	activateMockServer()
+	defer deactivateMockServer()
 
 	testCases := []struct {
 		name  string
@@ -139,10 +140,8 @@ func TestProvisionAll(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+		go func() {
 			defer wg.Done()
-
 			print := testutil.Printer(tc.name)
 
 			rootArgs := &shared.RootArgs{}
@@ -152,15 +151,10 @@ func TestProvisionAll(t *testing.T) {
 			if err := rootCmd.Execute(); err != nil {
 				t.Fatalf("want no error: %v", err)
 			}
-		})
+		}()
 	}
 
-	// subtests passed to Run are not executed till this parent function returns
-	// therefore deactivation of the mock server has to be done in a goroutine
-	go func() {
-		wg.Wait()
-		deactivateMockServer()
-	}()
+	wg.Wait()
 }
 
 func activateMockServer() {
