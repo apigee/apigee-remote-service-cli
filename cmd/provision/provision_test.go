@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 
 	"github.com/apigee/apigee-remote-service-cli/cmd"
@@ -29,16 +28,12 @@ import (
 
 const (
 	mockOrg           = "org"
-	mockDupOrg        = "duporg"
 	mockEnv           = "env"
 	mockUser          = "user"
 	mockPassword      = "password"
-	mockKey           = "key"
-	mockSecret        = "secret"
-	mockDevEmail      = "developer@mock.net"
 	mockRuntime       = "mock.runtime.com"
 	mockRuntimeURL    = "https://mock.runtime.com"
-	mockNameSapce     = "namespace"
+	mockNamespace     = "namespace"
 	mockToken         = "token"
 	mockManagement    = "api.mock.apigee.com"
 	mockManagementURL = "https://api.mock.apigee.com"
@@ -59,10 +54,6 @@ const (
 	cachesURLNoEnv      = `=~^https://%s/v1/organizations/(\w+)/environments/(\w+)/caches\z`
 	credentialURL       = `=~^https://%s/edgemicro/credential/organization/(\w+)/environment/(\w+)\z`
 	kvmURL              = `=~^https://%s/v1/organizations/(\w+)/environments/(\w+)/keyvaluemaps\z`
-	apiProductURL       = `=~^https://%s/v1/organizations/%s/apiproducts\z`
-	developerURL        = `=~^https://%s/v1/organizations/%s/developers\z`
-	appURL              = `=~^https://%s/v1/organizations/%s/developers/%s/apps\z`
-	appKeysURL          = `=~^https://%s/v1/organizations/%s/developers/%s/apps/remote-service/keys/(\w+)\z`
 
 	legacyRemoteServiceURL = `=~^https://%s-%s.apigee.net/remote-service/(\w+)\z`
 	hybridRemoteServiceURL = `=~^https://%s/remote-service/(\w+)\z`
@@ -127,7 +118,7 @@ func TestProvisionAll(t *testing.T) {
 		{
 			name: "TestProvisionHybrid",
 			flags: []string{"provision", "-o", mockOrg, "-e", mockEnv,
-				"-r", mockRuntimeURL, "-n", mockNameSapce, "-t", mockToken, "-v"},
+				"-r", mockRuntimeURL, "-n", mockNamespace, "-t", mockToken, "-v"},
 		},
 		{
 			name:  "TestProvisionOPDK",
@@ -135,26 +126,18 @@ func TestProvisionAll(t *testing.T) {
 		},
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(len(testCases))
-
 	for _, tc := range testCases {
 		tc := tc
-		go func() {
-			defer wg.Done()
-			print := testutil.Printer(tc.name)
+		print := testutil.Printer(tc.name)
 
-			rootArgs := &shared.RootArgs{}
-			rootCmd := cmd.GetRootCmd(tc.flags, print.Printf)
-			shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+		rootArgs := &shared.RootArgs{}
+		rootCmd := cmd.GetRootCmd(tc.flags, print.Printf)
+		shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
-			if err := rootCmd.Execute(); err != nil {
-				t.Fatalf("want no error: %v", err)
-			}
-		}()
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("want no error: %v", err)
+		}
 	}
-
-	wg.Wait()
 }
 
 func activateMockServer() {
