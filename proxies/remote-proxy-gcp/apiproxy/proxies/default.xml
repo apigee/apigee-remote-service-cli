@@ -177,9 +177,6 @@
     </PostFlow>
     <PreFlow name="PreFlow">
         <Request>
-            <Step>
-                <Name>Decode-Basic-Authentication</Name>
-            </Step>
         </Request>
         <Response/>
     </PreFlow>
