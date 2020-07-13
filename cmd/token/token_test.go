@@ -218,7 +218,7 @@ func TestInspectTokenFunc(t *testing.T) {
 		tc := tc
 		err := tc.token.inspectToken(tc.in, print.Printf)
 		if !testutil.ErrorContains(err, tc.errStr) {
-			t.Fatalf("want opening file err, got %v", err)
+			t.Errorf("want opening file err, got %v", err)
 		}
 	}
 
