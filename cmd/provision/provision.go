@@ -46,6 +46,8 @@ const (
 
 	remoteServiceProxyZip = "remote-service-gcp.zip"
 
+	apiProductsPath = "apiproducts"
+
 	certsURLFormat        = "%s/certs"        // RemoteServiceProxyURL
 	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
 	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
@@ -225,6 +227,11 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	if err := p.checkAndDeployProxy(authProxyName, customizedProxy, verbosef); err != nil {
 		return errors.Wrapf(err, "deploying proxy %s", authProxyName)
+	}
+
+	// create API product
+	if err := p.createAPIProduct(verbosef); err != nil {
+		return errors.Wrapf(err, "creating remote-service API product")
 	}
 
 	if !p.IsGCPManaged {

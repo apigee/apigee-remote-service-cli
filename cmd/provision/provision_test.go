@@ -54,6 +54,7 @@ const (
 	cachesURLNoEnv      = `=~^https://%s/v1/organizations/(\w+)/environments/(\w+)/caches\z`
 	credentialURL       = `=~^https://%s/edgemicro/credential/organization/(\w+)/environment/(\w+)\z`
 	kvmURL              = `=~^https://%s/v1/organizations/(\w+)/environments/(\w+)/keyvaluemaps\z`
+	apiProductURL       = `=~^https://%s/v1/organizations/%s/apiproducts\z`
 
 	legacyRemoteServiceURL = `=~^https://%s-%s.apigee.net/remote-service/(\w+)\z`
 	hybridRemoteServiceURL = `=~^https://%s/remote-service/(\w+)\z`
@@ -158,6 +159,8 @@ func activateMockServer() {
 		httpmock.NewStringResponder(http.StatusCreated, "{}"))
 	httpmock.RegisterResponder("POST", fmt.Sprintf(kvmURL, legacyEdgeHost),
 		httpmock.NewStringResponder(http.StatusCreated, "{}"))
+	httpmock.RegisterResponder("POST", fmt.Sprintf(apiProductURL, legacyEdgeHost, mockOrg),
+		httpmock.NewStringResponder(http.StatusCreated, "{}"))
 	httpmock.RegisterResponder("GET", fmt.Sprintf(legacyRemoteServiceURL, mockOrg, mockEnv),
 		httpmock.NewStringResponder(http.StatusAccepted, "{}"))
 	httpmock.RegisterResponder("POST", fmt.Sprintf(legacyRemoteServiceURL, mockOrg, mockEnv),
@@ -171,6 +174,8 @@ func activateMockServer() {
 	httpmock.RegisterResponder("POST", fmt.Sprintf(deployURLNoEnv, hybridHost),
 		httpmock.NewStringResponder(http.StatusAccepted, "{}"))
 	httpmock.RegisterResponder("POST", fmt.Sprintf(deployURL, hybridHost),
+		httpmock.NewStringResponder(http.StatusCreated, "{}"))
+	httpmock.RegisterResponder("POST", fmt.Sprintf(apiProductURL, hybridHost, mockOrg),
 		httpmock.NewStringResponder(http.StatusCreated, "{}"))
 	httpmock.RegisterResponder("GET", fmt.Sprintf(hybridRemoteServiceURL, mockRuntime),
 		httpmock.NewStringResponder(http.StatusAccepted, "{}"))
@@ -197,6 +202,8 @@ func activateMockServer() {
 	httpmock.RegisterResponder("POST", fmt.Sprintf(credentialURL, mockRuntime),
 		httpmock.NewStringResponder(http.StatusCreated, "{}"))
 	httpmock.RegisterResponder("POST", fmt.Sprintf(kvmURL, mockManagement),
+		httpmock.NewStringResponder(http.StatusCreated, "{}"))
+	httpmock.RegisterResponder("POST", fmt.Sprintf(apiProductURL, mockManagement, mockOrg),
 		httpmock.NewStringResponder(http.StatusCreated, "{}"))
 	httpmock.RegisterResponder("GET", fmt.Sprintf(hybridRemoteServiceURL, mockRuntime),
 		httpmock.NewStringResponder(http.StatusAccepted, "{}"))
