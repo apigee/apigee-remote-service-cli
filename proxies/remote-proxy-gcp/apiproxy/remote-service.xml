@@ -1,8 +1,8 @@
-<APIProxy revision="44" name="remote-service">
+<APIProxy revision="48" name="remote-service">
     <DisplayName>remote-service</DisplayName>
     <Description>remote-service</Description>
-    <CreatedAt>1593450962792</CreatedAt>
-    <LastModifiedAt>1593450962792</LastModifiedAt>
+    <CreatedAt>1594661244862</CreatedAt>
+    <LastModifiedAt>1594661244862</LastModifiedAt>
     <BasePaths>/remote-service</BasePaths>
     <Policies>
         <Policy>Send-JWKs-Message</Policy>
@@ -16,12 +16,12 @@
         <Policy>Generate-VerifyKey-Token</Policy>
         <Policy>Create-OAuth-Request</Policy>
         <Policy>Raise-Fault-Unknown-Request</Policy>
+        <Policy>Verify-Internal-JWT</Policy>
         <Policy>Generate-Access-Token</Policy>
         <Policy>Extract-OAuth-Params</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-Response</Policy>
         <Policy>Set-JWT-Variables</Policy>
-        <Policy>Decode-Basic-Authentication</Policy>
         <Policy>Products-to-JSON</Policy>
         <Policy>Verify-API-Key</Policy>
         <Policy>AccessTokenRequest</Policy>
@@ -29,7 +29,6 @@
         <Policy>Eval-Quota-Result</Policy>
         <Policy>DistributedQuota</Policy>
         <Policy>Populate-Product-List</Policy>
-        <Policy>Verify-Internal-JWT</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>
