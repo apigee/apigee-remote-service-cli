@@ -18,14 +18,18 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
+	"github.com/jarcoal/httpmock"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -122,6 +126,102 @@ func TestTokenInspect(t *testing.T) {
 	}
 
 	print.Check(t, want)
+}
+
+func TestTokenRotateCert(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "https://org-env.apigee.net/remote-service/certs",
+		httpmock.NewStringResponder(200, `{"keys":[{"alg":"RS256","e":"AQAB","kid":"2020-01-01T00:00:00-00:00","kty":"RSA","n":"old-fake-key"}]}`))
+
+	httpmock.RegisterResponder("POST", "https://org-env.apigee.net/remote-service/rotate",
+		httpmock.NewStringResponder(200, ""))
+
+	config := []byte(`tenant:
+  internal_api: https://istioservices.apigee.net/edgemicro
+  remote_service_api: https://org-env.apigee.net/remote-service
+  org_name: org
+  env_name: env
+  key: fake-key
+  secret: fake-secret`)
+
+	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if _, err := tmpFile.Write(config); err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	print := testutil.Printer("TestTokenRotateCert")
+
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"token", "rotate-cert", "--config", tmpFile.Name()}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
+
+	want := []string{"certificate successfully rotated"}
+
+	print.Check(t, want)
+}
+
+func TestInspectTokenFunc(t *testing.T) {
+	print := testutil.Printer("TestInspectTokenFunc")
+	rootArgs := &shared.RootArgs{}
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tk, err := generateJWT(privateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		token  token
+		in     io.Reader
+		errStr string
+	}{
+		{
+			token: token{
+				RootArgs: rootArgs,
+				file:     "fake",
+			},
+			in:     os.Stdin,
+			errStr: "opening file fake",
+		},
+		{
+			token: token{
+				RootArgs: rootArgs,
+			},
+			in:     strings.NewReader(""),
+			errStr: "parsing jwt token",
+		},
+		{
+			token: token{
+				RootArgs: rootArgs,
+			},
+			in:     strings.NewReader(tk),
+			errStr: "fetching certs",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		err := tc.token.inspectToken(tc.in, print.Printf)
+		if !testutil.ErrorContains(err, tc.errStr) {
+			t.Errorf("want opening file err, got %v", err)
+		}
+	}
+
 }
 
 func generateJWT(privateKey *rsa.PrivateKey) (string, error) {
