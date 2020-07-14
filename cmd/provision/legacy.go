@@ -87,7 +87,9 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 		if err != nil {
 			return errors.Wrapf(err, "writing file %s", calloutFile)
 		}
-		writer.WriteString(xml.Header)
+		if _, err := writer.WriteString(xml.Header); err != nil {
+			return errors.Wrapf(err, "writing %s to file %s", xml.Header, calloutFile)
+		}
 		encoder := xml.NewEncoder(writer)
 		encoder.Indent("", "  ")
 		err = encoder.Encode(callout)
@@ -158,12 +160,16 @@ func (p *provision) getOrCreateKVM(cred *keySecret, printf shared.FormatFn) erro
 func newHash() string {
 	// use crypto seed
 	var seed int64
-	binary.Read(rand.Reader, binary.BigEndian, &seed)
+	if err := binary.Read(rand.Reader, binary.BigEndian, &seed); err != nil {
+		return ""
+	}
 	rnd.Seed(seed)
 
 	t := time.Now()
 	h := sha256.New()
-	h.Write([]byte(t.String() + string(rnd.Int())))
+	if _, err := h.Write([]byte(t.String() + string(rnd.Int()))); err != nil {
+		return ""
+	}
 	str := hex.EncodeToString(h.Sum(nil))
 	return str
 }

@@ -52,9 +52,6 @@ const (
 	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
 	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
-	rotateURLFormat       = "%s/rotate"       // RemoteServiceProxyURL
-
-	remoteServiceAPIURLFormat = "https://apigee-runtime-%s-%s.%s:8443/remote-service" // org, env, namespace
 
 	fluentdInternalFormat = "apigee-udca-%s-%s.%s:20001" // org, env, namespace
 	defaultApigeeCAFile   = "/opt/apigee/tls/ca.crt"
@@ -68,8 +65,6 @@ type provision struct {
 	*shared.RootArgs
 	forceProxyInstall bool
 	virtualHosts      string
-	provisionKey      string
-	provisionSecret   string
 	rotate            int
 }
 

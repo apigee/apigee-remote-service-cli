@@ -37,11 +37,6 @@ const (
 	certsURLFormat         = "%s/certs"  // RemoteServiceProxyURL
 	rotateURLFormat        = "%s/rotate" // RemoteServiceProxyURL
 	clientCredentialsGrant = "client_credentials"
-	policySecretNameFormat = "%s-%s-policy-secret"
-	commonName             = "apigee-remote-service"
-	orgName                = "Google LLC"
-
-	secretKIDFormat = "kid=%s"
 )
 
 type token struct {
@@ -49,7 +44,6 @@ type token struct {
 	clientID     string
 	clientSecret string
 	file         string
-	namespace    string
 	truncate     int
 }
 
@@ -93,8 +87,12 @@ func cmdCreateToken(t *token, printf shared.FormatFn) *cobra.Command {
 	c.Flags().StringVarP(&t.clientID, "id", "i", "", "client id")
 	c.Flags().StringVarP(&t.clientSecret, "secret", "s", "", "client secret")
 
-	c.MarkFlagRequired("id")
-	c.MarkFlagRequired("secret")
+	if err := c.MarkFlagRequired("id"); err != nil {
+		return c
+	}
+	if err := c.MarkFlagRequired("secret"); err != nil {
+		return c
+	}
 
 	return c
 }
@@ -149,7 +147,9 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 				return err
 			}
 
-			t.rotateCert(printf)
+			if err := t.rotateCert(printf); err != nil {
+				return err
+			}
 			return nil
 		},
 	}
@@ -168,7 +168,9 @@ func (t *token) createToken(printf shared.FormatFn) (string, error) {
 		GrantType:    clientCredentialsGrant,
 	}
 	body := new(bytes.Buffer)
-	json.NewEncoder(body).Encode(tokenReq)
+	if err := json.NewEncoder(body).Encode(tokenReq); err != nil {
+		return "", errors.Wrap(err, "creating request body")
+	}
 
 	tokenURL := fmt.Sprintf(tokenURLFormat, t.RemoteServiceProxyURL)
 	req, err := http.NewRequest(http.MethodPost, tokenURL, body)

@@ -29,10 +29,8 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"reflect"
 
 	"github.com/bgentry/go-netrc/netrc"
-	"github.com/google/go-querystring/query"
 )
 
 const (
@@ -118,33 +116,6 @@ type ResponseErrorMessage struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 	Status  string `json:"status"`
-}
-
-func addOptions(s string, opt interface{}) (string, error) {
-	v := reflect.ValueOf(opt)
-
-	if v.Kind() == reflect.Ptr && v.IsNil() {
-		return s, nil
-	}
-
-	origURL, err := url.Parse(s)
-	if err != nil {
-		return s, err
-	}
-
-	origValues := origURL.Query()
-
-	newValues, err := query.Values(opt)
-	if err != nil {
-		return s, err
-	}
-
-	for k, v := range newValues {
-		origValues[k] = v
-	}
-
-	origURL.RawQuery = origValues.Encode()
-	return origURL.String(), nil
 }
 
 // EdgeClientOptions sets options for accessing edge APIs
@@ -313,7 +284,7 @@ func (c *EdgeClient) newRequest(method, urlStr string, body interface{}, include
 
 	var req *http.Request
 	if body != nil {
-		switch body.(type) {
+		switch body := body.(type) {
 		default:
 			ctype = appJSON
 			buf := new(bytes.Buffer)
@@ -324,7 +295,7 @@ func (c *EdgeClient) newRequest(method, urlStr string, body interface{}, include
 			req, err = http.NewRequest(method, u.String(), buf)
 		case io.Reader:
 			ctype = octetStream
-			req, err = http.NewRequest(method, u.String(), body.(io.Reader))
+			req, err = http.NewRequest(method, u.String(), body)
 		}
 	} else {
 		req, err = http.NewRequest(method, u.String(), nil)

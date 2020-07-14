@@ -76,7 +76,9 @@ func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 		Args:  cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
-			b.cmdList(printf)
+			if err := b.cmdList(printf); err != nil {
+				return
+			}
 		},
 	}
 

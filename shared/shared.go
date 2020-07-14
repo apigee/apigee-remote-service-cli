@@ -232,18 +232,13 @@ func (w *formatFnWriter) Write(p []byte) (n int, err error) {
 	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(Errorf).Pointer() {
 		fmt.Fprintf(os.Stderr, "%s", p)
 	}
-	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(NoPrintf).Pointer() {
-	}
+	// if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(NoPrintf).Pointer() {
+	// }
 	tp := testutil.TestPrint{}
 	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(tp.Printf).Pointer() {
 		w.formatFn("%s", p)
 	}
 	return len(p), nil
-}
-
-type overrideConfig struct {
-	Org  string        `yaml:"org"`
-	Envs []OverrideEnv `yaml:"envs"`
 }
 
 // OverrideEnv is subconfig of overrideConfig
@@ -289,15 +284,6 @@ func (r *RootArgs) loadConfig() error {
 	}
 
 	return nil
-}
-
-func loadEnv(r *RootArgs, env OverrideEnv) {
-	if r.Env == "" {
-		r.Env = env.Name
-	}
-	if r.RuntimeBase == "" {
-		r.RuntimeBase = fmt.Sprintf("https://%s", env.HostAlias)
-	}
 }
 
 // PrintMissingFlags will aggregate and print an error for the passed set of flags
