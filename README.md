@@ -1,4 +1,4 @@
-[![<CirclCI>](https://circleci.com/gh/apigee/apigee-remote-service-cli.svg?style=svg)](https://circleci.com/gh/apigee/apigee-remote-service-cli)
+[![Build](https://github.com/apigee/apigee-remote-service-cli/workflows/Build/badge.svg)](https://github.com/apigee/apigee-remote-service-cli/workflows/Build/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/apigee/apigee-remote-service-cli)](https://goreportcard.com/report/github.com/apigee/apigee-remote-service-cli)
 [![codecov.io](https://codecov.io/github/apigee/apigee-remote-service-cli/coverage.svg?branch=master)](https://codecov.io/github/apigee/apigee-remote-service-cli?branch=master)
 
