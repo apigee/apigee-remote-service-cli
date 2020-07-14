@@ -38,18 +38,20 @@ const (
 // CreateNewKey returns keyID, private key, jwks, error
 func (r *RootArgs) CreateNewKey() (keyID string, privateKey *rsa.PrivateKey, jwks *jwk.Set, err error) {
 	keyID = time.Now().Format(time.RFC3339)
-	privateKey, err = rsa.GenerateKey(rand.Reader, certKeyLength)
-	if err != nil {
+	if privateKey, err = rsa.GenerateKey(rand.Reader, certKeyLength); err != nil {
 		return
 	}
 
 	var jwkKey jwk.Key
-	jwkKey, err = jwk.New(&privateKey.PublicKey)
-	if err != nil {
+	if jwkKey, err = jwk.New(&privateKey.PublicKey); err != nil {
 		return
 	}
-	jwkKey.Set(jwk.KeyIDKey, keyID)
-	jwkKey.Set(jwk.AlgorithmKey, jwa.RS256)
+	if err = jwkKey.Set(jwk.KeyIDKey, keyID); err != nil {
+		return
+	}
+	if err = jwkKey.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
+		return
+	}
 
 	jwks = &jwk.Set{
 		Keys: []jwk.Key{jwkKey},

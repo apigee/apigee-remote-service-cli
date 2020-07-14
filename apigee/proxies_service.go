@@ -222,7 +222,7 @@ func zipDirectory(source string, target string, filter func(string) bool) error 
 		baseDir = filepath.Base(source)
 	}
 
-	filepath.Walk(source, func(rootPath string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(source, func(rootPath string, info os.FileInfo, err error) error {
 		if filter == nil || filter(rootPath) {
 			if err != nil {
 				return err
@@ -266,9 +266,11 @@ func zipDirectory(source string, target string, filter func(string) bool) error 
 			}
 		}
 		return err
-	})
+	}); err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 // Import an API proxy into an organization, creating a new API Proxy revision.
@@ -303,7 +305,7 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 		return nil, nil, errors.New("source must be a zipfile")
 	}
 
-	info, err = os.Stat(zipfileName)
+	_, err = os.Stat(zipfileName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -432,7 +434,9 @@ func (s *ProxiesServiceOp) Undeploy(proxyName, env string, rev Revision) (*Proxy
 		q.Add("env", env)
 		origURL.RawQuery = q.Encode()
 		urlPath = origURL.String()
-		req, err = s.client.NewRequestNoEnv("POST", urlPath, nil)
+		if req, err = s.client.NewRequestNoEnv("POST", urlPath, nil); err != nil {
+			return nil, nil, err
+		}
 	}
 	if err != nil {
 		return nil, nil, err

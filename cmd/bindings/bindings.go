@@ -75,8 +75,8 @@ func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 		Long:  "List Apigee Product to Remote Target bindings",
 		Args:  cobra.NoArgs,
 
-		Run: func(cmd *cobra.Command, _ []string) {
-			b.cmdList(printf)
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return b.cmdList(printf)
 		},
 	}
 

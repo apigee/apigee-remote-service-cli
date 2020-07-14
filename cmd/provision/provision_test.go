@@ -65,7 +65,9 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 	count := 0
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("{}"))
+		if _, err := w.Write([]byte("{}")); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
 		count++
 	}))
 
@@ -92,6 +94,9 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 	// try with InsecureSkipVerify
 	p.InsecureSkipVerify = true
 	client, err = p.createAuthorizedClient(p.createConfig(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := p.Resolve(false, false); err != nil {
 		t.Fatal(err)
 	}

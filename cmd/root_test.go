@@ -41,7 +41,9 @@ func TestVersion(t *testing.T) {
 			Version: "1.2.42",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(vs)
+		if err := json.NewEncoder(w).Encode(vs); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
 	}))
 	defer ts.Close()
 
