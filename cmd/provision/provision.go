@@ -52,9 +52,6 @@ const (
 	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
 	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
-	rotateURLFormat       = "%s/rotate"       // RemoteServiceProxyURL
-
-	remoteServiceAPIURLFormat = "https://apigee-runtime-%s-%s.%s:8443/remote-service" // org, env, namespace
 
 	fluentdInternalFormat = "apigee-udca-%s-%s.%s:20001" // org, env, namespace
 	defaultApigeeCAFile   = "/opt/apigee/tls/ca.crt"
@@ -68,8 +65,6 @@ type provision struct {
 	*shared.RootArgs
 	forceProxyInstall bool
 	virtualHosts      string
-	provisionKey      string
-	provisionSecret   string
 	rotate            int
 }
 
@@ -407,15 +402,21 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 			Bytes: x509.MarshalPKCS1PrivateKey(config.Tenant.PrivateKey)})
 
 		// create CRD for secret
-		kidProp := fmt.Sprintf(server.SecretKIDFormat, config.Tenant.PrivateKeyID)
 		jwksBytes, err := json.Marshal(config.Tenant.JWKS)
 		if err != nil {
 			return err
 		}
+
+		props := map[string]string{server.SecretPropsKIDKey: config.Tenant.PrivateKeyID}
+		propsBuf := new(bytes.Buffer)
+		if err := server.WriteProperties(propsBuf, props); err != nil {
+			return err
+		}
+
 		secretData := map[string]string{
 			server.SecretJKWSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
 			server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
-			server.SecretKIDKey:     base64.StdEncoding.EncodeToString([]byte(kidProp)),
+			server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 		}
 
 		secretCRD := server.SecretCRD{

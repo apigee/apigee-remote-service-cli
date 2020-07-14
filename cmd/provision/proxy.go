@@ -206,7 +206,9 @@ func unzipFile(src, dest string) error {
 	}
 	defer r.Close()
 
-	os.MkdirAll(dest, 0755)
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return err
+	}
 
 	extract := func(f *zip.File) error {
 		rc, err := f.Open()
@@ -218,9 +220,13 @@ func unzipFile(src, dest string) error {
 		path := filepath.Join(dest, f.Name)
 
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(path, f.Mode())
+			if err := os.MkdirAll(path, f.Mode()); err != nil {
+				return err
+			}
 		} else {
-			os.MkdirAll(filepath.Dir(path), f.Mode())
+			if err := os.MkdirAll(filepath.Dir(path), f.Mode()); err != nil {
+				return err
+			}
 			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
 				return err
@@ -266,7 +272,9 @@ func zipDir(source, file string) error {
 			zipFQName := filepath.Join(zipBase, file.Name())
 
 			if file.IsDir() {
-				addFiles(w, fqName, zipFQName)
+				if err := addFiles(w, fqName, zipFQName); err != nil {
+					return err
+				}
 				continue
 			}
 

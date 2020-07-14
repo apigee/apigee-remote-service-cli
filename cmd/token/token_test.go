@@ -42,7 +42,9 @@ func TestTokenCreate(t *testing.T) {
 			Token: "/token/",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Fatalf("error: %v", err)
+		}
 	}))
 	defer ts.Close()
 
@@ -72,8 +74,12 @@ func TestTokenInspect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
-	key.Set(jwk.KeyIDKey, "kid")
-	key.Set(jwk.AlgorithmKey, jwa.RS256)
+	if err := key.Set(jwk.KeyIDKey, "kid"); err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if err := key.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
+		t.Fatalf("error: %v", err)
+	}
 
 	jwksBuf, err := json.MarshalIndent(key, "", "")
 	if err != nil {
@@ -227,14 +233,30 @@ func TestInspectTokenFunc(t *testing.T) {
 func generateJWT(privateKey *rsa.PrivateKey) (string, error) {
 
 	token := jwt.New()
-	token.Set(jwt.AudienceKey, "remote-service-client")
-	token.Set(jwt.JwtIDKey, "/id/")
-	token.Set(jwt.IssuerKey, "https://org-env.apigee.net/remote-service/token")
-	token.Set("access_token", "/token/")
-	token.Set("client_id", "/clientid/")
-	token.Set("application_name", "/appname/")
-	token.Set("scope", "scope1 scope2")
-	token.Set("api_product_list", []string{"/product/"})
+	if err := token.Set(jwt.AudienceKey, "remote-service-client"); err != nil {
+		return "", err
+	}
+	if err := token.Set(jwt.JwtIDKey, "/id/"); err != nil {
+		return "", err
+	}
+	if err := token.Set(jwt.IssuerKey, "https://org-env.apigee.net/remote-service/token"); err != nil {
+		return "", err
+	}
+	if err := token.Set("access_token", "/token/"); err != nil {
+		return "", err
+	}
+	if err := token.Set("client_id", "/clientid/"); err != nil {
+		return "", err
+	}
+	if err := token.Set("application_name", "/appname/"); err != nil {
+		return "", err
+	}
+	if err := token.Set("scope", "scope1 scope2"); err != nil {
+		return "", err
+	}
+	if err := token.Set("api_product_list", []string{"/product/"}); err != nil {
+		return "", err
+	}
 	payload, err := jwt.Sign(token, jwa.RS256, privateKey)
 
 	return string(payload), err
