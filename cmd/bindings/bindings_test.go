@@ -37,7 +37,7 @@ func TestBindingsParams(t *testing.T) {
 func TestBindingListOPDK(t *testing.T) {
 
 	print := testutil.Printer("TestBindingListOPDK")
-	ts := productTestServer()
+	ts := productTestServer(t)
 	defer ts.Close()
 
 	var err error
@@ -76,7 +76,7 @@ func TestBindingListOPDK(t *testing.T) {
 func TestBindingAddOPDK(t *testing.T) {
 
 	print := testutil.Printer("TestBindingAddOPDK")
-	ts := productTestServer()
+	ts := productTestServer(t)
 	defer ts.Close()
 
 	var err error
@@ -111,7 +111,7 @@ func TestBindingAddOPDK(t *testing.T) {
 func TestBindingRemoveOPDK(t *testing.T) {
 
 	print := testutil.Printer("TestBindingRemoveOPDK")
-	ts := productTestServer()
+	ts := productTestServer(t)
 	defer ts.Close()
 
 	var err error
@@ -143,7 +143,7 @@ func TestBindingRemoveOPDK(t *testing.T) {
 	print.Check(t, wants)
 }
 
-func productTestServer() *httptest.Server {
+func productTestServer(t *testing.T) *httptest.Server {
 
 	res := product.APIResponse{
 		APIProducts: []product.APIProduct{
@@ -165,7 +165,7 @@ func productTestServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(res); err != nil {
-			return
+			t.Fatalf("want no error %v", err)
 		}
 	}))
 }
