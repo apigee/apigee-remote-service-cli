@@ -87,14 +87,8 @@ func cmdCreateToken(t *token, printf shared.FormatFn) *cobra.Command {
 	c.Flags().StringVarP(&t.clientID, "id", "i", "", "client id")
 	c.Flags().StringVarP(&t.clientSecret, "secret", "s", "", "client secret")
 
-	if err := c.MarkFlagRequired("id"); err != nil {
-		printf("error marking flags %v", err)
-		return c
-	}
-	if err := c.MarkFlagRequired("secret"); err != nil {
-		printf("error marking flags %v", err)
-		return c
-	}
+	_ = c.MarkFlagRequired("id")
+	_ = c.MarkFlagRequired("secret")
 
 	return c
 }
