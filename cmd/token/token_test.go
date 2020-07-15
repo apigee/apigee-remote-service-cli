@@ -18,6 +18,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -29,11 +30,45 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
-	"github.com/jarcoal/httpmock"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/spf13/cobra"
 )
+
+func remoteServiceHandler(t *testing.T) http.Handler {
+	_, key := generateJWK(t)
+
+	m := http.NewServeMux()
+	m.HandleFunc("/remote-service/certs", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"keys": []interface{}{
+				key,
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	m.HandleFunc("/remote-service/rotate", func(w http.ResponseWriter, r *http.Request) {
+		jsonBody := make(map[string]interface{})
+		if err := json.NewDecoder(r.Body).Decode(&jsonBody); err != nil {
+			t.Fatalf("error in rotate request %v", err)
+		}
+		if _, ok := jsonBody["private_key"]; !ok {
+			t.Error("rotate request has no private key")
+		}
+		if _, ok := jsonBody["jwks"]; !ok {
+			t.Error("rotate request has no jwks")
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// This matches every other route - we should not hit this one.
+		t.Fatalf("Unknown route %s hit", r.URL.Path)
+	})
+	return m
+}
 
 func TestTokenCreate(t *testing.T) {
 
@@ -65,21 +100,7 @@ func TestTokenCreate(t *testing.T) {
 }
 
 func TestTokenInspect(t *testing.T) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	key, err := jwk.New(&privateKey.PublicKey)
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-	if err := key.Set(jwk.KeyIDKey, "kid"); err != nil {
-		t.Fatalf("error: %v", err)
-	}
-	if err := key.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
-		t.Fatalf("error: %v", err)
-	}
+	privateKey, key := generateJWK(t)
 
 	jwksBuf, err := json.MarshalIndent(key, "", "")
 	if err != nil {
@@ -96,7 +117,7 @@ func TestTokenInspect(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	print := testutil.Printer("TestCreateToken")
+	print := testutil.Printer("TestInspectToken")
 
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"token", "inspect", "--runtime", ts.URL, "-v"}
@@ -135,14 +156,8 @@ func TestTokenInspect(t *testing.T) {
 }
 
 func TestTokenRotateCert(t *testing.T) {
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "https://org-env.apigee.net/remote-service/certs",
-		httpmock.NewStringResponder(200, `{"keys":[{"alg":"RS256","e":"AQAB","kid":"2020-01-01T00:00:00-00:00","kty":"RSA","n":"old-fake-key"}]}`))
-
-	httpmock.RegisterResponder("POST", "https://org-env.apigee.net/remote-service/rotate",
-		httpmock.NewStringResponder(200, ""))
+	ts := httptest.NewServer(remoteServiceHandler(t))
+	defer ts.Close()
 
 	config := []byte(`tenant:
   internal_api: https://istioservices.apigee.net/edgemicro
@@ -166,7 +181,7 @@ func TestTokenRotateCert(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"token", "rotate-cert", "--config", tmpFile.Name()}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -178,6 +193,9 @@ func TestTokenRotateCert(t *testing.T) {
 }
 
 func TestInspectTokenFunc(t *testing.T) {
+	ts := httptest.NewServer(remoteServiceHandler(t))
+	defer ts.Close()
+
 	print := testutil.Printer("TestInspectTokenFunc")
 	rootArgs := &shared.RootArgs{}
 
@@ -218,6 +236,15 @@ func TestInspectTokenFunc(t *testing.T) {
 			in:     strings.NewReader(tk),
 			errStr: "fetching certs",
 		},
+		{
+			token: token{
+				RootArgs: &shared.RootArgs{
+					RemoteServiceProxyURL: fmt.Sprintf("%s/remote-service", ts.URL),
+				},
+			},
+			in:     strings.NewReader(tk),
+			errStr: "verifying cert",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -228,6 +255,25 @@ func TestInspectTokenFunc(t *testing.T) {
 		}
 	}
 
+}
+
+func testCmd(rootArgs *shared.RootArgs, printf shared.FormatFn, url string) *cobra.Command {
+	c := Cmd(rootArgs, printf)
+
+	defaultPersistentPreRun := c.PersistentPreRunE
+	c.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if err := defaultPersistentPreRun(cmd, args); err != nil {
+			return err
+		}
+		setTestUrls(rootArgs, url)
+		return nil
+	}
+
+	return c
+}
+
+func setTestUrls(rootArgs *shared.RootArgs, url string) {
+	rootArgs.RemoteServiceProxyURL = fmt.Sprintf("%s/remote-service", url)
 }
 
 func generateJWT(privateKey *rsa.PrivateKey) (string, error) {
@@ -260,4 +306,24 @@ func generateJWT(privateKey *rsa.PrivateKey) (string, error) {
 	payload, err := jwt.Sign(token, jwa.RS256, privateKey)
 
 	return string(payload), err
+}
+
+func generateJWK(t *testing.T) (*rsa.PrivateKey, jwk.Key) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	key, err := jwk.New(&privateKey.PublicKey)
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if err := key.Set(jwk.KeyIDKey, "kid"); err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if err := key.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	return privateKey, key
 }
