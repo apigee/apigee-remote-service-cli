@@ -101,29 +101,106 @@ func setTestUrls(rootArgs *shared.RootArgs, url string) {
 	rootArgs.ApigeeClient, _ = apigee.NewEdgeClient(rootArgs.ClientOpts)
 }
 
-func goodHandler(t *testing.T) http.Handler {
+func handler(t *testing.T) http.Handler {
 	m := http.NewServeMux()
-	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
-		// w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-	})
-	m.HandleFunc("/v1/organizations/", func(w http.ResponseWriter, r *http.Request) {
-		t.Log(r.URL.Path)
+	m.HandleFunc("/v1/organizations/gcp/environments/test/apis/remote-service/deployments", func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.URL.Path)
+		res := apigee.GCPDeployments{
+			Deployments: []apigee.GCPDeployment{
+				{
+					Environment: "test",
+					Name:        "remote-service",
+					Revision:    "3",
+				},
+				{
+					Environment: "test",
+					Name:        "remote-service",
+					Revision:    "2",
+				},
+				{
+					Environment: "test",
+					Name:        "remote-service",
+					Revision:    "1",
+				},
+			},
+		}
 		switch r.Method {
 		default:
 			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
 		case http.MethodGet:
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("{}"))
-		case http.MethodPost:
-			if strings.Contains(r.URL.Path, "apiproducts") {
-				ap := apiProduct{}
-				if err := json.NewDecoder(r.Body).Decode(&ap); err != nil {
-					t.Fatalf("incorrect apiproduct %v", err)
-				}
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
 			}
-			w.WriteHeader(http.StatusCreated)
-			_, _ = w.Write([]byte("{}"))
+		}
+	})
+	m.HandleFunc("/v1/organizations/gcp/apis/remote-service", func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.URL.Path)
+		res := apigee.Proxy{
+			Name:      "remote-service",
+			Revisions: []apigee.Revision{3, 2, 1},
+			MetaData: apigee.ProxyMetadata{
+				LastModifiedBy: "gcp",
+				CreatedBy:      "gcp",
+			},
+		}
+		switch r.Method {
+		default:
+			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
+			}
+		}
+	})
+	m.HandleFunc("/v1/organizations/saas/environments/test/apis/remote-service/deployments", func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.URL.Path)
+		res := apigee.EnvironmentDeployment{
+			Name: "remote-service",
+			Revision: []apigee.RevisionDeployment{
+				{
+					Number: 3,
+					State:  "deployed",
+				},
+				{
+					Number: 2,
+					State:  "undeployed",
+				},
+				{
+					Number: 1,
+					State:  "undeployed",
+				},
+			},
+		}
+		switch r.Method {
+		default:
+			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
+			}
+		}
+	})
+	m.HandleFunc("/v1/organizations/saas/apis/remote-service", func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.URL.Path)
+		res := apigee.Proxy{
+			Name:      "remote-service",
+			Revisions: []apigee.Revision{3, 2, 1},
+			MetaData: apigee.ProxyMetadata{
+				LastModifiedBy: "gcp",
+				CreatedBy:      "gcp",
+			},
+		}
+		switch r.Method {
+		default:
+			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
+			}
 		}
 	})
 	m.HandleFunc("/credential/organization/", func(w http.ResponseWriter, r *http.Request) {
@@ -145,6 +222,34 @@ func goodHandler(t *testing.T) http.Handler {
 			w.WriteHeader(http.StatusOK)
 		}
 	})
+	// catch-all handler for remote service proxy verification
+	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	// catch-all handler for proxy management
+	m.HandleFunc("/v1/organizations/", func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.URL.Path)
+		switch r.Method {
+		default:
+			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
+		case http.MethodGet:
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("{}"))
+		case http.MethodPost:
+			if strings.Contains(r.URL.Path, "apiproducts") {
+				ap := apiProduct{}
+				if err := json.NewDecoder(r.Body).Decode(&ap); err != nil {
+					t.Fatalf("incorrect apiproduct %v", err)
+				}
+				if strings.Contains(r.URL.Path, "notgood") {
+					w.WriteHeader(http.StatusConflict)
+				}
+			} else {
+				w.WriteHeader(http.StatusCreated)
+				_, _ = w.Write([]byte("{}"))
+			}
+		}
+	})
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// This matches every other route - we should not hit this one.
 		t.Fatalf("Unknown route %s hit", r.URL.Path)
@@ -153,7 +258,7 @@ func goodHandler(t *testing.T) http.Handler {
 }
 
 func TestProvisionLegacySaaS(t *testing.T) {
-	ts := httptest.NewServer(goodHandler(t))
+	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
 	print := testutil.Printer("TestProvisionLegacySaaS")
@@ -166,33 +271,108 @@ func TestProvisionLegacySaaS(t *testing.T) {
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
 	}
+
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"provision", "-o", "saas", "-e", "test", "-u", "me", "-p", "password", "-f", "--legacy"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
+
+	want := []string{
+		"# Configuration for apigee-remote-service-envoy (platform: SaaS)",
+		"# generated by apigee-remote-service-cli provision on",
+		`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apigee-remote-service-envoy
+  namespace: apigee
+data:
+  config.yaml:`,
+		"",
+		"",
+		"",
+	}
+
+	print.CheckPrefix(t, want)
 }
 
 func TestProvisionOPDK(t *testing.T) {
-	ts := httptest.NewServer(goodHandler(t))
+	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
 	print := testutil.Printer("TestProvisionHybrid")
 
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"provision", "-o", "hi", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
+	flags := []string{"provision", "-o", "opdk", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
 	}
+
+	// product already exist
+	flags = []string{"provision", "-o", "notgood", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
+
+	want := []string{
+		"# Configuration for apigee-remote-service-envoy (platform: OPDK)",
+		"# generated by apigee-remote-service-cli provision on",
+		`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apigee-remote-service-envoy
+  namespace: ns
+data:
+  config.yaml:`,
+		"",
+		"",
+		"",
+	}
+
+	print.CheckPrefix(t, want)
 }
 
 func TestProvisionHybrid(t *testing.T) {
-	ts := httptest.NewServer(goodHandler(t))
+	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
 	print := testutil.Printer("TestProvisionHybrid")
 
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"provision", "-o", "hi", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "-v"}
+	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
+
+	want := []string{
+		"# Configuration for apigee-remote-service-envoy (platform: GCP)",
+		"# generated by apigee-remote-service-cli provision on",
+		`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apigee-remote-service-envoy
+  namespace: ns
+data:
+  config.yaml:`,
+	}
+
+	print.CheckPrefix(t, want)
+
+	// force replacing existing proxies
+	flags = []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "-f", "-v"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	if err := rootCmd.Execute(); err != nil {

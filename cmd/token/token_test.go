@@ -198,9 +198,6 @@ func TestTokenRotateCert(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
-	if err == nil {
-		t.Error("want error but got none")
-	}
 	testutil.ErrorContains(t, err, "no such host")
 
 	// a failing command for trying on hybrid
@@ -210,9 +207,6 @@ func TestTokenRotateCert(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
-	if err == nil {
-		t.Fatal("want error but got none")
-	}
 	testutil.ErrorContains(t, err, "only valid for legacy or opdk")
 
 	// a failing command for trying on hybrid
@@ -221,9 +215,6 @@ func TestTokenRotateCert(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	err = rootCmd.Execute()
-	if err == nil {
-		t.Error("want error but got none")
-	}
 	testutil.ErrorContains(t, err, "required flag(s)")
 }
 
