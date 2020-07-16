@@ -27,6 +27,6 @@ func ErrorContains(t *testing.T, out error, want string) {
 		}
 	}
 	if !strings.Contains(out.Error(), want) {
-		t.Errorf("got %v want %s", out, want)
+		t.Errorf("want %s, got %v ", want, out)
 	}
 }

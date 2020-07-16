@@ -227,7 +227,7 @@ func TestTokenRotateCert(t *testing.T) {
 	testutil.ErrorContains(t, err, "required flag(s)")
 }
 
-func TestInspectTokenFunc(t *testing.T) {
+func TestInspectTokenErrors(t *testing.T) {
 	ts := httptest.NewServer(remoteServiceHandler(t))
 	defer ts.Close()
 
