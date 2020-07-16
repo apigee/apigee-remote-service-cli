@@ -185,7 +185,7 @@ func TestTokenRotateCert(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	if err := rootCmd.Execute(); err != nil {
-		t.Fatalf("want no error: %v", err)
+		t.Errorf("want no error: %v", err)
 	}
 
 	want := []string{"certificate successfully rotated"}
@@ -193,17 +193,15 @@ func TestTokenRotateCert(t *testing.T) {
 	print.Check(t, want)
 
 	// a failing command for invalid host
-	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test"}
+	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test", "--legacy"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
 	if err == nil {
-		t.Fatal("want error but got none")
+		t.Error("want error but got none")
 	}
-	if !testutil.ErrorContains(err, "no such host") {
-		t.Fatalf("want no such host error, got %v", err)
-	}
+	testutil.ErrorContains(t, err, "no such host")
 
 	// a failing command for trying on hybrid
 	rootArgs = &shared.RootArgs{}
@@ -215,9 +213,18 @@ func TestTokenRotateCert(t *testing.T) {
 	if err == nil {
 		t.Fatal("want error but got none")
 	}
-	if !testutil.ErrorContains(err, "only valid for legacy or opdk") {
-		t.Fatalf("want only valid for legacy or opdk error, got %v", err)
+	testutil.ErrorContains(t, err, "only valid for legacy or opdk")
+
+	// a failing command for trying on hybrid
+	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test", "--legacy"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err = rootCmd.Execute()
+	if err == nil {
+		t.Error("want error but got none")
 	}
+	testutil.ErrorContains(t, err, "required flag(s)")
 }
 
 func TestInspectTokenFunc(t *testing.T) {
@@ -278,9 +285,7 @@ func TestInspectTokenFunc(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		err := tc.token.inspectToken(tc.in, print.Printf)
-		if !testutil.ErrorContains(err, tc.errStr) {
-			t.Errorf("want opening file err, got %v", err)
-		}
+		testutil.ErrorContains(t, err, tc.errStr)
 	}
 
 }

@@ -60,6 +60,11 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		},
 	}
 
+	c.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "", false,
+		"Apigee SaaS (sets management and runtime URL)")
+	c.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "", false,
+		"Apigee opdk")
+
 	c.AddCommand(cmdCreateToken(t, printf))
 	c.AddCommand(cmdInspectToken(t, printf))
 	c.AddCommand(cmdRotateCert(t, printf))

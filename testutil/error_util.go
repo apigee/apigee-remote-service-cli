@@ -14,15 +14,19 @@
 
 package testutil
 
-import "strings"
+import (
+	"strings"
+	"testing"
+)
 
 // ErrorContains checks if the error string contains the wanted pattern
-func ErrorContains(out error, want string) bool {
+func ErrorContains(t *testing.T, out error, want string) {
 	if out == nil {
-		return want == ""
+		if want != "" {
+			t.Errorf("got no error want %s", want)
+		}
 	}
-	if want == "" {
-		return false
+	if !strings.Contains(out.Error(), want) {
+		t.Errorf("got %v want %s", out, want)
 	}
-	return strings.Contains(out.Error(), want)
 }
