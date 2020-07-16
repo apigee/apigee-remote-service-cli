@@ -162,8 +162,8 @@ func TestTokenRotateCert(t *testing.T) {
 	config := []byte(`tenant:
   internal_api: https://istioservices.apigee.net/edgemicro
   remote_service_api: https://org-env.apigee.net/remote-service
-  org_name: org
-  env_name: env
+  org_name: hi
+  env_name: test
   key: fake-key
   secret: fake-secret`)
 
@@ -178,6 +178,7 @@ func TestTokenRotateCert(t *testing.T) {
 
 	print := testutil.Printer("TestTokenRotateCert")
 
+	// a good command
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"token", "rotate-cert", "--config", tmpFile.Name()}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
@@ -190,6 +191,33 @@ func TestTokenRotateCert(t *testing.T) {
 	want := []string{"certificate successfully rotated"}
 
 	print.Check(t, want)
+
+	// a failing command for invalid host
+	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	if err == nil {
+		t.Fatal("want error but got none")
+	}
+	if !testutil.ErrorContains(err, "no such host") {
+		t.Fatalf("want no such host error, got %v", err)
+	}
+
+	// a failing command for trying on hybrid
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test", "-r", ts.URL}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	if err == nil {
+		t.Fatal("want error but got none")
+	}
+	if !testutil.ErrorContains(err, "only valid for legacy or opdk") {
+		t.Fatalf("want only valid for legacy or opdk error, got %v", err)
+	}
 }
 
 func TestInspectTokenFunc(t *testing.T) {

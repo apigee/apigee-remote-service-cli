@@ -124,7 +124,7 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 
 			if t.IsGCPManaged {
-				return fmt.Errorf("only valid for legacy or hybrid, use create-secret for hybrid")
+				return fmt.Errorf("only valid for legacy or opdk, use create-secret for hybrid")
 			}
 
 			if t.ServerConfig != nil {
