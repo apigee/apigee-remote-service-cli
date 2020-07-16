@@ -16,6 +16,7 @@ package testutil
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -52,6 +53,26 @@ func (tp *TestPrint) Check(t *testing.T, want []string) {
 		w := want[i]
 		if w != got {
 			t.Errorf("%s want[%d]:\n'%s', got: \n'%s'", tp.Name, i, w, got)
+		}
+	}
+
+	tp.Prints = nil
+}
+
+// Check is for checking test output
+func (tp *TestPrint) CheckPrefix(t *testing.T, want []string) {
+	if want == nil {
+		want = []string{}
+	}
+
+	if len(want) != len(tp.Prints) {
+		t.Errorf("%s want %d prints, got %d: %v", tp.Name, len(want), len(tp.Prints), tp.Prints)
+	}
+
+	for i, got := range tp.Prints {
+		w := want[i]
+		if !strings.HasPrefix(got, w) {
+			t.Errorf("%s want[%d] to start with:\n'%s', got: \n'%s'", tp.Name, i, w, got)
 		}
 	}
 

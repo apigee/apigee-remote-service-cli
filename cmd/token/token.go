@@ -60,6 +60,11 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		},
 	}
 
+	c.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "", false,
+		"Apigee SaaS (sets management and runtime URL)")
+	c.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "", false,
+		"Apigee opdk")
+
 	c.AddCommand(cmdCreateToken(t, printf))
 	c.AddCommand(cmdInspectToken(t, printf))
 	c.AddCommand(cmdRotateCert(t, printf))
@@ -124,7 +129,7 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 
 			if t.IsGCPManaged {
-				return fmt.Errorf("only valid for legacy or hybrid, use create-secret for hybrid")
+				return fmt.Errorf("only valid for legacy or opdk, use create-secret for hybrid")
 			}
 
 			if t.ServerConfig != nil {
