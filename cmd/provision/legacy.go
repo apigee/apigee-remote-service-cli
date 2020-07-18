@@ -201,13 +201,13 @@ func (p *provision) createLegacyCredential(printf shared.FormatFn) (*keySecret, 
 		return nil, err
 	}
 
-	resp, err := p.ApigeeClient.Do(req, nil)
+	_, err = p.ApigeeClient.Do(req, nil)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf("creating credential, status: %d", resp.StatusCode)
-	}
+	// if resp.StatusCode > 299 {
+	// 	return nil, fmt.Errorf("creating credential, status: %d", resp.StatusCode)
+	// }
 	printf("credential created")
 	return cred, nil
 }
@@ -233,13 +233,13 @@ func (p *provision) verifyInternalProxy(client *http.Client, printf shared.Forma
 		q.Add("encrypt", "true")
 		req.URL.RawQuery = q.Encode()
 	}
-	if err != nil {
+	if err == nil {
 		res, err = client.Do(req)
 		if res != nil {
 			defer res.Body.Close()
 		}
 	}
-	if err != nil {
+	if res.StatusCode > 299 || err != nil {
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
 

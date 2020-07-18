@@ -226,6 +226,23 @@ func handler(t *testing.T) http.Handler {
 			w.WriteHeader(http.StatusOK)
 		}
 	})
+	// internal proxy verification
+	m.HandleFunc("/analytics/", func(w http.ResponseWriter, r *http.Request) {
+		t.Log(r.URL.Path)
+		if strings.Contains(r.URL.Path, "badinternal") {
+			http.Error(w, "Not Found", http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	})
+	m.HandleFunc("/axpublisher/", func(w http.ResponseWriter, r *http.Request) {
+		t.Log(r.URL.Path)
+		if strings.Contains(r.URL.Path, "badinternal") {
+			http.Error(w, "Not Found", http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	})
 	// catch-all handler for remote service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -257,6 +274,19 @@ func handler(t *testing.T) http.Handler {
 				} else if strings.Contains(r.URL.Path, "nokvm") {
 					w.WriteHeader(http.StatusForbidden)
 				} else if strings.Contains(r.URL.Path, "badkvm") {
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte("{}"))
+				} else {
+					w.WriteHeader(http.StatusCreated)
+					_, _ = w.Write([]byte("{}"))
+				}
+			} else if strings.Contains(r.URL.Path, "caches") {
+				if strings.Contains(r.URL.Path, "conflictcache") {
+					w.WriteHeader(http.StatusConflict)
+					_, _ = w.Write([]byte("{}"))
+				} else if strings.Contains(r.URL.Path, "nocache") {
+					w.WriteHeader(http.StatusForbidden)
+				} else if strings.Contains(r.URL.Path, "badcache") {
 					w.WriteHeader(http.StatusOK)
 					_, _ = w.Write([]byte("{}"))
 				} else {
@@ -391,7 +421,7 @@ data:
 	testutil.ErrorContains(t, err, "--token is required for hybrid")
 }
 
-func TestAPIProduct(t *testing.T) {
+func TestAPIProductCreation(t *testing.T) {
 	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
@@ -430,11 +460,11 @@ data:
 	print.CheckPrefix(t, want)
 }
 
-func TestProvisionKVM(t *testing.T) {
+func TestKVMCreation(t *testing.T) {
 	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
-	print := testutil.Printer("TestProvisionKVM")
+	print := testutil.Printer("TestKVMCreation")
 
 	// error on failing in creating kvm
 	rootArgs := &shared.RootArgs{}
@@ -477,11 +507,44 @@ data:
 	print.CheckPrefix(t, want)
 }
 
-func TestProvisionCredentials(t *testing.T) {
+func TestCacheCreation(t *testing.T) {
 	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
-	print := testutil.Printer("TestProvisionCredentials")
+	print := testutil.Printer("TestCacheCreation")
+
+	// error on failing in creating caches
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"provision", "-o", "nocache", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err := rootCmd.Execute()
+	testutil.ErrorContains(t, err, "deploying internal proxy")
+
+	// unexpected status code on creating caches
+	flags = []string{"provision", "-o", "badcache", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "creating cache remote-service, status code: 200")
+
+	// caches already exist
+	flags = []string{"provision", "-o", "conflictcache", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
+}
+
+func TestCredentialsCreation(t *testing.T) {
+	ts := httptest.NewServer(handler(t))
+	defer ts.Close()
+
+	print := testutil.Printer("TestCredentialsCreation")
 
 	// error on failing in creating credentials
 	rootArgs := &shared.RootArgs{}
@@ -491,4 +554,30 @@ func TestProvisionCredentials(t *testing.T) {
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "generating credential")
+}
+
+func TestInternalProxyVerification(t *testing.T) {
+	ts := httptest.NewServer(handler(t))
+	defer ts.Close()
+
+	print := testutil.Printer("TestInternalProxyVerification")
+
+	// error on failing in verifying for opdk
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"provision", "-o", "badinternal", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
+
+	// error on failing in verifying for legacy saas
+	flags = []string{"provision", "-o", "badinternal", "-e", "test", "-u", "me", "-p", "password", "--legacy"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
 }
