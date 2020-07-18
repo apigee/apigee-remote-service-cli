@@ -205,9 +205,6 @@ func (p *provision) createLegacyCredential(printf shared.FormatFn) (*keySecret, 
 	if err != nil {
 		return nil, err
 	}
-	// if resp.StatusCode > 299 {
-	// 	return nil, fmt.Errorf("creating credential, status: %d", resp.StatusCode)
-	// }
 	printf("credential created")
 	return cred, nil
 }
@@ -239,7 +236,7 @@ func (p *provision) verifyInternalProxy(client *http.Client, printf shared.Forma
 			defer res.Body.Close()
 		}
 	}
-	if res.StatusCode > 299 || err != nil {
+	if (res != nil && res.StatusCode > 299) || err != nil {
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
 
