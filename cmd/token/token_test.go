@@ -70,6 +70,40 @@ func remoteServiceHandler(t *testing.T) http.Handler {
 	return m
 }
 
+func badHandler(t *testing.T) http.Handler {
+	_, key := generateJWK(t)
+
+	m := http.NewServeMux()
+	m.HandleFunc("/remote-service/certs", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"keys": []interface{}{
+				key,
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	m.HandleFunc("/remote-service/rotate", func(w http.ResponseWriter, r *http.Request) {
+		jsonBody := make(map[string]interface{})
+		if err := json.NewDecoder(r.Body).Decode(&jsonBody); err != nil {
+			t.Fatalf("error in rotate request %v", err)
+		}
+		if _, ok := jsonBody["private_key"]; !ok {
+			t.Error("rotate request has no private key")
+		}
+		if _, ok := jsonBody["jwks"]; !ok {
+			t.Error("rotate request has no jwks")
+		}
+		w.WriteHeader(http.StatusUnauthorized)
+	})
+	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// This matches every other route - we should not hit this one.
+		t.Fatalf("Unknown route %s hit", r.URL.Path)
+	})
+	return m
+}
+
 func TestTokenCreate(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +131,13 @@ func TestTokenCreate(t *testing.T) {
 	want := []string{"/token/"}
 
 	print.Check(t, want)
+
+	flags = []string{"token", "create", "--runtime", "dummy", "--id", "/id/", "--secret", "/secret/"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err := rootCmd.Execute()
+	testutil.ErrorContains(t, err, "creating token: Post \"dummy/remote-service/token\": unsupported protocol scheme")
 }
 
 func TestTokenInspect(t *testing.T) {
@@ -153,6 +194,13 @@ func TestTokenInspect(t *testing.T) {
 	}
 
 	print.Check(t, want)
+
+	flags = []string{"token", "inspect", "--runtime", "dummy", "-v"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "inspecting token: parsing jwt token: invalid jws message")
 }
 
 func TestTokenRotateCert(t *testing.T) {
@@ -192,7 +240,18 @@ func TestTokenRotateCert(t *testing.T) {
 
 	print.Check(t, want)
 
-	// a failing command for invalid host
+	badServer := httptest.NewServer(badHandler(t))
+	defer badServer.Close()
+
+	// error on authentication error
+	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test", "--legacy"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, badServer.URL))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "authentication failed, check your key and secret")
+
+	// error for invalid host
 	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test", "--legacy"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
@@ -200,7 +259,7 @@ func TestTokenRotateCert(t *testing.T) {
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "no such host")
 
-	// a failing command for trying on hybrid
+	// error for trying on hybrid
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test", "-r", ts.URL}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
@@ -209,7 +268,7 @@ func TestTokenRotateCert(t *testing.T) {
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "only valid for legacy or opdk")
 
-	// a failing command for trying on hybrid
+	// error for missing flags
 	flags = []string{"token", "rotate-cert", "-o", "hi", "-e", "test", "--legacy"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
