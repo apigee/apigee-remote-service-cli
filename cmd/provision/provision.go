@@ -80,21 +80,13 @@ and installing a remote-service kvm with certificates, creating credentials, and
 to your organization and environment.`,
 		Args: cobra.NoArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			err := rootArgs.Resolve(false, true)
-			if err == nil {
-				missingFlagNames := []string{}
-				if p.IsGCPManaged {
-					if p.Token == "" {
-						missingFlagNames = append(missingFlagNames, "token")
-					}
-				} else {
-					if p.rotate > 0 {
-						return fmt.Errorf(`--rotate only valid for hybrid, use 'token rotate-cert' for others`)
-					}
-				}
-				err = p.PrintMissingFlags(missingFlagNames)
+			if err := rootArgs.Resolve(false, true); err != nil {
+				return err
 			}
-			return err
+			if !p.IsGCPManaged && p.rotate > 0 {
+				return fmt.Errorf(`--rotate only valid for hybrid, use 'token rotate-cert' for others`)
+			}
+			return nil
 		},
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
