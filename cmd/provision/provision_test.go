@@ -244,6 +244,17 @@ func handler(t *testing.T) http.Handler {
 		}
 	})
 	// catch-all handler for remote service proxy verification
+	m.HandleFunc("/remote-service/runtime-env", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		res := map[string]string{
+			"runtime-version": "v130",
+		}
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	// catch-all handler for remote service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})

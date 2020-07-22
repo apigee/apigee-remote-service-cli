@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<AssignMessage async="false" continueOnError="false" enabled="true" name="Send-Hybrid-Version">
-    <DisplayName>Send Version</DisplayName>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="Send-Runtime-Env">
+    <DisplayName>Send Runtime Env</DisplayName>
     <Properties/>
     <Set>
         <Headers>
             <Header name="Cache-Control">public, max-age=604800</Header>
             <Header name="Content-Type">application/json</Header>
         </Headers>
-        <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">{"hybrid-version":"@hybrid_version#"}</Payload>
+        <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">{"runtime-version":"@runtime_version#"}</Payload>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <AssignTo createNew="false" transport="http" type="request"/>
