@@ -188,7 +188,7 @@ func (p *provision) checkRuntimeVersion(config *server.Config, verbosef shared.F
 	}
 	version, ok := jsonBody["runtime-version"]
 	if !ok {
-		return err
+		return fmt.Errorf("response has no 'runtime-version' field")
 	}
 	if version > "v120" {
 		config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, envScopeEncodedName(p.Org, p.Env), p.Namespace)

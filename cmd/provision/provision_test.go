@@ -101,10 +101,9 @@ func setTestUrls(rootArgs *shared.RootArgs, url string) {
 	rootArgs.ApigeeClient, _ = apigee.NewEdgeClient(rootArgs.ClientOpts)
 }
 
-func handler(t *testing.T) http.Handler {
+func serveMux(t *testing.T) *http.ServeMux {
 	m := http.NewServeMux()
 	m.HandleFunc("/v1/organizations/gcp/environments/test/apis/remote-service/deployments", func(w http.ResponseWriter, r *http.Request) {
-		t.Logf("%s %s", r.Method, r.URL.Path)
 		res := apigee.GCPDeployments{
 			Deployments: []apigee.GCPDeployment{
 				{
@@ -135,7 +134,6 @@ func handler(t *testing.T) http.Handler {
 		}
 	})
 	m.HandleFunc("/v1/organizations/gcp/apis/remote-service", func(w http.ResponseWriter, r *http.Request) {
-		t.Logf("%s %s", r.Method, r.URL.Path)
 		res := apigee.Proxy{
 			Name:      "remote-service",
 			Revisions: []apigee.Revision{3, 2, 1},
@@ -155,7 +153,6 @@ func handler(t *testing.T) http.Handler {
 		}
 	})
 	m.HandleFunc("/v1/organizations/saas/environments/test/apis/remote-service/deployments", func(w http.ResponseWriter, r *http.Request) {
-		t.Logf("%s %s", r.Method, r.URL.Path)
 		res := apigee.EnvironmentDeployment{
 			Name: "remote-service",
 			Revision: []apigee.RevisionDeployment{
@@ -184,7 +181,6 @@ func handler(t *testing.T) http.Handler {
 		}
 	})
 	m.HandleFunc("/v1/organizations/saas/apis/remote-service", func(w http.ResponseWriter, r *http.Request) {
-		t.Logf("%s %s", r.Method, r.URL.Path)
 		res := apigee.Proxy{
 			Name:      "remote-service",
 			Revisions: []apigee.Revision{3, 2, 1},
@@ -204,7 +200,6 @@ func handler(t *testing.T) http.Handler {
 		}
 	})
 	m.HandleFunc("/credential/organization/", func(w http.ResponseWriter, r *http.Request) {
-		t.Log(r.URL.Path)
 		switch r.Method {
 		default:
 			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
@@ -228,7 +223,6 @@ func handler(t *testing.T) http.Handler {
 	})
 	// internal proxy verification
 	m.HandleFunc("/analytics/", func(w http.ResponseWriter, r *http.Request) {
-		t.Log(r.URL.Path)
 		if strings.Contains(r.URL.Path, "badinternal") {
 			http.Error(w, "Not Found", http.StatusNotFound)
 		} else {
@@ -236,7 +230,6 @@ func handler(t *testing.T) http.Handler {
 		}
 	})
 	m.HandleFunc("/axpublisher/", func(w http.ResponseWriter, r *http.Request) {
-		t.Log(r.URL.Path)
 		if strings.Contains(r.URL.Path, "badinternal") {
 			http.Error(w, "Not Found", http.StatusNotFound)
 		} else {
@@ -244,23 +237,20 @@ func handler(t *testing.T) http.Handler {
 		}
 	})
 	// catch-all handler for remote service proxy verification
-	m.HandleFunc("/remote-service/runtime-env", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		res := map[string]string{
-			"runtime-version": "v130",
-		}
-		if err := json.NewEncoder(w).Encode(res); err != nil {
-			t.Fatalf("want no error %v", err)
-		}
-		w.WriteHeader(http.StatusOK)
-	})
-	// catch-all handler for remote service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "runtime-env") {
+			w.Header().Set("Content-Type", "application/json")
+			res := map[string]string{
+				"runtime-version": "v130",
+			}
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
+			}
+		}
 		w.WriteHeader(http.StatusOK)
 	})
 	// catch-all handler for proxy management
 	m.HandleFunc("/v1/organizations/", func(w http.ResponseWriter, r *http.Request) {
-		t.Logf("%s %s", r.Method, r.URL.Path)
 		switch r.Method {
 		default:
 			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
@@ -315,6 +305,10 @@ func handler(t *testing.T) http.Handler {
 		t.Fatalf("Unknown route %s hit", r.URL.Path)
 	})
 	return m
+}
+
+func handler(t *testing.T) http.Handler {
+	return serveMux(t)
 }
 
 func TestProvisionLegacySaaS(t *testing.T) {
@@ -430,6 +424,59 @@ data:
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "--token is required for hybrid")
+}
+
+func TestInvalidRuntimeVersion(t *testing.T) {
+	badHandler := func(t *testing.T) http.Handler {
+		m := serveMux(t)
+		m.HandleFunc("/remote-service/runtime-env", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
+		return m
+	}
+
+	ts := httptest.NewServer(badHandler(t))
+	defer ts.Close()
+
+	print := testutil.Printer("TestRuntimeVersion")
+
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err := rootCmd.Execute()
+	testutil.ErrorContains(t, err, "fetching runtime version: invalid character")
+}
+
+func TestMissingRuntimeVersion(t *testing.T) {
+	badHandler := func(t *testing.T) http.Handler {
+		m := serveMux(t)
+		m.HandleFunc("/remote-service/runtime-env", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			res := map[string]string{
+				"useless-field": "hello",
+			}
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
+			}
+		})
+		return m
+	}
+
+	ts := httptest.NewServer(badHandler(t))
+	defer ts.Close()
+
+	print := testutil.Printer("TestRuntimeVersion")
+
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "-v"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err := rootCmd.Execute()
+	testutil.ErrorContains(t, err, "fetching runtime version: response has no 'runtime-version' field")
 }
 
 func TestAPIProductCreation(t *testing.T) {
