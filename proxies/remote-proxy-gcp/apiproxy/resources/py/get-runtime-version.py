@@ -2,4 +2,4 @@ import os
 
 version = os.environ.get("APIGEE_DPCOLOR", "unknown")
 
-flow.setVariable("hybrid_version", version)
+flow.setVariable("runtime_version", version)
