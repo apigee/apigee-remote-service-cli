@@ -18,7 +18,9 @@
         <Policy>Raise-Fault-Unknown-Request</Policy>
         <Policy>Verify-Internal-JWT</Policy>
         <Policy>Generate-Access-Token</Policy>
+        <Policy>Get-Hybrid-Version</Policy>
         <Policy>Extract-OAuth-Params</Policy>
+        <Policy>Send-Hybrid-Version</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-Response</Policy>
         <Policy>Set-JWT-Variables</Policy>
@@ -39,6 +41,7 @@
         <Resource>jsc://eval-quota-result.js</Resource>
         <Resource>jsc://set-response.js</Resource>
         <Resource>jsc://set-jwt-variables.js</Resource>
+        <Resource>py://get-hybrid-version.py</Resource>
     </Resources>
     <TargetServers></TargetServers>
     <TargetEndpoints></TargetEndpoints>
