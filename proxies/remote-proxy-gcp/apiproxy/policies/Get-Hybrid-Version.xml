@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Script timeLimit="20000" async="false" continueOnError="false" enabled="true" name="Get-Hybrid-Version">
+    <DisplayName>Get Hybrid Version</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <ResourceURL>py://get-hybrid-version.py</ResourceURL>
+</Script>

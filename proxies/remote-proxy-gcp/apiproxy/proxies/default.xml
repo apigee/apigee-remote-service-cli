@@ -161,6 +161,20 @@
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/quotas") and (request.verb = "POST")</Condition>
         </Flow>
+        <Flow name="Get Version">
+            <Description>Get the version of the hybrid runtime</Description>
+            <Request>
+                <Step>
+                    <Name>Get-Hybrid-Version</Name>
+                </Step>
+            </Request>
+            <Response>
+                <Step>
+                    <Name>Send-Hybrid-Version</Name>
+                </Step>
+            </Response>
+            <Condition>(proxy.pathsuffix MatchesPath "/version") and (request.verb = "GET")</Condition>
+        </Flow>
         <Flow name="Unknown Request">
             <Description>Unknown Request</Description>
             <Request>
