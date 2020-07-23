@@ -170,7 +170,7 @@ func (p *provision) checkRuntimeVersion(config *server.Config, verbosef shared.F
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/runtime-env", p.RemoteServiceProxyURL)
+	targetURL := fmt.Sprintf("%s/version", p.RemoteServiceProxyURL)
 	req, err := http.NewRequest(http.MethodGet, targetURL, nil)
 	if err != nil {
 		return err
@@ -186,11 +186,14 @@ func (p *provision) checkRuntimeVersion(config *server.Config, verbosef shared.F
 	if err := json.NewDecoder(res.Body).Decode(&jsonBody); err != nil {
 		return err
 	}
-	version, ok := jsonBody["runtime-version"]
+	version, ok := jsonBody["platform"]
 	if !ok {
-		return fmt.Errorf("response has no 'runtime-version' field")
+		return fmt.Errorf("response has no 'platform' field")
 	}
-	if version > "v120" {
+	if version == "unknown" {
+		return fmt.Errorf("runtime version unknown")
+	}
+	if version >= "1.3.0" {
 		config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, envScopeEncodedName(p.Org, p.Env), p.Namespace)
 		verbosef("UDCA endpoint encoded")
 	}

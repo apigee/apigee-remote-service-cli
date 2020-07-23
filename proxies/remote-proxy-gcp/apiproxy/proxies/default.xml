@@ -131,7 +131,11 @@
         </Flow>
         <Flow name="Get Version">
             <Description>Get the version of the API Proxy</Description>
-            <Request/>
+            <Request>
+                <Step>
+                    <Name>Get-Runtime-Version</Name>
+                </Step>
+            </Request>
             <Response>
                 <Step>
                     <Name>Send-Version</Name>
@@ -160,20 +164,6 @@
                 </Step>
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/quotas") and (request.verb = "POST")</Condition>
-        </Flow>
-        <Flow name="Get Runtime Env">
-            <Description>Get the version of the apigee runtime</Description>
-            <Request>
-                <Step>
-                    <Name>Get-Runtime-Version</Name>
-                </Step>
-            </Request>
-            <Response>
-                <Step>
-                    <Name>Send-Runtime-Env</Name>
-                </Step>
-            </Response>
-            <Condition>(proxy.pathsuffix MatchesPath "/runtime-env") and (request.verb = "GET")</Condition>
         </Flow>
         <Flow name="Unknown Request">
             <Description>Unknown Request</Description>

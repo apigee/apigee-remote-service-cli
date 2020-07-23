@@ -238,10 +238,10 @@ func serveMux(t *testing.T) *http.ServeMux {
 	})
 	// catch-all handler for remote service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "runtime-env") {
+		if strings.Contains(r.URL.Path, "version") {
 			w.Header().Set("Content-Type", "application/json")
 			res := map[string]string{
-				"runtime-version": "v130",
+				"platform": "1.3.0",
 			}
 			if err := json.NewEncoder(w).Encode(res); err != nil {
 				t.Fatalf("want no error %v", err)
@@ -429,7 +429,7 @@ data:
 func TestInvalidRuntimeVersion(t *testing.T) {
 	badHandler := func(t *testing.T) http.Handler {
 		m := serveMux(t)
-		m.HandleFunc("/remote-service/runtime-env", func(w http.ResponseWriter, r *http.Request) {
+		m.HandleFunc("/remote-service/version", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("ok"))
 		})
@@ -453,7 +453,7 @@ func TestInvalidRuntimeVersion(t *testing.T) {
 func TestMissingRuntimeVersion(t *testing.T) {
 	badHandler := func(t *testing.T) http.Handler {
 		m := serveMux(t)
-		m.HandleFunc("/remote-service/runtime-env", func(w http.ResponseWriter, r *http.Request) {
+		m.HandleFunc("/remote-service/version", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			res := map[string]string{
 				"useless-field": "hello",
@@ -476,7 +476,36 @@ func TestMissingRuntimeVersion(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "fetching runtime version: response has no 'runtime-version' field")
+	testutil.ErrorContains(t, err, "fetching runtime version: response has no 'platform' field")
+}
+
+func TestUnknownRuntimeVersion(t *testing.T) {
+	badHandler := func(t *testing.T) http.Handler {
+		m := serveMux(t)
+		m.HandleFunc("/remote-service/version", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			res := map[string]string{
+				"platform": "unknown",
+			}
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
+			}
+		})
+		return m
+	}
+
+	ts := httptest.NewServer(badHandler(t))
+	defer ts.Close()
+
+	print := testutil.Printer("TestRuntimeVersion")
+
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "-v"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err := rootCmd.Execute()
+	testutil.ErrorContains(t, err, "fetching runtime version: runtime version unknown")
 }
 
 func TestAPIProductCreation(t *testing.T) {

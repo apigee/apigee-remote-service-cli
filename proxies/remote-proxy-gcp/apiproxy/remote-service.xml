@@ -20,7 +20,6 @@
         <Policy>Generate-Access-Token</Policy>
         <Policy>Get-Runtime-Version</Policy>
         <Policy>Extract-OAuth-Params</Policy>
-        <Policy>Send-Runtime-Env</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-Response</Policy>
         <Policy>Set-JWT-Variables</Policy>
