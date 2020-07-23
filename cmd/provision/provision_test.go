@@ -39,6 +39,10 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 		}
 		count++
 	}))
+	defer ts.Close()
+
+	duration = 1
+	interval = 500
 
 	// try without InsecureSkipVerify
 	p := &provision{
@@ -383,6 +387,9 @@ func TestProvisionHybrid(t *testing.T) {
 	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
+	duration = 1
+	interval = 500
+
 	print := testutil.Printer("TestProvisionHybrid")
 
 	rootArgs := &shared.RootArgs{}
@@ -439,6 +446,9 @@ func TestInvalidRuntimeVersion(t *testing.T) {
 	ts := httptest.NewServer(badHandler(t))
 	defer ts.Close()
 
+	duration = 1
+	interval = 500
+
 	print := testutil.Printer("TestRuntimeVersion")
 
 	rootArgs := &shared.RootArgs{}
@@ -468,6 +478,9 @@ func TestMissingRuntimeVersion(t *testing.T) {
 	ts := httptest.NewServer(badHandler(t))
 	defer ts.Close()
 
+	duration = 1
+	interval = 500
+
 	print := testutil.Printer("TestRuntimeVersion")
 
 	rootArgs := &shared.RootArgs{}
@@ -496,6 +509,9 @@ func TestUnknownRuntimeVersion(t *testing.T) {
 
 	ts := httptest.NewServer(badHandler(t))
 	defer ts.Close()
+
+	duration = 1
+	interval = 500
 
 	print := testutil.Printer("TestRuntimeVersion")
 

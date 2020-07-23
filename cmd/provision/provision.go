@@ -48,6 +48,12 @@ const (
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
 )
 
+// default durations for the proxy verification retry
+var (
+	duration time.Duration = 60   // second
+	interval time.Duration = 5000 // millisecond
+)
+
 type provision struct {
 	*shared.RootArgs
 	forceProxyInstall bool
@@ -113,7 +119,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	var verbosef = shared.NoPrintf
 	if p.Verbose {
-		verbosef = printf
+		verbosef = shared.Errorf
 	}
 
 	tempDir, err := ioutil.TempDir("", "apigee")
@@ -287,8 +293,8 @@ func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client,
 
 func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.FormatFn) error {
 	var verifyErrors error
-	timeout := time.After(60 * time.Second)
-	tick := time.Tick(5 * time.Second)
+	timeout := time.After(duration * time.Second)
+	tick := time.Tick(interval * time.Millisecond)
 	for {
 		select {
 		case <-timeout:
