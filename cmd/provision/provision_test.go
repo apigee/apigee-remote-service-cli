@@ -447,7 +447,7 @@ func TestInvalidRuntimeVersion(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "fetching runtime version: invalid character")
+	testutil.ErrorContains(t, err, "Unable to get the runtime version: invalid character")
 }
 
 func TestMissingRuntimeVersion(t *testing.T) {
@@ -476,7 +476,7 @@ func TestMissingRuntimeVersion(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "fetching runtime version: response has no 'platform' field")
+	testutil.ErrorContains(t, err, "Unable to get the runtime version: response has no 'platform' field")
 }
 
 func TestUnknownRuntimeVersion(t *testing.T) {
@@ -505,7 +505,7 @@ func TestUnknownRuntimeVersion(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "fetching runtime version: runtime version unknown")
+	testutil.ErrorContains(t, err, "Unable to get the runtime version: runtime version unknown")
 }
 
 func TestAPIProductCreation(t *testing.T) {

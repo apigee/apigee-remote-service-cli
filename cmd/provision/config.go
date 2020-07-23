@@ -163,42 +163,38 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 	return nil
 }
 
-// checkRuntime gets the version of the hybrid runtime and change the fluentd endpoint when necessary
-func (p *provision) checkRuntimeVersion(config *server.Config, verbosef shared.FormatFn) error {
-	client, err := p.createAuthorizedClient(config)
-	if err != nil {
-		return err
-	}
-
+// checkRuntimeVersion gets the version of the hybrid runtime and change the fluentd endpoint when necessary
+func (p *provision) checkRuntimeVersion(config *server.Config, client *http.Client, verbosef shared.FormatFn) (string, error) {
 	targetURL := fmt.Sprintf("%s/version", p.RemoteServiceProxyURL)
 	req, err := http.NewRequest(http.MethodGet, targetURL, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if res != nil {
 		defer res.Body.Close()
 	}
 	jsonBody := make(map[string]string)
 	if err := json.NewDecoder(res.Body).Decode(&jsonBody); err != nil {
-		return err
+		return "", err
 	}
 	version, ok := jsonBody["platform"]
 	if !ok {
-		return fmt.Errorf("response has no 'platform' field")
+		return "", fmt.Errorf("response has no 'platform' field")
 	}
 	if version == "unknown" {
-		return fmt.Errorf("runtime version unknown")
-	}
-	if version >= "1.3.0" {
-		config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, envScopeEncodedName(p.Org, p.Env), p.Namespace)
-		verbosef("UDCA endpoint encoded")
+		return "", fmt.Errorf("runtime version unknown")
 	}
 
-	return nil
+	return version, nil
+}
+
+func (p *provision) encodeUDCAEndpoint(config *server.Config, verbosef shared.FormatFn) {
+	config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, envScopeEncodedName(p.Org, p.Env), p.Namespace)
+	verbosef("UDCA endpoint encoded")
 }
 
 // shortName returns a substring with up to the first 15 characters of the input string

@@ -239,24 +239,19 @@ func (p *provision) run(printf shared.FormatFn) error {
 		config.Tenant.JWKS = jwks
 	}
 
-	verifyErrors := p.verify(config, verbosef)
-
+	var verifyErrors error
 	if p.IsGCPManaged {
-		if err := p.checkRuntimeVersion(config, verbosef); err != nil {
-			return errors.Wrap(err, "fetching runtime version")
-		}
+		verifyErrors = p.verifyWithRetry(config, verbosef)
+	} else {
+		verifyErrors = p.verifyWithoutRetry(config, verbosef)
 	}
 
 	if err := p.printConfig(config, printf, verifyErrors); err != nil {
 		return errors.Wrapf(err, "generating config")
 	}
 
-	if verifyErrors != nil {
-		os.Exit(1)
-	}
-
 	verbosef("provisioning verified OK")
-	return nil
+	return verifyErrors
 }
 
 func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {
@@ -290,6 +285,48 @@ func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client,
 	}, nil
 }
 
+func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.FormatFn) error {
+	var verifyErrors error
+	timeout := time.After(60 * time.Second)
+	tick := time.Tick(5 * time.Second)
+	for {
+		select {
+		case <-timeout:
+			if verifyErrors != nil {
+				shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
+				shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
+				for _, err := range multierr.Errors(verifyErrors) {
+					if strings.Contains(err.Error(), "Unable to get the runtime version") {
+						p.encodeUDCAEndpoint(config, verbosef)
+					}
+					shared.Errorf("  %s", err)
+				}
+				shared.Errorf("\n")
+			}
+			return verifyErrors
+		case <-tick:
+			verifyErrors = p.verify(config, verbosef)
+			if verifyErrors == nil {
+				return nil
+			}
+			verbosef("verifying proxies failed, may retry again...")
+		}
+	}
+}
+
+func (p *provision) verifyWithoutRetry(config *server.Config, verbosef shared.FormatFn) error {
+	verifyErrors := p.verify(config, verbosef)
+	if verifyErrors != nil {
+		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
+		shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
+		for _, err := range multierr.Errors(verifyErrors) {
+			shared.Errorf("  %s", err)
+		}
+		shared.Errorf("\n")
+	}
+	return verifyErrors
+}
+
 func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) error {
 
 	client, err := p.createAuthorizedClient(config)
@@ -306,13 +343,13 @@ func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) erro
 	verbosef("verifying remote-service proxy...")
 	verifyErrors = multierr.Combine(verifyErrors, p.verifyRemoteServiceProxy(client, verbosef))
 
-	if verifyErrors != nil {
-		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
-		shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
-		for _, err := range multierr.Errors(verifyErrors) {
-			shared.Errorf("  %s", err)
+	if p.IsGCPManaged {
+		if version, err := p.checkRuntimeVersion(config, client, verbosef); err != nil {
+			err = errors.Wrapf(err, "Unable to get the runtime version")
+			verifyErrors = multierr.Combine(verifyErrors, err)
+		} else if version >= "1.3.0" {
+			p.encodeUDCAEndpoint(config, verbosef)
 		}
-		shared.Errorf("\n")
 	}
 
 	return verifyErrors
