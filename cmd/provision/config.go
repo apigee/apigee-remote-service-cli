@@ -187,7 +187,6 @@ func (p *provision) checkRuntimeVersion(config *server.Config, client *http.Clie
 	}
 	if version == "unknown" {
 		verbosef("runtime version unknown")
-		return "unknown", nil
 	}
 
 	return version, nil
