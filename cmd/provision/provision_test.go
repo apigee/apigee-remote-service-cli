@@ -520,8 +520,9 @@ func TestUnknownRuntimeVersion(t *testing.T) {
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
-	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "Unable to get the runtime version: runtime version unknown")
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
 }
 
 func TestAPIProductCreation(t *testing.T) {

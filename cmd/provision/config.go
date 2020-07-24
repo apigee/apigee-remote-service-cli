@@ -186,7 +186,8 @@ func (p *provision) checkRuntimeVersion(config *server.Config, client *http.Clie
 		return "", fmt.Errorf("response has no 'platform' field")
 	}
 	if version == "unknown" {
-		return "", fmt.Errorf("runtime version unknown")
+		verbosef("runtime version unknown")
+		return "unknown", nil
 	}
 
 	return version, nil
