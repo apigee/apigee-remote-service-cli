@@ -330,7 +330,7 @@ func newResponse(r *http.Response) *Response {
 
 func debugDump(data []byte, err error) {
 	if err == nil {
-		fmt.Printf("%s\n\n", data)
+		fmt.Fprintf(os.Stderr, "%s\n\n", data)
 	} else {
 		log.Fatalf("%s\n\n", err)
 	}

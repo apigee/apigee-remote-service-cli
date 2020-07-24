@@ -131,7 +131,11 @@
         </Flow>
         <Flow name="Get Version">
             <Description>Get the version of the API Proxy</Description>
-            <Request/>
+            <Request>
+                <Step>
+                    <Name>Get-Runtime-Version</Name>
+                </Step>
+            </Request>
             <Response>
                 <Step>
                     <Name>Send-Version</Name>

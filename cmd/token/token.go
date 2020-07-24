@@ -239,7 +239,7 @@ func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 func (t *token) rotateCert(printf shared.FormatFn) error {
 	var verbosef = shared.NoPrintf
 	if t.Verbose {
-		verbosef = printf
+		verbosef = shared.Errorf
 	}
 
 	verbosef("generating key and jwks...")

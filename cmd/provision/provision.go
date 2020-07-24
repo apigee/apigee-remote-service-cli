@@ -15,12 +15,7 @@
 package provision
 
 import (
-	"bytes"
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -35,7 +30,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -52,13 +46,12 @@ const (
 	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
 	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
+)
 
-	fluentdInternalFormat = "apigee-udca-%s-%s.%s:20001" // org, env, namespace
-	defaultApigeeCAFile   = "/opt/apigee/tls/ca.crt"
-	defaultApigeeCertFile = "/opt/apigee/tls/tls.crt"
-	defaultApigeeKeyFile  = "/opt/apigee/tls/tls.key"
-
-	policySecretNameFormat = "%s-%s-policy-secret"
+// default durations for the proxy verification retry
+var (
+	duration time.Duration = 60   // second
+	interval time.Duration = 5000 // millisecond
 )
 
 type provision struct {
@@ -126,7 +119,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	var verbosef = shared.NoPrintf
 	if p.Verbose {
-		verbosef = printf
+		verbosef = shared.Errorf
 	}
 
 	tempDir, err := ioutil.TempDir("", "apigee")
@@ -252,18 +245,19 @@ func (p *provision) run(printf shared.FormatFn) error {
 		config.Tenant.JWKS = jwks
 	}
 
-	verifyErrors := p.verify(config, verbosef)
+	var verifyErrors error
+	if p.IsGCPManaged {
+		verifyErrors = p.verifyWithRetry(config, verbosef)
+	} else {
+		verifyErrors = p.verifyWithoutRetry(config, verbosef)
+	}
 
 	if err := p.printConfig(config, printf, verifyErrors); err != nil {
 		return errors.Wrapf(err, "generating config")
 	}
 
-	if verifyErrors != nil {
-		os.Exit(1)
-	}
-
 	verbosef("provisioning verified OK")
-	return nil
+	return verifyErrors
 }
 
 func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {
@@ -297,6 +291,48 @@ func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client,
 	}, nil
 }
 
+func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.FormatFn) error {
+	var verifyErrors error
+	timeout := time.After(duration * time.Second)
+	tick := time.Tick(interval * time.Millisecond)
+	for {
+		select {
+		case <-timeout:
+			if verifyErrors != nil {
+				shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
+				shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
+				for _, err := range multierr.Errors(verifyErrors) {
+					if strings.Contains(err.Error(), "Unable to get the runtime version") {
+						p.encodeUDCAEndpoint(config, verbosef)
+					}
+					shared.Errorf("  %s", err)
+				}
+				shared.Errorf("\n")
+			}
+			return verifyErrors
+		case <-tick:
+			verifyErrors = p.verify(config, verbosef)
+			if verifyErrors == nil {
+				return nil
+			}
+			verbosef("verifying proxies failed, may retry again...")
+		}
+	}
+}
+
+func (p *provision) verifyWithoutRetry(config *server.Config, verbosef shared.FormatFn) error {
+	verifyErrors := p.verify(config, verbosef)
+	if verifyErrors != nil {
+		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
+		shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
+		for _, err := range multierr.Errors(verifyErrors) {
+			shared.Errorf("  %s", err)
+		}
+		shared.Errorf("\n")
+	}
+	return verifyErrors
+}
+
 func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) error {
 
 	client, err := p.createAuthorizedClient(config)
@@ -313,137 +349,16 @@ func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) erro
 	verbosef("verifying remote-service proxy...")
 	verifyErrors = multierr.Combine(verifyErrors, p.verifyRemoteServiceProxy(client, verbosef))
 
-	if verifyErrors != nil {
-		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
-		shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
-		for _, err := range multierr.Errors(verifyErrors) {
-			shared.Errorf("  %s", err)
+	if p.IsGCPManaged {
+		if version, err := p.checkRuntimeVersion(config, client, verbosef); err != nil {
+			err = errors.Wrapf(err, "Unable to get the runtime version")
+			verifyErrors = multierr.Combine(verifyErrors, err)
+		} else if version >= "1.3.0" {
+			p.encodeUDCAEndpoint(config, verbosef)
 		}
-		shared.Errorf("\n")
 	}
 
 	return verifyErrors
-}
-
-func (p *provision) createConfig(cred *keySecret) *server.Config {
-	config := &server.Config{
-		Tenant: server.TenantConfig{
-			InternalAPI:            p.InternalProxyURL,
-			RemoteServiceAPI:       p.RemoteServiceProxyURL,
-			OrgName:                p.Org,
-			EnvName:                p.Env,
-			AllowUnverifiedSSLCert: p.InsecureSkipVerify,
-		},
-	}
-
-	if cred != nil {
-		config.Tenant.Key = cred.Key
-		config.Tenant.Secret = cred.Secret
-	}
-
-	if p.IsGCPManaged {
-		config.Tenant.InternalAPI = "" // no internal API for GCP
-		config.Analytics.CollectionInterval = 10 * time.Second
-
-		config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalFormat, p.Org, p.Env, p.Namespace)
-		config.Analytics.TLS.CAFile = defaultApigeeCAFile
-		config.Analytics.TLS.CertFile = defaultApigeeCertFile
-		config.Analytics.TLS.KeyFile = defaultApigeeKeyFile
-	}
-
-	if p.IsOPDK {
-		config.Analytics.LegacyEndpoint = true
-	}
-
-	return config
-}
-
-func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, verifyErrors error) error {
-	// encode config
-	var yamlBuffer bytes.Buffer
-	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
-	yamlEncoder.SetIndent(2)
-	err := yamlEncoder.Encode(config)
-	if err != nil {
-		return err
-	}
-	configYAML := yamlBuffer.String()
-
-	data := map[string]string{"config.yaml": configYAML}
-	configCRD := server.ConfigMapCRD{
-		APIVersion: "v1",
-		Kind:       "ConfigMap",
-		Metadata: server.Metadata{
-			Name:      "apigee-remote-service-envoy",
-			Namespace: p.Namespace,
-		},
-		Data: data,
-	}
-
-	yamlBuffer.Reset()
-	yamlEncoder = yaml.NewEncoder(&yamlBuffer)
-	yamlEncoder.SetIndent(2)
-	err = yamlEncoder.Encode(configCRD)
-	if err != nil {
-		return err
-	}
-
-	// secret for IsGCPManaged
-	if p.IsGCPManaged {
-		privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
-			Bytes: x509.MarshalPKCS1PrivateKey(config.Tenant.PrivateKey)})
-
-		// create CRD for secret
-		jwksBytes, err := json.Marshal(config.Tenant.JWKS)
-		if err != nil {
-			return err
-		}
-
-		props := map[string]string{server.SecretPropsKIDKey: config.Tenant.PrivateKeyID}
-		propsBuf := new(bytes.Buffer)
-		if err := server.WriteProperties(propsBuf, props); err != nil {
-			return err
-		}
-
-		secretData := map[string]string{
-			server.SecretJKWSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
-			server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
-			server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
-		}
-
-		secretCRD := server.SecretCRD{
-			APIVersion: "v1",
-			Kind:       "Secret",
-			Type:       "Opaque",
-			Metadata: server.Metadata{
-				Name:      fmt.Sprintf(policySecretNameFormat, p.Org, p.Env),
-				Namespace: p.Namespace,
-			},
-			Data: secretData,
-		}
-
-		err = yamlEncoder.Encode(secretCRD)
-		if err != nil {
-			return err
-		}
-	}
-
-	platform := "GCP"
-	if p.IsLegacySaaS {
-		platform = "SaaS"
-	}
-	if p.IsOPDK {
-		platform = "OPDK"
-	}
-
-	printf("# Configuration for apigee-remote-service-envoy (platform: %s)", platform)
-	printf("# generated by apigee-remote-service-cli provision on %s", time.Now().Format("2006-01-02 15:04:05"))
-	if verifyErrors != nil {
-		printf("# WARNING: verification of provision failed. May not be valid.")
-	}
-	printf(yamlBuffer.String())
-
-	return nil
 }
 
 // verify GET RemoteServiceProxyURL/certs
