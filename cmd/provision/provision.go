@@ -256,7 +256,10 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return errors.Wrapf(err, "generating config")
 	}
 
-	verbosef("provisioning verified OK")
+	if verifyErrors == nil {
+		verbosef("provisioning verified OK")
+	}
+
 	return verifyErrors
 }
 
@@ -353,7 +356,7 @@ func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) erro
 		if version, err := p.checkRuntimeVersion(config, client, verbosef); err != nil {
 			err = errors.Wrapf(err, "Unable to get the runtime version")
 			verifyErrors = multierr.Combine(verifyErrors, err)
-		} else if version >= "1.3.0" {
+		} else if version >= "1.3.0" || version == "unknown" {
 			p.encodeUDCAEndpoint(config, verbosef)
 		}
 	}
