@@ -50,7 +50,7 @@ const (
 
 // default durations for the proxy verification retry
 var (
-	duration time.Duration = 60   // second
+	duration time.Duration = 180  // second
 	interval time.Duration = 5000 // millisecond
 )
 
@@ -318,7 +318,7 @@ func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.Forma
 			if verifyErrors == nil {
 				return nil
 			}
-			verbosef("verifying proxies failed, may retry again...")
+			verbosef("verifying proxies failed, trying again...")
 		}
 	}
 }
