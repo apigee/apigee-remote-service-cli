@@ -15,9 +15,13 @@
 package token
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,14 +30,17 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
+	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 func remoteServiceHandler(t *testing.T) http.Handler {
@@ -409,4 +416,121 @@ func generateJWK(t *testing.T) (*rsa.PrivateKey, jwk.Key) {
 	}
 
 	return privateKey, key
+}
+
+func TestCreateInternalJWT(t *testing.T) {
+	config := generateConfig(t)
+
+	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if _, err := tmpFile.Write(config); err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	print := testutil.Printer("TestCreateInternalJWT")
+
+	// a good command
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"token", "internal", "--config", tmpFile.Name()}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Errorf("want no error: %v", err)
+	}
+
+	if len(print.Prints) != 1 {
+		t.Errorf("want 1 output, got %d", len(print.Prints))
+	}
+
+	// missing config
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"token", "internal", "-r", "dummy"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "required flag(s) \"config\" not set")
+
+	// duration too long
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"token", "internal", "--config", tmpFile.Name(), "--duration", "80m"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "JWT should not be valid for longer than 1 hour")
+}
+
+func generateConfig(t *testing.T) []byte {
+	var yamlBuffer bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
+	yamlEncoder.SetIndent(2)
+
+	privateKey, key := generateJWK(t)
+
+	config := server.DefaultConfig()
+	config.Tenant.RemoteServiceAPI = "https://RUNTIME/remote-service"
+	config.Tenant.OrgName = "hi"
+	config.Tenant.EnvName = "test"
+	config.Analytics.FluentdEndpoint = "apigee-udca-hi-test-1q2w3e4r.apigee:20001"
+	if err := yamlEncoder.Encode(config); err != nil {
+		t.Fatal(err)
+	}
+	configYAML := yamlBuffer.String()
+	data := map[string]string{"config.yaml": configYAML}
+
+	configCRD := server.ConfigMapCRD{
+		APIVersion: "v1",
+		Kind:       "ConfigMap",
+		Metadata: server.Metadata{
+			Name:      "apigee-remote-service-envoy",
+			Namespace: "apigee",
+		},
+		Data: data,
+	}
+
+	yamlBuffer.Reset()
+	yamlEncoder = yaml.NewEncoder(&yamlBuffer)
+	yamlEncoder.SetIndent(2)
+	if err := yamlEncoder.Encode(configCRD); err != nil {
+		t.Fatal(err)
+	}
+
+	privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
+	jwksBytes, _ := json.Marshal(&jwk.Set{
+		Keys: []jwk.Key{key},
+	})
+	props := map[string]string{server.SecretPropsKIDKey: time.Now().Format(time.RFC3339)}
+	propsBuf := new(bytes.Buffer)
+	if err := server.WriteProperties(propsBuf, props); err != nil {
+		t.Fatal(err)
+	}
+
+	secretData := map[string]string{
+		server.SecretJKWSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
+		server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
+		server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
+	}
+
+	secretCRD := server.SecretCRD{
+		APIVersion: "v1",
+		Kind:       "Secret",
+		Type:       "Opaque",
+		Metadata: server.Metadata{
+			Name:      "hi-test-policy-secret",
+			Namespace: "apigee",
+		},
+		Data: secretData,
+	}
+
+	if err := yamlEncoder.Encode(secretCRD); err != nil {
+		t.Fatal(err)
+	}
+
+	return yamlBuffer.Bytes()
 }

@@ -7,7 +7,7 @@ go 1.13
 // replace github.com/apigee/apigee-remote-service-envoy => ../apigee-remote-service-envoy
 
 require (
-	github.com/apigee/apigee-remote-service-envoy v1.0.0-pre.1
+	github.com/apigee/apigee-remote-service-envoy v1.0.0-pre.1.0.20200729234108-088a461ba862
 	github.com/apigee/apigee-remote-service-golib v1.0.0-pre.1
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/lestrrat-go/jwx v1.0.3

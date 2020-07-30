@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -41,10 +43,11 @@ const (
 
 type token struct {
 	*shared.RootArgs
-	clientID     string
-	clientSecret string
-	file         string
-	truncate     int
+	clientID            string
+	clientSecret        string
+	file                string
+	truncate            int
+	internalJWTDuration time.Duration
 }
 
 // Cmd returns base command
@@ -68,6 +71,7 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	c.AddCommand(cmdCreateToken(t, printf))
 	c.AddCommand(cmdInspectToken(t, printf))
 	c.AddCommand(cmdRotateCert(t, printf))
+	c.AddCommand(cmdCreateInternalJWT(t, printf))
 
 	return c
 }
@@ -162,6 +166,38 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 	return c
 }
 
+func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "internal",
+		Short: "Create a JWT token for authorizing remote-service API calls (hybrid only)",
+		Long:  "Create a JWT token for authorizing remote-service API calls (hybrid only)",
+		Args:  cobra.NoArgs,
+
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if !t.IsGCPManaged {
+				return fmt.Errorf("generating internal JWT only valid for hybrid")
+			}
+			if t.internalJWTDuration > 60*time.Minute {
+				return fmt.Errorf("JWT should not be valid for longer than 1 hour")
+			}
+
+			token, err := t.createInternalJWT(printf)
+			if err != nil {
+				return errors.Wrap(err, "creating internal JWT")
+			}
+			printf(token)
+			return nil
+		},
+	}
+
+	// need to add this config flag here specifically to have it checked first
+	c.Flags().StringVarP(&t.ConfigPath, "config", "c", "", "Path to Apigee Remote Service config file")
+	c.Flags().DurationVarP(&t.internalJWTDuration, "duration", "", 10*time.Minute, "Valid time of the internal JWT from creation")
+	_ = c.MarkFlagRequired("config")
+
+	return c
+}
+
 func (t *token) createToken(printf shared.FormatFn) (string, error) {
 	tokenReq := &tokenRequest{
 		ClientID:     t.clientID,
@@ -189,6 +225,24 @@ func (t *token) createToken(printf shared.FormatFn) (string, error) {
 	defer resp.Body.Close()
 
 	return tokenRes.Token, nil
+}
+
+func (t *token) createInternalJWT(printf shared.FormatFn) (string, error) {
+	if t.ServerConfig == nil {
+		return "", fmt.Errorf("tenant not found. requires a valid config file")
+	}
+	token, err := server.NewToken(t.internalJWTDuration)
+	if err != nil {
+		return "", err
+	}
+	privateKey := t.ServerConfig.Tenant.PrivateKey
+	kid := t.ServerConfig.Tenant.PrivateKeyID
+	signed, err := server.SignJWT(token, jwa.RS256, privateKey, kid)
+	if err != nil {
+		return "", err
+	}
+	internalJWT := bytes.NewBuffer(signed).String()
+	return internalJWT, nil
 }
 
 func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
