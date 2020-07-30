@@ -477,5 +477,5 @@ data:
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
-	testutil.ErrorContains(t, err, "creating internal JWT: tenant not found. requires a valid config file")
+	testutil.ErrorContains(t, err, "required flag(s) \"config\" not set")
 }

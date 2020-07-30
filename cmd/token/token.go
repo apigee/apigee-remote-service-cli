@@ -188,6 +188,8 @@ func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
 		},
 	}
 
+	// need to readd this flag to have it checked first
+	c.Flags().StringVarP(&t.ConfigPath, "config", "c", "", "Path to Apigee Remote Service config file")
 	_ = c.MarkFlagRequired("config")
 
 	return c
