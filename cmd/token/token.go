@@ -166,8 +166,6 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 }
 
 func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
-	// work around the runtime requirement
-	t.RuntimeBase = "dummy"
 	c := &cobra.Command{
 		Use:   "internal",
 		Short: "Create a JWT token for authorizing remote-service API calls (hybrid only)",
