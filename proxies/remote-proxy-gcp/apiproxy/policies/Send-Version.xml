@@ -8,7 +8,7 @@
             <Header name="Content-Type">application/json</Header>
         </Headers>
         <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">{
-    "version":"1.0.0-beta.4",
+    "version":"1.0.0-pre.2",
     "platform":"@runtime_version#"
 }</Payload>
     </Set>
