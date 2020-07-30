@@ -192,7 +192,7 @@ func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
 
 	// need to readd this flag to have it checked first
 	c.Flags().StringVarP(&t.ConfigPath, "config", "c", "", "Path to Apigee Remote Service config file")
-	c.Flags().DurationVarP(&t.internalJWTDuration, "duration", "", 10*time.Minute, "Duration of the internal JWT (default 10 mins)")
+	c.Flags().DurationVarP(&t.internalJWTDuration, "duration", "", 10*time.Minute, "Valid time of the internal JWT from creation")
 	_ = c.MarkFlagRequired("config")
 
 	return c
