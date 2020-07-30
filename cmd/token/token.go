@@ -186,9 +186,10 @@ func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
 		},
 	}
 
-	c.Flags().StringVarP(&t.ConfigPath, "config", "c", "", "path to the config file")
-
 	_ = c.MarkFlagRequired("config")
+
+	// work around the runtime requirement
+	t.RuntimeBase = "dummy"
 
 	return c
 }
@@ -223,12 +224,12 @@ func (t *token) createToken(printf shared.FormatFn) (string, error) {
 }
 
 func (t *token) createInternalJWT(printf shared.FormatFn) (string, error) {
-	token, err := server.NewToken(10)
-	if err != nil {
-		return "", err
-	}
 	if t.ServerConfig == nil {
 		return "", fmt.Errorf("tenant not found")
+	}
+	token, err := server.NewToken(t.ServerConfig.Tenant.InternalJWTDuration)
+	if err != nil {
+		return "", err
 	}
 	privateKey := t.ServerConfig.Tenant.PrivateKey
 	kid := t.ServerConfig.Tenant.PrivateKeyID

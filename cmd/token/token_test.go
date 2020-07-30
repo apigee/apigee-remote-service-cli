@@ -461,7 +461,7 @@ data:
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"token", "internal", "--config", tmpFile.Name(), "--runtime", "dummy"}
+	flags := []string{"token", "internal", "--config", tmpFile.Name()}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
