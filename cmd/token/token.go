@@ -43,10 +43,11 @@ const (
 
 type token struct {
 	*shared.RootArgs
-	clientID     string
-	clientSecret string
-	file         string
-	truncate     int
+	clientID            string
+	clientSecret        string
+	file                string
+	truncate            int
+	internalJWTDuration time.Duration
 }
 
 // Cmd returns base command
@@ -176,6 +177,9 @@ func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
 			if !t.IsGCPManaged {
 				return fmt.Errorf("generating internal JWT only valid for hybrid")
 			}
+			if t.internalJWTDuration > 60*time.Minute {
+				return fmt.Errorf("JWT should not be valid for longer than 1 hour")
+			}
 
 			token, err := t.createInternalJWT(printf)
 			if err != nil {
@@ -188,6 +192,7 @@ func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
 
 	// need to readd this flag to have it checked first
 	c.Flags().StringVarP(&t.ConfigPath, "config", "c", "", "Path to Apigee Remote Service config file")
+	c.Flags().DurationVarP(&t.internalJWTDuration, "duration", "", 10*time.Minute, "Duration of the internal JWT (default 10 mins)")
 	_ = c.MarkFlagRequired("config")
 
 	return c
@@ -226,7 +231,7 @@ func (t *token) createInternalJWT(printf shared.FormatFn) (string, error) {
 	if t.ServerConfig == nil {
 		return "", fmt.Errorf("tenant not found. requires a valid config file")
 	}
-	token, err := server.NewToken(t.ServerConfig.Tenant.InternalJWTDuration)
+	token, err := server.NewToken(t.internalJWTDuration)
 	if err != nil {
 		return "", err
 	}

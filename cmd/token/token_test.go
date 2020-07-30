@@ -478,4 +478,13 @@ data:
 
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "required flag(s) \"config\" not set")
+
+	// missing config
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"token", "internal", "--config", tmpFile.Name(), "--duration", "80m"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "JWT should not be valid for longer than 1 hour")
 }
