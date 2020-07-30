@@ -166,6 +166,8 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 }
 
 func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
+	// work around the runtime requirement
+	t.RuntimeBase = "dummy"
 	c := &cobra.Command{
 		Use:   "internal",
 		Short: "Create a JWT token for authorizing remote-service API calls (hybrid only)",
@@ -187,9 +189,6 @@ func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
 	}
 
 	_ = c.MarkFlagRequired("config")
-
-	// work around the runtime requirement
-	t.RuntimeBase = "dummy"
 
 	return c
 }
@@ -225,7 +224,7 @@ func (t *token) createToken(printf shared.FormatFn) (string, error) {
 
 func (t *token) createInternalJWT(printf shared.FormatFn) (string, error) {
 	if t.ServerConfig == nil {
-		return "", fmt.Errorf("tenant not found")
+		return "", fmt.Errorf("tenant not found. requires a valid config file")
 	}
 	token, err := server.NewToken(t.ServerConfig.Tenant.InternalJWTDuration)
 	if err != nil {
