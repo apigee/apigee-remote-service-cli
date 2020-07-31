@@ -230,7 +230,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 		config = p.createConfig(cred)
 	}
 
-	if p.IsGCPManaged && config.Tenant.PrivateKey == nil {
+	if p.IsGCPManaged && (config.Tenant.PrivateKey == nil || p.rotate > 0) {
 		keyID, privateKey, jwks, err := p.CreateNewKey()
 		if err != nil {
 			return err
