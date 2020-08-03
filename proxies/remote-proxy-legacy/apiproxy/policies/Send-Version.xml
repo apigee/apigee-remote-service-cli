@@ -10,5 +10,5 @@
         <Payload contentType="application/json">{"version":"1.0.0"}</Payload>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew="false" transport="http" type="request"/>
+    <AssignTo createNew="true" transport="http" type="response"/>
 </AssignMessage>

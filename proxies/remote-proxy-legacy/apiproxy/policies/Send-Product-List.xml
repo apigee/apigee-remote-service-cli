@@ -10,5 +10,5 @@
         <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">@productlist#</Payload>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew="false" transport="http" type="response"/>
+    <AssignTo createNew="true" transport="http" type="response"/>
 </AssignMessage>
