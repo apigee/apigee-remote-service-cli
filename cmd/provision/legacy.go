@@ -167,7 +167,7 @@ func newHash() (string, error) {
 
 	t := time.Now()
 	h := sha256.New()
-	if _, err := h.Write([]byte(t.String() + string(rnd.Int()))); err != nil {
+	if _, err := h.Write([]byte(t.String() + string(rune(rnd.Int())))); err != nil {
 		return "", err
 	}
 	str := hex.EncodeToString(h.Sum(nil))
