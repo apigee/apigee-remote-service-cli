@@ -19,20 +19,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
-
-func init() {
-	// Apigee does not support http2 at present
-	if !strings.Contains(os.Getenv("GODEBUG"), "http2client=0") {
-		os.Setenv("GODEBUG", os.Getenv("GODEBUG")+",http2client=0")
-	}
-}
 
 // GetRootCmd returns the root of the cobra command-tree.
 func GetRootCmd(args []string, printf shared.FormatFn) *cobra.Command {
