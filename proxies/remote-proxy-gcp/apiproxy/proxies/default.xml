@@ -35,6 +35,9 @@
             </Request>
             <Response>
                 <Step>
+                    <Name>Create-New-Response</Name>
+                </Step>
+                <Step>
                     <Name>Set-Response</Name>
                 </Step>
             </Response>
@@ -107,6 +110,9 @@
                 </Step>
             </Request>
             <Response>
+                <Step>
+                    <Name>Create-New-Response</Name>
+                </Step>
                 <Step>
                     <Name>Set-Response</Name>
                 </Step>
