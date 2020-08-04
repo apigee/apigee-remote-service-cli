@@ -18,21 +18,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
 )
-
-func TestForceHttp11(t *testing.T) {
-
-	env := os.Getenv("GODEBUG")
-	if !strings.Contains(env, "http2client=0") {
-		t.Errorf("expected GODEBUG to include 'http2client=0' get %s", env)
-	}
-}
 
 func TestVersion(t *testing.T) {
 

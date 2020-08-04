@@ -14,5 +14,5 @@
 }</Payload>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew="false" type="response"/>
+    <AssignTo createNew="true" type="response"/>
 </AssignMessage>

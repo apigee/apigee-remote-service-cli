@@ -9,4 +9,5 @@
         <StatusCode>200</StatusCode>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew="true" type="response"/>
 </AssignMessage>

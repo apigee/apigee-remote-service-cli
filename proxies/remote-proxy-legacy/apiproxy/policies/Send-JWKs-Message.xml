@@ -8,4 +8,5 @@
         <StatusCode>200</StatusCode>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew="true" transport="http" type="response"/>
 </AssignMessage>
