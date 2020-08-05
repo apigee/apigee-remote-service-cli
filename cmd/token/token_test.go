@@ -139,12 +139,21 @@ func TestTokenCreate(t *testing.T) {
 
 	print.Check(t, want)
 
+	// bad runtime
 	flags = []string{"token", "create", "--runtime", "dummy", "--id", "/id/", "--secret", "/secret/"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "creating token: Post \"dummy/remote-service/token\": unsupported protocol scheme")
+
+	// missing runtime
+	flags = []string{"token", "create", "--id", "/id/", "--secret", "/secret/"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
 }
 
 func TestTokenInspect(t *testing.T) {

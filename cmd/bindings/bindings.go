@@ -46,7 +46,7 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		Short: "Manage Apigee Product to Remote Target bindings",
 		Long:  "Manage Apigee Product to Remote Target bindings.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return rootArgs.Resolve(false, true)
+			return rootArgs.Resolve(false, false)
 		},
 	}
 
@@ -60,6 +60,8 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		"Apigee username (legacy or OPDK only)")
 	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "",
 		"Apigee password (legacy or OPDK only)")
+	c.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m",
+		"", "Apigee management base URL")
 
 	c.AddCommand(cmdBindingsList(cfg, printf))
 	c.AddCommand(cmdBindingsAdd(cfg, printf))
