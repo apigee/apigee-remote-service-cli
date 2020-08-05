@@ -130,20 +130,24 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 			r.ManagementBase = LegacySaaSManagementBase
 		}
 		if r.IsOPDK {
+			if r.RuntimeBase == "" {
+				return fmt.Errorf("--runtime or --config is required and used as the management url if --management is not explicitly set for opdk")
+			}
 			r.ManagementBase = r.RuntimeBase
 		}
 	}
 
-	if requireRuntime {
-		if r.IsLegacySaaS {
-			if r.Org != "" && r.Env != "" {
-				r.RuntimeBase = fmt.Sprintf(RuntimeBaseFormat, r.Org, r.Env)
-			} else if requireRuntime {
-				return fmt.Errorf("--organization and --environment are required")
-			}
-		} else if r.RuntimeBase == "" {
-			return errors.New("--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
+	if r.IsLegacySaaS {
+		if r.Org == "" || r.Env == "" {
+			return fmt.Errorf("--organization and --environment are required for legacy saas")
 		}
+		if r.RuntimeBase == "" {
+			r.RuntimeBase = fmt.Sprintf(RuntimeBaseFormat, r.Org, r.Env)
+		}
+	}
+
+	if requireRuntime && r.RuntimeBase == "" {
+		return errors.New("--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
 	}
 
 	// calculate internal proxy URL from runtime URL for LegacySaaS or OPDK

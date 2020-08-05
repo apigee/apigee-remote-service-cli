@@ -205,23 +205,12 @@ func testBindingsParams(t *testing.T, args ...string) {
 	var flags []string
 	var rootCmd *cobra.Command
 	var rootArgs *shared.RootArgs
+	var wantErr string
 	print := testutil.Printer("TestBindingsParams")
 
-	// hybrid no args
-	wantErr := "--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)"
-	flags = []string{"bindings"}
-	flags = append(flags, args...)
-	rootArgs = &shared.RootArgs{}
-	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
-	err = rootCmd.Execute()
-	if err == nil || err.Error() != wantErr {
-		t.Errorf("%v want %s, got: %v", args, wantErr, err)
-	}
-
-	// hybrid requires runtime
-	wantErr = "--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)"
-	flags = []string{"bindings", "-o", "/org/", "-e", "/env/"}
+	// opdk no args
+	wantErr = "--runtime or --config is required and used as the management url if --management is not explicitly set for opdk"
+	flags = []string{"bindings", "--opdk"}
 	flags = append(flags, args...)
 	rootArgs = &shared.RootArgs{}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
@@ -244,7 +233,7 @@ func testBindingsParams(t *testing.T, args ...string) {
 	}
 
 	// legacy requires org & env
-	wantErr = "--organization and --environment are required"
+	wantErr = "--organization and --environment are required for legacy saas"
 	flags = []string{"bindings", "--legacy", "--runtime", "/runtime/"}
 	flags = append(flags, args...)
 	rootArgs = &shared.RootArgs{}

@@ -50,8 +50,8 @@ const (
 
 // default durations for the proxy verification retry
 var (
-	duration time.Duration = 180  // second
-	interval time.Duration = 5000 // millisecond
+	duration time.Duration = 180 * time.Second
+	interval time.Duration = 5 * time.Second
 )
 
 type provision struct {
@@ -296,8 +296,8 @@ func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client,
 
 func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.FormatFn) error {
 	var verifyErrors error
-	timeout := time.After(duration * time.Second)
-	tick := time.Tick(interval * time.Millisecond)
+	timeout := time.After(duration)
+	tick := time.Tick(interval)
 	for {
 		select {
 		case <-timeout:
