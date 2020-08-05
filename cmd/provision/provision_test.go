@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/cmd"
@@ -41,8 +42,8 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	duration = 200
-	interval = 100
+	duration = 200 * time.Millisecond
+	interval = 100 * time.Millisecond
 
 	// try without InsecureSkipVerify
 	p := &provision{
@@ -389,8 +390,8 @@ func TestProvisionHybrid(t *testing.T) {
 	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
-	duration = 200
-	interval = 100
+	duration = 200 * time.Millisecond
+	interval = 100 * time.Millisecond
 
 	print := testutil.Printer("TestProvisionHybrid")
 
@@ -448,8 +449,8 @@ func TestInvalidRuntimeVersion(t *testing.T) {
 	ts := httptest.NewServer(badHandler(t))
 	defer ts.Close()
 
-	duration = 200
-	interval = 100
+	duration = 200 * time.Millisecond
+	interval = 100 * time.Millisecond
 
 	print := testutil.Printer("TestRuntimeVersion")
 
@@ -480,8 +481,8 @@ func TestMissingRuntimeVersion(t *testing.T) {
 	ts := httptest.NewServer(badHandler(t))
 	defer ts.Close()
 
-	duration = 200
-	interval = 100
+	duration = 200 * time.Millisecond
+	interval = 100 * time.Millisecond
 
 	print := testutil.Printer("TestRuntimeVersion")
 
@@ -512,8 +513,8 @@ func TestUnknownRuntimeVersion(t *testing.T) {
 	ts := httptest.NewServer(badHandler(t))
 	defer ts.Close()
 
-	duration = 200
-	interval = 100
+	duration = 200 * time.Millisecond
+	interval = 100 * time.Millisecond
 
 	print := testutil.Printer("TestRuntimeVersion")
 
