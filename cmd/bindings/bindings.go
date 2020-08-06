@@ -393,7 +393,6 @@ func (b *bindings) updateTargetBindings(p *product.APIProduct, bindings []string
 	if err != nil {
 		return err
 	}
-	//req.URL.Path = path // hack: negate client's base URL
 	var attrResult attrUpdate
 	_, err = b.ApigeeClient.Do(req, &attrResult)
 	return err
