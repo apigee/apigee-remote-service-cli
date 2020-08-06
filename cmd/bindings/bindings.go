@@ -195,6 +195,7 @@ func (b *bindings) getProduct(name string) (*product.APIProduct, error) {
 	resp, err := b.ApigeeClient.Do(req, p)
 	if err != nil {
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			defer resp.Body.Close()
 			return nil, nil
 		}
 		return nil, errors.Wrap(err, "retrieving products")
