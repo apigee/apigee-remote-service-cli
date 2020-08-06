@@ -230,7 +230,7 @@ func TestBindingVerifyAll(t *testing.T) {
 		"verifying apps associated with product /product2/:",
 		"  app /app1/ associated with product /product2/ is verified",
 		"verifying apps associated with product /product0/:",
-		"  app /app0/ associated with product /product0/ is not associated with remote-service product",
+		"  app /app0/ associated with product /product0/ is verified",
 		"no app is found associated with product /product4/",
 	}
 	print.Check(t, wants)
@@ -317,6 +317,10 @@ func productTestServer(t *testing.T) *httptest.Server {
 						APIProducts: []apigee.APIProductRef{
 							{
 								Name:   "/product0/",
+								Status: "approved",
+							},
+							{
+								Name:   "remote-service",
 								Status: "approved",
 							},
 						},

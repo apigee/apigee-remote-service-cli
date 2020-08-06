@@ -17,6 +17,7 @@ package bindings
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -26,6 +27,7 @@ import (
 	"github.com/apigee/apigee-remote-service-golib/product"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -156,18 +158,25 @@ func cmdBindingsVerify(b *bindings, printf shared.FormatFn) *cobra.Command {
 		Args:  cobra.MaximumNArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apps, err := b.getAppMap()
+			apps, err := b.getProductNameToAppMap()
 			if err != nil {
 				return err
 			}
 			if len(args) == 0 {
-				return b.verifyAll(apps, printf)
+				err = b.verifyAll(apps, printf)
+				if err != nil {
+					os.Exit(1)
+				}
+				return nil
 			}
 			p, err := b.getProduct(args[0])
 			if err != nil {
 				return err
 			}
-			b.verify(p, apps, printf)
+			err = b.verify(p, apps, printf)
+			if err != nil {
+				os.Exit(1)
+			}
 			return nil
 		},
 	}
@@ -214,7 +223,8 @@ func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	return res.APIProducts, nil
 }
 
-func (b *bindings) getAppMap() (map[string][]App, error) {
+// getProductNameToAppMap returns a map of []App with the key being product names
+func (b *bindings) getProductNameToAppMap() (map[string][]App, error) {
 	req, err := b.ApigeeClient.NewRequestNoEnv(http.MethodGet, appURLFormat, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
@@ -316,33 +326,38 @@ func (b *bindings) verifyAll(appMap map[string][]App, printf shared.FormatFn) er
 	if err != nil {
 		return err
 	}
+	var verifyErrors error
 	for _, p := range products {
 		if p.Name == "remote-service" { // no need to verify this reserved product
 			continue
 		}
-		b.verify(&p, appMap, printf)
+		err = b.verify(&p, appMap, printf)
+		if err != nil {
+			verifyErrors = multierr.Append(verifyErrors, err)
+		}
 	}
-	return nil
+	return verifyErrors
 }
 
-func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf shared.FormatFn) {
+func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf shared.FormatFn) error {
 	if p.GetBoundTargets() == nil {
 		printf("product %s is unbound to any target, no need to verify", p.Name)
-		return
+		return nil
 	}
 	apps, ok := appMap[p.Name]
 	if !ok {
 		printf("no app is found associated with product %s", p.Name)
-		return
+		return nil
 	}
 	printf("verifying apps associated with product %s:", p.Name)
 	for _, app := range apps {
 		if !app.hasRemoteService {
-			printf("  app %s associated with product %s is not associated with remote-service product", app.name, p.Name)
+			return fmt.Errorf("  app %s associated with product %s is not associated with remote-service product", app.name, p.Name)
 		} else {
 			printf("  app %s associated with product %s is verified", app.name, p.Name)
 		}
 	}
+	return nil
 }
 
 func (b *bindings) bindTarget(p *product.APIProduct, target string, printf shared.FormatFn) error {
