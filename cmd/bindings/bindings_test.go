@@ -89,6 +89,28 @@ func TestBindingListOPDK(t *testing.T) {
 		"\n",
 	}
 	print.Check(t, wants)
+
+	flags = []string{"bindings", "list", "/product2/", "--opdk", "--runtime", ts.URL,
+		"-o", "/org/", "-e", "/env/", "-u", "/username/", "-p", "password"}
+	rootArgs = &shared.RootArgs{}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+	if err = rootCmd.Execute(); err != nil {
+		t.Errorf("want no error, got: %v", err)
+	}
+	wants = []string{
+		"\nAPI Products\n============",
+		"\nBound\n-----",
+		"\n",
+		"/product2/",
+		":",
+		"\n  Target bindings:",
+		"\n    ",
+		"/target/",
+		"\n  Paths:",
+		"\n",
+	}
+	print.Check(t, wants)
 }
 
 func TestBindingAddOPDK(t *testing.T) {
