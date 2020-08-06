@@ -20,6 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
@@ -58,7 +59,21 @@ func TestBindingListOPDK(t *testing.T) {
 		"\nAPI Products\n============",
 		"\nBound\n-----",
 		"\n",
+		"/product0/",
+		":",
+		"\n  Target bindings:",
+		"\n    ",
+		"/target/",
+		"\n  Paths:",
+		"\n",
 		"/product2/",
+		":",
+		"\n  Target bindings:",
+		"\n    ",
+		"/target/",
+		"\n  Paths:",
+		"\n",
+		"/product4/",
 		":",
 		"\n  Target bindings:",
 		"\n    ",
@@ -71,6 +86,28 @@ func TestBindingListOPDK(t *testing.T) {
 		"\n",
 		"/product1/",
 		":",
+		"\n",
+	}
+	print.Check(t, wants)
+
+	flags = []string{"bindings", "list", "/product2/", "--opdk", "--runtime", ts.URL,
+		"-o", "/org/", "-e", "/env/", "-u", "/username/", "-p", "password"}
+	rootArgs = &shared.RootArgs{}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+	if err = rootCmd.Execute(); err != nil {
+		t.Errorf("want no error, got: %v", err)
+	}
+	wants = []string{
+		"\nAPI Products\n============",
+		"\nBound\n-----",
+		"\n",
+		"/product2/",
+		":",
+		"\n  Target bindings:",
+		"\n    ",
+		"/target/",
+		"\n  Paths:",
 		"\n",
 	}
 	print.Check(t, wants)
@@ -168,9 +205,66 @@ func TestBindingRemoveOPDK(t *testing.T) {
 	print.Check(t, wants)
 }
 
+func TestBindingVerifyAll(t *testing.T) {
+	print := testutil.Printer("TestBindingVerify")
+	ts := productTestServer(t)
+	defer ts.Close()
+
+	var err error
+	var flags []string
+	var rootCmd *cobra.Command
+	var rootArgs *shared.RootArgs
+	var wants []string
+
+	flags = []string{"bindings", "verify", "--opdk", "--runtime", ts.URL,
+		"-o", "/org/", "-e", "/env/", "-u", "/username/", "-p", "password"}
+	rootArgs = &shared.RootArgs{}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+	if err = rootCmd.Execute(); err != nil {
+		t.Errorf("want no error, got: %v", err)
+	}
+	wants = []string{
+		"product /product1/ is unbound to any target, no need to verify",
+		"product /product/ is unbound to any target, no need to verify",
+		"verifying apps associated with product /product2/:",
+		"  app /app1/ associated with product /product2/ is verified",
+		"verifying apps associated with product /product0/:",
+		"  app /app0/ associated with product /product0/ is verified",
+		"no app is found associated with product /product4/",
+	}
+	print.Check(t, wants)
+}
+
+func TestBindingVerifyOne(t *testing.T) {
+	print := testutil.Printer("TestBindingVerify")
+	ts := productTestServer(t)
+	defer ts.Close()
+
+	var err error
+	var flags []string
+	var rootCmd *cobra.Command
+	var rootArgs *shared.RootArgs
+	var wants []string
+
+	flags = []string{"bindings", "verify", "/product2/", "--opdk", "--runtime", ts.URL,
+		"-o", "/org/", "-e", "/env/", "-u", "/username/", "-p", "password"}
+	rootArgs = &shared.RootArgs{}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+	if err = rootCmd.Execute(); err != nil {
+		t.Errorf("want no error, got: %v", err)
+	}
+	wants = []string{
+		"verifying apps associated with product /product2/:",
+		"  app /app1/ associated with product /product2/ is verified",
+	}
+	print.Check(t, wants)
+}
+
 func productTestServer(t *testing.T) *httptest.Server {
 
-	res := product.APIResponse{
+	prods := product.APIResponse{
 		APIProducts: []product.APIProduct{
 			{
 				Name: "/product1/",
@@ -189,15 +283,159 @@ func productTestServer(t *testing.T) *httptest.Server {
 				QuotaLimit: "null",
 				Scopes:     []string{""},
 			},
+			{
+				Name: "/product0/",
+				Attributes: []product.Attribute{
+					{
+						Name:  product.TargetsAttr,
+						Value: "/target/",
+					},
+				},
+				QuotaLimit: "null",
+				Scopes:     []string{""},
+			},
+			{
+				Name: "/product4/",
+				Attributes: []product.Attribute{
+					{
+						Name:  product.TargetsAttr,
+						Value: "/target/",
+					},
+				},
+				QuotaLimit: "null",
+				Scopes:     []string{""},
+			},
+		},
+	}
+	apps := apigee.AppResponse{
+		Apps: []apigee.Application{
+			{
+				AppID: "0",
+				Name:  "/app0/",
+				Credentials: []apigee.Credential{
+					{
+						APIProducts: []apigee.APIProductRef{
+							{
+								Name:   "/product0/",
+								Status: "approved",
+							},
+							{
+								Name:   "remote-service",
+								Status: "approved",
+							},
+						},
+					},
+				},
+			},
+			{
+				AppID: "1",
+				Name:  "/app1/",
+				Credentials: []apigee.Credential{
+					{
+						APIProducts: []apigee.APIProductRef{
+							{
+								Name:   "/product2/",
+								Status: "approved",
+							},
+							{
+								Name:   "remote-service",
+								Status: "approved",
+							},
+						},
+					},
+				},
+			},
+			{
+				AppID: "2",
+				Name:  "/app2/",
+				Credentials: []apigee.Credential{
+					{
+						APIProducts: []apigee.APIProductRef{
+							{
+								Name:   "remote-service",
+								Status: "approved",
+							},
+						},
+					},
+				},
+			},
+			{
+				AppID: "3",
+				Name:  "/app3/",
+				Credentials: []apigee.Credential{
+					{
+						APIProducts: []apigee.APIProductRef{
+							{
+								Name:   "remote-service",
+								Status: "approved",
+							},
+						},
+					},
+					{
+						APIProducts: []apigee.APIProductRef{
+							{
+								Name:   "/product3/",
+								Status: "approved",
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	m := http.NewServeMux()
+	m.HandleFunc("/v1/organizations/org/apiproducts", (func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(res); err != nil {
+		if err := json.NewEncoder(w).Encode(prods); err != nil {
 			t.Fatalf("want no error %v", err)
 		}
 	}))
+	m.HandleFunc("/v1/organizations/org/apps", (func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(apps); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
+	}))
+	m.HandleFunc("/v1/organizations/org/apiproducts/product1", (func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(prods.APIProducts[0]); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
+	}))
+	m.HandleFunc("/v1/organizations/org/apiproducts/product", (func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(prods.APIProducts[1]); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
+	}))
+	m.HandleFunc("/v1/organizations/org/apiproducts/product2", (func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(prods.APIProducts[2]); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
+	}))
+	m.HandleFunc("/v1/organizations/org/apiproducts/product/attributes", (func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(prods.APIProducts[1]); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
+	}))
+	m.HandleFunc("/v1/organizations/org/apiproducts/product2/attributes", (func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(prods.APIProducts[2]); err != nil {
+			t.Fatalf("want no error %v", err)
+		}
+	}))
+	return httptest.NewServer(m)
 }
 
 func testBindingsParams(t *testing.T, args ...string) {
