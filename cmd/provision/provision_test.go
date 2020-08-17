@@ -253,8 +253,9 @@ func serveMux(t *testing.T) *http.ServeMux {
 			if err := json.NewEncoder(w).Encode(res); err != nil {
 				t.Fatalf("want no error %v", err)
 			}
+		} else {
+			w.WriteHeader(http.StatusOK)
 		}
-		w.WriteHeader(http.StatusOK)
 	})
 	m.HandleFunc("/v1/organizations/gcp", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -334,6 +335,16 @@ func serveMux(t *testing.T) *http.ServeMux {
 					_, _ = w.Write([]byte("{}"))
 				} else {
 					w.WriteHeader(http.StatusCreated)
+					_, _ = w.Write([]byte("{}"))
+				}
+			} else if strings.Contains(r.URL.Path, "resourcefiles") {
+				if strings.Contains(r.URL.Path, "conflictproperty") {
+					w.WriteHeader(http.StatusConflict)
+					_, _ = w.Write([]byte("{}"))
+				} else if strings.Contains(r.URL.Path, "notfoundng") {
+					w.WriteHeader(http.StatusNotFound)
+				} else {
+					w.WriteHeader(http.StatusOK)
 					_, _ = w.Write([]byte("{}"))
 				}
 			} else {
@@ -505,9 +516,25 @@ data:
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
-	if err := rootCmd.Execute(); err == nil {
-		t.Error("want error 404 got none")
+	err := rootCmd.Execute()
+	testutil.ErrorContains(t, err, "404")
+
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"provision", "-o", "ng", "-e", "conflictproperty", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Errorf("want no error: %v", err)
 	}
+
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "404")
 }
 
 func TestInvalidRuntimeVersion(t *testing.T) {

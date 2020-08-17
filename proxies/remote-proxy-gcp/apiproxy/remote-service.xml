@@ -30,7 +30,7 @@
         <Policy>Raise-Fault-Missing-Secret</Policy>
         <Policy>Extract-OAuth-Params</Policy>
         <Policy>Set-Quota-Variables</Policy>
-        <Policy>Set-JWT-Public-Keys</Policy>
+        <Policy>Set-JWKS</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>
@@ -42,8 +42,7 @@
         <Resource>jsc://set-quota-variables.js</Resource>
         <Resource>py://get-runtime-version.py</Resource>
         <Resource>java://products-javacallout-2.0.0.jar</Resource>
-        <Resource>jsc://Set-JWT-Public-Keys.js</Resource>
-        <Resource>properties://remote-service.properties</Resource>
+        <Resource>jsc://set-jwks-variable.js</Resource>
     </Resources>
     <TargetServers></TargetServers>
     <TargetEndpoints></TargetEndpoints>

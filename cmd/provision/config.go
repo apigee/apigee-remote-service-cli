@@ -78,7 +78,7 @@ func (p *provision) createConfig(cred *keySecret) *server.Config {
 	return config
 }
 
-func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, verifyErrors error) error {
+func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, verifyErrors error, verbosef shared.FormatFn) error {
 	// encode config
 	var yamlBuffer bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
@@ -132,7 +132,7 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		}
 
 		if p.runtimeType == "CLOUD" {
-			if err := p.createSecretPropertyset(jwksBytes, privateKeyBytes, propsBuf.Bytes(), printf); err != nil {
+			if err := p.createSecretPropertyset(jwksBytes, privateKeyBytes, propsBuf.Bytes(), verbosef); err != nil {
 				return err
 			}
 		}
@@ -207,7 +207,7 @@ func (p *provision) encodeUDCAEndpoint(config *server.Config, verbosef shared.Fo
 }
 
 // createSecretPropertyset creates an environment-scoped propertyset to store the secrets
-func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props []byte, printf shared.FormatFn) error {
+func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props []byte, verbosef shared.FormatFn) error {
 	m := map[string]string{
 		"crt":  string(jwk),
 		"key1": strings.ReplaceAll(string(privateKey[:len(privateKey)/2]), "\n", `\n`),
@@ -225,11 +225,15 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	}
 
 	res, err := p.ApigeeClient.Do(req, nil)
-	if err != nil {
-		return err
-	}
 	if res != nil {
 		defer res.Body.Close()
+	}
+	if err != nil {
+		if res.StatusCode != http.StatusConflict {
+			return err
+		} else {
+			verbosef("property set remote-service already exists")
+		}
 	}
 
 	return nil

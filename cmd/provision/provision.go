@@ -260,7 +260,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 		verifyErrors = p.verifyWithoutRetry(config, verbosef)
 	}
 
-	if err := p.printConfig(config, printf, verifyErrors); err != nil {
+	if err := p.printConfig(config, printf, verifyErrors, verbosef); err != nil {
 		return errors.Wrapf(err, "generating config")
 	}
 
