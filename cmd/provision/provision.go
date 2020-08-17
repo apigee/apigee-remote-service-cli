@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/pkg/errors"
@@ -59,6 +60,7 @@ type provision struct {
 	forceProxyInstall bool
 	virtualHosts      string
 	rotate            int
+	runtimeType       string
 }
 
 // Cmd returns base command
@@ -83,6 +85,12 @@ to your organization and environment.`,
 		},
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if p.IsGCPManaged {
+				err := p.getRuntimeType()
+				if err != nil {
+					return errors.Wrapf(err, "getting runtime type")
+				}
+			}
 			return p.run(printf)
 		},
 	}
@@ -261,6 +269,25 @@ func (p *provision) run(printf shared.FormatFn) error {
 	}
 
 	return verifyErrors
+}
+
+func (p *provision) getRuntimeType() error {
+	req, err := p.ApigeeClient.NewRequestNoEnv(http.MethodGet, "", nil)
+	if err != nil {
+		return err
+	}
+
+	org := &apigee.Organization{}
+	res, err := p.ApigeeClient.Do(req, org)
+	if err != nil {
+		return err
+	}
+	if res != nil {
+		defer res.Body.Close()
+	}
+	p.runtimeType = org.RuntimeType
+
+	return nil
 }
 
 func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {

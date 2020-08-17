@@ -23,6 +23,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/apigee/apigee-remote-service-cli/shared"
@@ -39,6 +40,8 @@ const (
 	defaultApigeeKeyFile  = "/opt/apigee/tls/tls.key"
 
 	policySecretNameFormat = "%s-%s-policy-secret"
+
+	propertysetURL = `/resourcefiles?name=%s&type=properties`
 )
 
 func (p *provision) createConfig(cred *keySecret) *server.Config {
@@ -128,6 +131,12 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 			server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 		}
 
+		if p.runtimeType == "CLOUD" {
+			if err := p.createSecretPropertyset(jwksBytes, privateKeyBytes, propsBuf.Bytes(), printf); err != nil {
+				return err
+			}
+		}
+
 		secretCRD := server.SecretCRD{
 			APIVersion: "v1",
 			Kind:       "Secret",
@@ -195,6 +204,35 @@ func (p *provision) checkRuntimeVersion(config *server.Config, client *http.Clie
 func (p *provision) encodeUDCAEndpoint(config *server.Config, verbosef shared.FormatFn) {
 	config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, envScopeEncodedName(p.Org, p.Env), p.Namespace)
 	verbosef("UDCA endpoint encoded")
+}
+
+// createSecretPropertyset creates an environment-scoped propertyset to store the secrets
+func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props []byte, printf shared.FormatFn) error {
+	m := map[string]string{
+		"crt":  string(jwk),
+		"key1": strings.ReplaceAll(string(privateKey[:len(privateKey)/2]), "\n", `\n`),
+		"key2": strings.ReplaceAll(string(privateKey[len(privateKey)/2:]), "\n", `\n`),
+	}
+	propsBuf := new(bytes.Buffer)
+	if err := server.WriteProperties(propsBuf, m); err != nil {
+		return err
+	}
+	props = append(props, propsBuf.Bytes()...)
+
+	req, err := p.ApigeeClient.NewRequest(http.MethodPost, fmt.Sprintf(propertysetURL, "remote-service"), bytes.NewReader(props))
+	if err != nil {
+		return err
+	}
+
+	res, err := p.ApigeeClient.Do(req, nil)
+	if err != nil {
+		return err
+	}
+	if res != nil {
+		defer res.Body.Close()
+	}
+
+	return nil
 }
 
 // shortName returns a substring with up to the first 15 characters of the input string
