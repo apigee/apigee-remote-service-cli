@@ -123,7 +123,7 @@
                 <Step>
                     <!-- .crt is actually JWKs JSON -->
                     <Name>Raise-Fault-Missing-Secret</Name>
-                    <Condition>propertyset.remote-service.crt is null</Condition>
+                    <Condition>propertyset.remote-service.crt is null || private.secret.remote-service.crt is null</Condition>
                 </Step>
             </Request>
             <Response>
