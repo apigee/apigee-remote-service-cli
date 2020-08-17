@@ -39,3 +39,14 @@ context.setVariable("jti", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/
         v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
 }));
+
+// fetch the key and kid from the propertyset if secret does not exist
+if (context.getVariable("private.secret.remote-service.key") === null) {
+    key1 = context.getVariable("propertyset.remote-service.key1")
+    key2 = context.getVariable("propertyset.remote-service.key2")
+    context.setVariable("private.remote-service.key", key1 + key2)
+    context.setVariable("private.remote-service.properties.kid", context.getVariable("propertyset.remote-service.kid"))
+} else {
+    context.setVariable("private.remote-service.key", context.getVariable("private.secret.remote-service.key"))
+    context.setVariable("private.remote-service.properties.kid", context.getVariable("private.secret.remote-service.properties.kid"))
+}

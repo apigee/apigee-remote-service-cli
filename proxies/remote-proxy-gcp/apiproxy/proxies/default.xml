@@ -8,7 +8,9 @@
             <Request>
                 <Step>
                     <Name>Raise-Fault-Missing-Secret</Name>
-                    <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
+                    <Condition>
+                        (private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null) and (propertyset.remote-service.key1 is null || propertyset.remote-service.key2 is null || propertyset.remote-service.kid is null)
+                    </Condition>
                 </Step>
                 <Step>
                     <Name>Extract-API-Key</Name>
@@ -35,9 +37,6 @@
             </Request>
             <Response>
                 <Step>
-                    <Name>Create-New-Response</Name>
-                </Step>
-                <Step>
                     <Name>Set-Response</Name>
                 </Step>
             </Response>
@@ -54,10 +53,6 @@
                 </Step>
             </Request>
             <Response>
-                <Step>
-                    <Name>Create-New-Response</Name>
-                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
-                </Step>
                 <Step>
                     <Name>JavaCallout</Name>
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
@@ -78,7 +73,9 @@
             <Request>
                 <Step>
                     <Name>Raise-Fault-Missing-Secret</Name>
-                    <Condition>private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null</Condition>
+                    <Condition>
+                        (private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null) and (propertyset.remote-service.key1 is null || propertyset.remote-service.key2 is null || propertyset.remote-service.kid is null)
+                    </Condition>
                 </Step>
                 <Step>
                     <Name>Extract-OAuth-Params</Name>
@@ -115,9 +112,6 @@
             </Request>
             <Response>
                 <Step>
-                    <Name>Create-New-Response</Name>
-                </Step>
-                <Step>
                     <Name>Set-Response</Name>
                 </Step>
             </Response>
@@ -129,10 +123,13 @@
                 <Step>
                     <!-- .crt is actually JWKs JSON -->
                     <Name>Raise-Fault-Missing-Secret</Name>
-                    <Condition>private.secret.remote-service.crt is null</Condition>
+                    <Condition>propertyset.remote-service.crt is null</Condition>
                 </Step>
             </Request>
             <Response>
+                <Step>
+                    <Name>Set-JWKS</Name>
+                </Step>
                 <Step>
                     <Name>Send-JWKs-Message</Name>
                 </Step>
@@ -190,8 +187,7 @@
         <Response/>
     </PostFlow>
     <PreFlow name="PreFlow">
-        <Request>
-        </Request>
+        <Request/>
         <Response/>
     </PreFlow>
     <HTTPProxyConnection>
