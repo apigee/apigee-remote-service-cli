@@ -14,7 +14,7 @@
 
 cert = context.getVariable('private.secret.remote-service.crt')
 if (cert === null) {
-    context.setVariable("remote-service.crt", context.getVariable('propertyset.remote-service.key1') + context.getVariable('propertyset.remote-service.key2'));
+    context.setVariable("remote-service.crt", context.getVariable('propertyset.remote-service.crt'));
 } else {
     context.setVariable("remote-service.crt", cert);
 }
