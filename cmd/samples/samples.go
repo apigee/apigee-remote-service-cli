@@ -75,9 +75,17 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 func cmdCreateSampleConfig(s *samples, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "create",
-		Short: "Create a new OAuth token",
-		Long:  "Create a new OAuth token",
-		Args:  cobra.NoArgs,
+		Short: "Create sample configuration files for native envoy or istio",
+		Long: `Create sample configuration files for native envoy or istio. A directory to
+output the config files (default to ./samples) should be provided through --out-dir.
+In the case of native envoy, it takes the host of the target service, the desired
+cluster name for it and optionally the path prefix for matching should be provided.
+It also sets up custom SSL connection from the envoy to the remote-service cluster if
+a directory containing tls.key and tls.crt is provided.
+In the case of istio where envoy proxy acts as sidecars, users are responsible for
+preparing files related to deployment of the target services thus no information for it
+is needed.`,
+		Args: cobra.NoArgs,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			url, _ := url.Parse(s.RuntimeBase)
