@@ -41,7 +41,8 @@ const (
 
 	policySecretNameFormat = "%s-%s-policy-secret"
 
-	propertysetURL = `/resourcefiles?name=%s&type=properties`
+	propertysetPOSTURL = `/resourcefiles?name=%s&type=properties`
+	propertysetPUTURL  = `/resourcefiles/properties/%s`
 )
 
 func (p *provision) createConfig(cred *keySecret) *server.Config {
@@ -219,7 +220,23 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	}
 	props = append(props, propsBuf.Bytes()...)
 
-	req, err := p.ApigeeClient.NewRequest(http.MethodPost, fmt.Sprintf(propertysetURL, "remote-service"), bytes.NewReader(props))
+	if p.rotate > 0 {
+		req, err := p.ApigeeClient.NewRequest(http.MethodPut, fmt.Sprintf(propertysetPUTURL, "remote-service"), bytes.NewReader(props))
+		if err != nil {
+			return err
+		}
+
+		res, err := p.ApigeeClient.Do(req, nil)
+		if res != nil {
+			defer res.Body.Close()
+		}
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	req, err := p.ApigeeClient.NewRequest(http.MethodPost, fmt.Sprintf(propertysetPOSTURL, "remote-service"), bytes.NewReader(props))
 	if err != nil {
 		return err
 	}

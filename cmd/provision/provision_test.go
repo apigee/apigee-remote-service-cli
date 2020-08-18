@@ -300,6 +300,9 @@ func serveMux(t *testing.T) *http.ServeMux {
 		case http.MethodGet:
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("{}"))
+		case http.MethodPut:
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("{}"))
 		case http.MethodPost:
 			if strings.Contains(r.URL.Path, "apiproducts") {
 				ap := apiProduct{}
@@ -370,6 +373,7 @@ func TestProvisionLegacySaaS(t *testing.T) {
 
 	print := testutil.Printer("TestProvisionLegacySaaS")
 
+	// good provision
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "hi", "-e", "test", "-u", "me", "-p", "password", "--legacy"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
@@ -419,6 +423,7 @@ func TestProvisionOPDK(t *testing.T) {
 
 	print := testutil.Printer("TestProvisionOPDK")
 
+	// good provision
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "opdk", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
@@ -438,6 +443,7 @@ func TestProvisionHybrid(t *testing.T) {
 
 	print := testutil.Printer("TestProvisionHybrid")
 
+	// good provision
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
@@ -488,8 +494,9 @@ func TestProvisionNGSaaS(t *testing.T) {
 
 	print := testutil.Printer("TestProvisionHybrid")
 
+	// 	// good provision with rotate
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	flags := []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
@@ -511,6 +518,17 @@ data:
 
 	print.CheckPrefix(t, want)
 
+	// good provision without rotate
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Errorf("want no error: %v", err)
+	}
+
+	// request to get runtime type returns 404
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "badng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
@@ -519,8 +537,9 @@ data:
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "404")
 
+	// propertyset remote-service already exists
 	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "ng", "-e", "conflictproperty", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	flags = []string{"provision", "-o", "ng", "-e", "conflictproperty", "-r", ts.URL, "-n", "ns", "-t", "token", "-v"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
@@ -528,6 +547,7 @@ data:
 		t.Errorf("want no error: %v", err)
 	}
 
+	// propertyset creation request returns 404
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
