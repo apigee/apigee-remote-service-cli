@@ -230,10 +230,7 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 		if res != nil {
 			defer res.Body.Close()
 		}
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	}
 
 	req, err := p.ApigeeClient.NewRequest(http.MethodPost, fmt.Sprintf(propertysetPOSTURL, "remote-service"), bytes.NewReader(props))
