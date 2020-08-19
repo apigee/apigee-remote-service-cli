@@ -260,7 +260,10 @@ func generateConfig(t *testing.T) []byte {
 }
 
 func TestTemp(t *testing.T) {
-	files := templates.AssetNames()
+	files, err := templates.AssetDir("native")
+	if err != nil {
+		t.Log(err)
+	}
 	for _, f := range files {
 		t.Log(f)
 	}

@@ -30,42 +30,23 @@ if [[ `command -v go-bindata` == "" ]]; then
 fi
 
 TEMP_DIR=$(mktemp -d)
-TEMPLATES_ZIP_DIR="${TEMP_DIR}/templates"
 TEMPLATES_SOURCE_DIR="${ROOTDIR}/templates"
+TEMPLATES_DIR="${TEMP_DIR}/templates"
 
-NATIVE_TEMPLATES_SRC="${TEMPLATES_SOURCE_DIR}/native"
-ISTIO16_TEMPLATES_SRC="${TEMPLATES_SOURCE_DIR}/istio-1.6"
-ISTIO17_TEMPLATES_SRC="${TEMPLATES_SOURCE_DIR}/istio-1.7"
-
-if [ ! -d "${TEMPLATES_ZIP_DIR}" ]; then
-  mkdir -p "${TEMPLATES_ZIP_DIR}"
+if [ ! -d "${TEMPLATES_DIR}" ]; then
+  mkdir -p "${TEMPLATES_DIR}"
 fi
 
-# native templates
-ZIP=${TEMPLATES_ZIP_DIR}/native.zip
-echo "building ${ZIP}"
-rm -f "${ZIP}"
-cd "${TEMPLATES_SOURCE_DIR}"
-zip -qr "${ZIP}" native
 
-# istio-1.6 templates
-ZIP=${TEMPLATES_ZIP_DIR}/istio-1.6.zip
-echo "building ${ZIP}"
-rm -f "${ZIP}"
-cd "${TEMPLATES_SOURCE_DIR}"
-zip -qr "${ZIP}" istio-1.6
-
-# istio-1.7 templates
-ZIP=${TEMPLATES_ZIP_DIR}/istio-1.7.zip
-echo "building ${ZIP}"
-rm -f "${ZIP}"
-cd "${TEMPLATES_SOURCE_DIR}"
-zip -qr "${ZIP}" istio-1.7
+cp -r "${TEMPLATES_SOURCE_DIR}/native"    $TEMPLATES_DIR
+cp -r "${TEMPLATES_SOURCE_DIR}/istio-1.6" $TEMPLATES_DIR
+cp -r "${TEMPLATES_SOURCE_DIR}/istio-1.7" $TEMPLATES_DIR
 
 # create resource
 RESOURCE_FILE="${ROOTDIR}/templates/templates.go"
 echo "building ${RESOURCE_FILE}"
-cd "${TEMP_DIR}"
-go-bindata -nomemcopy -pkg "templates" -prefix "templates" -o "${RESOURCE_FILE}" templates
+cd ${TEMP_DIR}
+echo $(ls "${TEMP_DIR}/templates")
+go-bindata -nomemcopy -pkg "templates" -prefix "templates" -o "${RESOURCE_FILE}" templates/...
 
 echo "done"

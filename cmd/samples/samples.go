@@ -15,14 +15,11 @@
 package samples
 
 import (
-	"archive/zip"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -35,8 +32,8 @@ import (
 )
 
 const (
-	nativeTemplateZip = "native.zip"
-	istioTemplateZip  = "istio-1.6.zip"
+	nativeTemplateDir = "native"
+	istioTemplateDir  = "istio-1.6"
 )
 
 type samples struct {
@@ -160,24 +157,25 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 	}
 	if s.isNative {
 		printf("generating the configuration file for native envoy proxy...")
-		return s.createConfig(nativeTemplateZip, printf)
+		return s.createConfig(nativeTemplateDir, printf)
 	}
 	printf("generating configuration files envoy as sidecars...")
-	return s.createConfig(istioTemplateZip, printf)
+	return s.createConfig(istioTemplateDir, printf)
 }
 
-func (s *samples) createConfig(zipFile string, printf shared.FormatFn) error {
+func (s *samples) createConfig(templateDir string, printf shared.FormatFn) error {
 	tempDir, err := ioutil.TempDir("", "apigee")
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}
 	defer os.RemoveAll(tempDir)
 
-	outDir, err := getTemplates(tempDir, zipFile)
+	err = getTemplates(tempDir, templateDir)
 	if err != nil {
 		return errors.Wrap(err, "getting templates")
 	}
-	templates, err := ioutil.ReadDir(outDir)
+	path := path.Join(tempDir, templateDir)
+	templates, err := ioutil.ReadDir(path)
 	if err != nil {
 		return errors.Wrap(err, "getting templates directory")
 	}
@@ -185,7 +183,7 @@ func (s *samples) createConfig(zipFile string, printf shared.FormatFn) error {
 		if f.Name() == "httpbin.yaml" && s.TargetService.Name != "httpbin" {
 			continue
 		}
-		err := s.createConfigYaml(outDir, f.Name(), printf)
+		err := s.createConfigYaml(path, f.Name(), printf)
 		if err != nil {
 			return err
 		}
@@ -207,51 +205,9 @@ func (s *samples) createConfigYaml(dir string, name string, printf shared.Format
 }
 
 // getTemplates unzips the templates to the tempDir/templates and returns the directory
-func getTemplates(tempDir string, name string) (string, error) {
-	if err := templates.RestoreAsset(tempDir, name); err != nil {
-		return "", errors.Wrapf(err, "restoring asset %s", name)
+func getTemplates(tempDir string, name string) error {
+	if err := templates.RestoreAssets(tempDir, name); err != nil {
+		return errors.Wrapf(err, "restoring asset %s", name)
 	}
-	zipFile := filepath.Join(tempDir, name)
-
-	extractDir, err := ioutil.TempDir(tempDir, "templates")
-	if err != nil {
-		return "", errors.Wrap(err, "creating temp dir")
-	}
-	if err := unzipTemplates(zipFile, extractDir); err != nil {
-		return "", errors.Wrapf(err, "extracting %s to %s", zipFile, tempDir)
-	}
-	return extractDir, nil
-}
-
-func unzipTemplates(zipFile string, dest string) error {
-	r, err := zip.OpenReader(zipFile)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	for _, src := range r.File {
-		rc, err := src.Open()
-		if err != nil {
-			return err
-		}
-		defer rc.Close()
-
-		f := src.FileInfo()
-		if f.IsDir() {
-			continue
-		}
-		path := path.Join(dest, f.Name())
-		dst, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, f.Mode())
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(dst, rc)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
