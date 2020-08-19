@@ -153,10 +153,7 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 }
 
 func (s *samples) createNativeConfig(printf shared.FormatFn) error {
-	tmpl, err := template.New("native").Parse(nativeEnvoyConfig)
-	if err != nil {
-		return err
-	}
+	tmpl, _ := template.New("envoy-config").Parse(nativeEnvoyConfig)
 	f, err := os.OpenFile(path.Join(s.outDir, "envoy-config.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return err
@@ -189,10 +186,7 @@ func (s *samples) createIstioConfig(printf shared.FormatFn) error {
 }
 
 func (s *samples) createEnvoyFilter(printf shared.FormatFn) error {
-	tmpl, err := template.New("native").Parse(envoyFilterSidecar)
-	if err != nil {
-		return err
-	}
+	tmpl, _ := template.New("envoyfilter-sidecar").Parse(envoyFilterSidecar)
 	f, err := os.OpenFile(path.Join(s.outDir, "envoyfilter-sidecar.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return err
@@ -202,10 +196,7 @@ func (s *samples) createEnvoyFilter(printf shared.FormatFn) error {
 }
 
 func (s *samples) createRequestAuthentication(printf shared.FormatFn) error {
-	tmpl, err := template.New("native").Parse(requestAuthentication)
-	if err != nil {
-		return err
-	}
+	tmpl, _ := template.New("request-authentication").Parse(requestAuthentication)
 	f, err := os.OpenFile(path.Join(s.outDir, "request-authentication.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return err
@@ -215,10 +206,7 @@ func (s *samples) createRequestAuthentication(printf shared.FormatFn) error {
 }
 
 func (s *samples) createAdapterConfig(printf shared.FormatFn) error {
-	tmpl, err := template.New("native").Parse(adapterConfig)
-	if err != nil {
-		return err
-	}
+	tmpl, _ := template.New("apigee-envoy-adapter").Parse(adapterConfig)
 	f, err := os.OpenFile(path.Join(s.outDir, "apigee-envoy-adapter.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return err
@@ -228,10 +216,7 @@ func (s *samples) createAdapterConfig(printf shared.FormatFn) error {
 }
 
 func (s *samples) createHttpbinConfig(printf shared.FormatFn) error {
-	tmpl, err := template.New("native").Parse(httpbinConfig)
-	if err != nil {
-		return err
-	}
+	tmpl, _ := template.New("httpbin").Parse(httpbinConfig)
 	f, err := os.OpenFile(path.Join(s.outDir, "httpbin.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return err
