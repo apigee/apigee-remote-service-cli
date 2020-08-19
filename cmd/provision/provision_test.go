@@ -45,6 +45,10 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 	duration = 200 * time.Millisecond
 	interval = 100 * time.Millisecond
 
+	authTS := httptest.NewServer(handler(t))
+	defer authTS.Close()
+	apigee.SetOAuthURL(authTS.URL + "/oauth/token")
+
 	// try without InsecureSkipVerify
 	p := &provision{
 		RootArgs: &shared.RootArgs{
@@ -228,6 +232,16 @@ func serveMux(t *testing.T) *http.ServeMux {
 			w.WriteHeader(http.StatusOK)
 		}
 	})
+	m.HandleFunc("/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		res := apigee.OAuthResponse{
+			AccessToken:  "access-token",
+			RefreshToken: "refresh-token",
+			TokenType:    "bearer",
+		}
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			t.Fatalf("error in generating oauth response %v", err)
+		}
+	})
 	// internal proxy verification
 	m.HandleFunc("/analytics/", func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "badinternal") {
@@ -323,6 +337,8 @@ func TestProvisionLegacySaaS(t *testing.T) {
 	defer ts.Close()
 
 	print := testutil.Printer("TestProvisionLegacySaaS")
+
+	apigee.SetOAuthURL(ts.URL + "/oauth/token")
 
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "hi", "-e", "test", "-u", "me", "-p", "password", "--legacy"}
@@ -668,6 +684,8 @@ func TestInternalProxyVerification(t *testing.T) {
 	defer ts.Close()
 
 	print := testutil.Printer("TestInternalProxyVerification")
+
+	apigee.SetOAuthURL(ts.URL + "/oauth/token")
 
 	// error on failing in verifying for opdk
 	rootArgs := &shared.RootArgs{}
