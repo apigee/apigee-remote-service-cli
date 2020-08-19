@@ -22,6 +22,7 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/templates"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"gopkg.in/yaml.v3"
@@ -90,10 +91,10 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 
 	want := []string{
 		"generating configuration files envoy as sidecars...",
-		"generating envoyfilter-sidecar.yaml...",
-		"generating request-authentication.yaml...",
 		"generating apigee-envoy-adapter.yaml...",
+		"generating envoyfilter-sidecar.yaml...",
 		"generating httpbin.yaml...",
+		"generating request-authentication.yaml...",
 	}
 
 	print.CheckPrefix(t, want)
@@ -128,9 +129,9 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 
 	want := []string{
 		"generating configuration files envoy as sidecars...",
+		"generating apigee-envoy-adapter.yaml...",
 		"generating envoyfilter-sidecar.yaml...",
 		"generating request-authentication.yaml...",
-		"generating apigee-envoy-adapter.yaml...",
 	}
 
 	print.CheckPrefix(t, want)
@@ -256,4 +257,11 @@ func generateConfig(t *testing.T) []byte {
 	}
 
 	return yamlBuffer.Bytes()
+}
+
+func TestTemp(t *testing.T) {
+	files := templates.AssetNames()
+	for _, f := range files {
+		t.Log(f)
+	}
 }

@@ -15,19 +15,28 @@
 package samples
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
 	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/templates"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+)
+
+const (
+	nativeTemplateZip = "native.zip"
+	istioTemplateZip  = "istio-1.6.zip"
 )
 
 type samples struct {
@@ -130,6 +139,11 @@ func (s *samples) loadConfig() error {
 	s.Namespace = s.ServerConfig.Global.Namespace
 	s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
 
+	if s.TLS.Dir != "" {
+		s.TLS.Key = path.Join(s.TLS.Dir, "tls.key")
+		s.TLS.Crt = path.Join(s.TLS.Dir, "tls.crt")
+	}
+
 	return nil
 }
 
@@ -146,81 +160,98 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 	}
 	if s.isNative {
 		printf("generating the configuration file for native envoy proxy...")
-		return s.createNativeConfig(printf)
+		return s.createConfig(nativeTemplateZip, printf)
 	}
 	printf("generating configuration files envoy as sidecars...")
-	return s.createIstioConfig(printf)
+	return s.createConfig(istioTemplateZip, printf)
 }
 
-func (s *samples) createNativeConfig(printf shared.FormatFn) error {
-	tmpl, _ := template.New("envoy-config").Parse(nativeEnvoyConfig)
-	f, err := os.OpenFile(path.Join(s.outDir, "envoy-config.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
+func (s *samples) createConfig(zipFile string, printf shared.FormatFn) error {
+	tempDir, err := ioutil.TempDir("", "apigee")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating temp dir")
 	}
-	if s.TLS.Dir != "" {
-		s.TLS.Key = path.Join(s.TLS.Dir, "tls.key")
-		s.TLS.Crt = path.Join(s.TLS.Dir, "tls.crt")
-	}
-	printf("generating envoy-config.yaml...")
-	return tmpl.Execute(f, s)
-}
+	defer os.RemoveAll(tempDir)
 
-func (s *samples) createIstioConfig(printf shared.FormatFn) error {
-	err := s.createEnvoyFilter(printf)
+	outDir, err := getTemplates(tempDir, zipFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting templates")
 	}
-	err = s.createRequestAuthentication(printf)
+	templates, err := ioutil.ReadDir(outDir)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting templates directory")
 	}
-	err = s.createAdapterConfig(printf)
-	if err != nil {
-		return err
-	}
-	if s.TargetService.Name == "httpbin" {
-		return s.createHttpbinConfig(printf)
+	for _, f := range templates {
+		if f.Name() == "httpbin.yaml" && s.TargetService.Name != "httpbin" {
+			continue
+		}
+		err := s.createConfigYaml(outDir, f.Name(), printf)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (s *samples) createEnvoyFilter(printf shared.FormatFn) error {
-	tmpl, _ := template.New("envoyfilter-sidecar").Parse(envoyFilterSidecar)
-	f, err := os.OpenFile(path.Join(s.outDir, "envoyfilter-sidecar.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
+func (s *samples) createConfigYaml(dir string, name string, printf shared.FormatFn) error {
+	tmpl, err := template.New(name).ParseFiles(path.Join(dir, name))
 	if err != nil {
 		return err
 	}
-	printf("generating envoyfilter-sidecar.yaml...")
+	f, err := os.OpenFile(path.Join(s.outDir, name), os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	printf("generating %s...", name)
 	return tmpl.Execute(f, s)
 }
 
-func (s *samples) createRequestAuthentication(printf shared.FormatFn) error {
-	tmpl, _ := template.New("request-authentication").Parse(requestAuthentication)
-	f, err := os.OpenFile(path.Join(s.outDir, "request-authentication.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
-	if err != nil {
-		return err
+// getTemplates unzips the templates to the tempDir/templates and returns the directory
+func getTemplates(tempDir string, name string) (string, error) {
+	if err := templates.RestoreAsset(tempDir, name); err != nil {
+		return "", errors.Wrapf(err, "restoring asset %s", name)
 	}
-	printf("generating request-authentication.yaml...")
-	return tmpl.Execute(f, s)
+	zipFile := filepath.Join(tempDir, name)
+
+	extractDir, err := ioutil.TempDir(tempDir, "templates")
+	if err != nil {
+		return "", errors.Wrap(err, "creating temp dir")
+	}
+	if err := unzipTemplates(zipFile, extractDir); err != nil {
+		return "", errors.Wrapf(err, "extracting %s to %s", zipFile, tempDir)
+	}
+	return extractDir, nil
 }
 
-func (s *samples) createAdapterConfig(printf shared.FormatFn) error {
-	tmpl, _ := template.New("apigee-envoy-adapter").Parse(adapterConfig)
-	f, err := os.OpenFile(path.Join(s.outDir, "apigee-envoy-adapter.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
+func unzipTemplates(zipFile string, dest string) error {
+	r, err := zip.OpenReader(zipFile)
 	if err != nil {
 		return err
 	}
-	printf("generating apigee-envoy-adapter.yaml...")
-	return tmpl.Execute(f, s)
-}
+	defer r.Close()
 
-func (s *samples) createHttpbinConfig(printf shared.FormatFn) error {
-	tmpl, _ := template.New("httpbin").Parse(httpbinConfig)
-	f, err := os.OpenFile(path.Join(s.outDir, "httpbin.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
-	if err != nil {
-		return err
+	for _, src := range r.File {
+		rc, err := src.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		f := src.FileInfo()
+		if f.IsDir() {
+			continue
+		}
+		path := path.Join(dest, f.Name())
+		dst, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(dst, rc)
+		if err != nil {
+			return err
+		}
 	}
-	printf("generating httpbin.yaml...")
-	return tmpl.Execute(f, s)
+
+	return nil
 }
