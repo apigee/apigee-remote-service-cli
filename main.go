@@ -48,7 +48,9 @@ func main() {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, provision.Cmd(rootArgs, shared.Printf))
 	shared.AddCommandWithFlags(rootCmd, rootArgs, bindings.Cmd(rootArgs, shared.Printf))
 	shared.AddCommandWithFlags(rootCmd, rootArgs, token.Cmd(rootArgs, shared.Printf))
-	shared.AddCommandWithFlags(rootCmd, rootArgs, samples.Cmd(rootArgs, shared.Printf))
+
+	// samples command does not require standard flags
+	rootCmd.AddCommand(samples.Cmd(rootArgs, shared.Printf))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(-1)

@@ -216,7 +216,7 @@ clusters:
 kind: Deployment
 metadata:
   name: apigee-remote-service-envoy
-  namespace: apigee
+  namespace: {{.Namespace}}
   annotations:
     sidecar.istio.io/rewriteAppHTTPProbers: "true"
     prometheus.io/path: /metrics
@@ -294,7 +294,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: apigee-remote-service-envoy
-  namespace: apigee
+  namespace: {{.Namespace}}
   labels:
     app: apigee-remote-service-envoy
 spec:
@@ -314,7 +314,7 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: apigee-remote-target-service
+  name: apigee-remote-{{.TargetService.Name}}
   namespace: default
 spec:
   workloadSelector:
@@ -427,5 +427,47 @@ spec:
   - from:
     - source:
         requestPrincipals: ["*"]
+`
+
+	httpbinConfig = `# An httpbin target example Deployment and Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  namespace: default
+  labels:
+    app: httpbin
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app: httpbin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: httpbin
+        version: v1
+        managed-by: apigee
+    spec:
+      containers:
+      - image: docker.io/kennethreitz/httpbin
+        imagePullPolicy: IfNotPresent
+        name: httpbin
+        ports:
+        - containerPort: 80
 `
 )

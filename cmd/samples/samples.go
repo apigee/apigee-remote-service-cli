@@ -15,14 +15,17 @@
 package samples
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
 	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -31,6 +34,7 @@ type samples struct {
 	*shared.RootArgs
 	isNative      bool
 	outDir        string
+	overwrite     bool
 	RuntimeHost   string
 	TargetService targetService
 	TLS           tls
@@ -62,9 +66,6 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		Short: "Managing sample configuration files for remote-service deployment",
 		Long:  `Managing sample configuration files for remote-service deployment`,
 		Args:  cobra.NoArgs,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return rootArgs.Resolve(true, true)
-		},
 	}
 
 	c.AddCommand(cmdCreateSampleConfig(s, printf))
@@ -76,32 +77,60 @@ func cmdCreateSampleConfig(s *samples, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "create",
 		Short: "Create sample configuration files for native envoy or istio",
-		Long: `Create sample configuration files for native envoy or istio. A directory to
-output the config files (default to ./samples) should be provided through --out-dir.
-In the case of native envoy, it takes the host of the target service, the desired
-cluster name for it and optionally the path prefix for matching should be provided.
-It also sets up custom SSL connection from the envoy to the remote-service cluster if
-a directory containing tls.key and tls.crt is provided.
-In the case of istio where envoy proxy acts as sidecars, users are responsible for
-preparing files related to deployment of the target services thus no information for it
-is needed.`,
+		Long: `Create sample configuration files for native envoy or istio. A valid config
+yaml file generated through provisioning is required via --config/-c. Files will be in
+the directory specified via --out (default ./samples).
+In the case of native envoy, it takes the host of the target service, the desired name
+for its cluster and optionally the path prefix for matching. It also sets custom SSL 
+connection from the envoy to the remote-service cluster if a folder containing tls.key
+and tls.crt is provided via --tls/-t.
+In the case of istio where envoy proxy acts as sidecars, if the target is unspecified,
+the httpbin example will be generated. Otherwise, users are responsible for preparing
+files related to deployment of their target services.`,
 		Args: cobra.NoArgs,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			url, _ := url.Parse(s.RuntimeBase)
-			s.RuntimeHost = url.Hostname()
+			err := s.loadConfig()
+			if err != nil {
+				return errors.Wrap(err, "loading config yaml file")
+			}
 			return errors.Wrap(s.createSampleConfigs(printf), "creating sample config files")
 		},
 	}
 
-	c.Flags().BoolVarP(&s.isNative, "native", "", false, "generating config for native envoy (otherwise istio by default)")
-	c.Flags().StringVarP(&s.outDir, "out-dir", "", "samples", "directory to create config files within")
-	c.Flags().StringVarP(&s.TargetService.Name, "name", "", "target-service-name", "target service name")
-	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "target-service-host", "target service host")
-	c.Flags().StringVarP(&s.TargetService.Prefix, "prefix", "", "/", "target service prefix")
-	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory for tls key and crt")
+	c.Flags().StringVarP(&s.ConfigPath, "config", "c", "", "Path to Apigee Remote Service config file")
+	c.Flags().BoolVarP(&s.isNative, "native", "", false, "generate config for native envoy (otherwise assuming istio)")
+	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
+	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
+	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
+	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host")
+	c.Flags().StringVarP(&s.TargetService.Prefix, "prefix", "p", "/", "target service prefix")
+	c.Flags().StringVarP(&s.TLS.Dir, "tls", "t", "", "directory for tls key and crt")
+
+	_ = c.MarkFlagRequired("config")
 
 	return c
+}
+
+func (s *samples) loadConfig() error {
+	s.ServerConfig = &server.Config{}
+	err := s.ServerConfig.Load(s.ConfigPath, "")
+	if err != nil {
+		return err
+	}
+
+	s.RuntimeBase = strings.Split(s.ServerConfig.Tenant.RemoteServiceAPI, "/remote-service")[0]
+	url, err := url.Parse(s.RuntimeBase)
+	if err != nil {
+		return err
+	}
+	s.RuntimeHost = url.Hostname()
+	s.Org = s.ServerConfig.Tenant.OrgName
+	s.Env = s.ServerConfig.Tenant.EnvName
+	s.Namespace = s.ServerConfig.Global.Namespace
+	s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
+
+	return nil
 }
 
 func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
@@ -110,6 +139,10 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 		if err := os.Mkdir(s.outDir, 0755); err != nil {
 			return err
 		}
+	} else if s.overwrite {
+		printf("overwriting the existing directory...")
+	} else {
+		return fmt.Errorf("output directory already exists")
 	}
 	if s.isNative {
 		printf("generating the configuration file for native envoy proxy...")
@@ -145,7 +178,14 @@ func (s *samples) createIstioConfig(printf shared.FormatFn) error {
 	if err != nil {
 		return err
 	}
-	return s.createAdapterConfig(printf)
+	err = s.createAdapterConfig(printf)
+	if err != nil {
+		return err
+	}
+	if s.TargetService.Name == "httpbin" {
+		return s.createHttpbinConfig(printf)
+	}
+	return nil
 }
 
 func (s *samples) createEnvoyFilter(printf shared.FormatFn) error {
@@ -183,7 +223,19 @@ func (s *samples) createAdapterConfig(printf shared.FormatFn) error {
 	if err != nil {
 		return err
 	}
-	s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
 	printf("generating apigee-envoy-adapter.yaml...")
+	return tmpl.Execute(f, s)
+}
+
+func (s *samples) createHttpbinConfig(printf shared.FormatFn) error {
+	tmpl, err := template.New("native").Parse(httpbinConfig)
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path.Join(s.outDir, "httpbin.yaml"), os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	printf("generating httpbin.yaml...")
 	return tmpl.Execute(f, s)
 }
