@@ -489,7 +489,7 @@ type OAuthResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
 	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    string `json:"expires_in,omitempty"`
+	ExpiresIn    uint32 `json:"expires_in,omitempty"`
 	Scope        string `json:"scope,omitempty"`
 	JTI          string `json:"jti,omitempty"`
 }
