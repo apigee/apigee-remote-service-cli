@@ -243,6 +243,7 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 				Username:    o.Auth.Username,
 				Password:    o.Auth.Password,
 				BearerToken: o.Auth.BearerToken,
+				MFAToken:    o.Auth.MFAToken,
 			}
 		}
 		if e != nil {
