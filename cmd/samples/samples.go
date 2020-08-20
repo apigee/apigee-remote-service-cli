@@ -31,14 +31,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	nativeTemplateDir = "native"
-	istioTemplateDir  = "istio-1.6"
-)
-
 type samples struct {
 	*shared.RootArgs
-	isNative      bool
+	template      string
 	outDir        string
 	overwrite     bool
 	RuntimeHost   string
@@ -48,9 +43,8 @@ type samples struct {
 }
 
 type targetService struct {
-	Name   string
-	Host   string
-	Prefix string
+	Name string
+	Host string
 }
 
 type tls struct {
@@ -82,14 +76,13 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 func cmdCreateSampleConfig(s *samples, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "create",
-		Short: "Create sample configuration files for native envoy or istio",
-		Long: `Create sample configuration files for native envoy or istio. A valid config
+		Short: "create sample configuration files for native envoy or istio",
+		Long: `create sample configuration files for native envoy or istio. A valid config
 yaml file generated through provisioning is required via --config/-c. Files will be in
 the directory specified via --out (default ./samples).
-In the case of native envoy, it takes the host of the target service, the desired name
-for its cluster and optionally the path prefix for matching. It also sets custom SSL 
-connection from the envoy to the remote-service cluster if a folder containing tls.key
-and tls.crt is provided via --tls/-t.
+In the case of native envoy, it takes the target service host and the desired name for
+its cluster. It also sets custom SSL connection from the envoy to the remote-service 
+cluster if a folder containing tls.key and tls.crt is provided via --tls.
 In the case of istio where envoy proxy acts as sidecars, if the target is unspecified,
 the httpbin example will be generated. Otherwise, users are responsible for preparing
 files related to deployment of their target services.`,
@@ -100,18 +93,25 @@ files related to deployment of their target services.`,
 			if err != nil {
 				return errors.Wrap(err, "loading config yaml file")
 			}
-			return errors.Wrap(s.createSampleConfigs(printf), "creating sample config files")
+			err = s.createSampleConfigs(printf)
+			if err != nil {
+				return errors.Wrap(err, "creating sample config files")
+			}
+			printf("config files successfully generated.")
+			if s.template != "native" {
+				printf("please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.")
+			}
+			return nil
 		},
 	}
 
-	c.Flags().StringVarP(&s.ConfigPath, "config", "c", "", "Path to Apigee Remote Service config file")
-	c.Flags().BoolVarP(&s.isNative, "native", "", false, "generate config for native envoy (otherwise assuming istio)")
+	c.Flags().StringVarP(&s.ConfigPath, "config", "c", "", "path to Apigee Remote Service config file")
+	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.6", "template name (options are istio-1.6, istio-1.7, native)")
 	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
 	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host")
-	c.Flags().StringVarP(&s.TargetService.Prefix, "prefix", "p", "/", "target service prefix")
-	c.Flags().StringVarP(&s.TLS.Dir, "tls", "t", "", "directory for tls key and crt")
+	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory for tls key and crt")
 
 	_ = c.MarkFlagRequired("config")
 
@@ -155,12 +155,8 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 	} else {
 		return fmt.Errorf("output directory already exists")
 	}
-	if s.isNative {
-		printf("generating the configuration file for native envoy proxy...")
-		return s.createConfig(nativeTemplateDir, printf)
-	}
-	printf("generating configuration files envoy as sidecars...")
-	return s.createConfig(istioTemplateDir, printf)
+	printf("generating %s configuration files...", s.template)
+	return s.createConfig(s.template, printf)
 }
 
 func (s *samples) createConfig(templateDir string, printf shared.FormatFn) error {

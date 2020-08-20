@@ -21,7 +21,7 @@ admin:
             - name: default
               domains: "*"
               routes:
-              - match: { prefix: {{.TargetService.Prefix}} }
+              - match: { prefix: / }
                 route:
                   cluster: {{.TargetService.Name}}
                 typed_per_filter_config:

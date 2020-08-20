@@ -46,7 +46,7 @@ func TestCreateNativeConfigs(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--native", "--out", "./native", "-c", tmpFile.Name(), "--tls", "./"}
+	flags := []string{"samples", "create", "-t", "native", "--out", "./native", "-c", tmpFile.Name(), "--tls", "./"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -55,8 +55,9 @@ func TestCreateNativeConfigs(t *testing.T) {
 	}
 
 	want := []string{
-		"generating the configuration file for native envoy proxy...",
+		"generating native configuration files...",
 		"generating envoy-config.yaml...",
+		"config files successfully generated.",
 	}
 
 	print.CheckPrefix(t, want)
@@ -90,11 +91,13 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"generating configuration files envoy as sidecars...",
+		"generating istio-1.6 configuration files...",
 		"generating apigee-envoy-adapter.yaml...",
 		"generating envoyfilter-sidecar.yaml...",
 		"generating httpbin.yaml...",
 		"generating request-authentication.yaml...",
+		"config files successfully generated.",
+		"please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
 	}
 
 	print.CheckPrefix(t, want)
@@ -128,10 +131,12 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"generating configuration files envoy as sidecars...",
+		"generating istio-1.6 configuration files...",
 		"generating apigee-envoy-adapter.yaml...",
 		"generating envoyfilter-sidecar.yaml...",
 		"generating request-authentication.yaml...",
+		"config files successfully generated.",
+		"please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
 	}
 
 	print.CheckPrefix(t, want)
@@ -190,7 +195,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 	// existing directory with overwrite
 	rootArgs := &shared.RootArgs{}
 
-	flags := []string{"samples", "create", "--native", "--out", tmpDir, "-c", tmpFile.Name(), "-f"}
+	flags := []string{"samples", "create", "-t", "native", "--out", tmpDir, "-c", tmpFile.Name(), "-f"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -200,8 +205,9 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 
 	want := []string{
 		"overwriting the existing directory...",
-		"generating the configuration file for native envoy proxy...",
+		"generating native configuration files...",
 		"generating envoy-config.yaml...",
+		"config files successfully generated.",
 	}
 
 	print.CheckPrefix(t, want)

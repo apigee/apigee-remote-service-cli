@@ -80,7 +80,7 @@ func version(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	}
 
 	subC.PersistentFlags().StringVarP(&rootArgs.ConfigPath, "config", "c",
-		"", "Path to Apigee Remote Service config file")
+		"", "path to Apigee Remote Service config file")
 
 	subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
 		"", "Apigee runtime base URL")
