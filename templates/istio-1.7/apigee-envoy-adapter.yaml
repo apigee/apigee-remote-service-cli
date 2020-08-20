@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apigee-remote-service-envoy
+  namespace: {{.Namespace}}
+  annotations:
+    sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: "5001"
+    prometheus.io/scheme: https
+    prometheus.io/scrape: "true"
+    prometheus.io/type: prometheusspec
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apigee-remote-service-envoy
+  template:
+    metadata:
+      labels:
+        app: apigee-remote-service-envoy
+        version: v1
+    spec:
+      securityContext:  
+        runAsUser: 999
+        runAsGroup: 999
+        runAsNonRoot: true
+      containers:
+      - name: apigee-remote-service-envoy
+        image: "google/apigee-envoy-adapter:v1.0.0"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5001
+          failureThreshold: 1
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 5001
+          failureThreshold: 30
+          periodSeconds: 10
+        args:
+          - --log-level=debug
+          - --config=/config/config.yaml
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
+            cpu: 10m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /config
+          name: apigee-remote-service-envoy
+          readOnly: true
+        - mountPath: /opt/apigee/tls
+          name: tls-volume
+          readOnly: true
+        - mountPath: /policy-secret
+          name: policy-secret
+          readOnly: true
+      volumes:
+      - name: apigee-remote-service-envoy
+        configMap:
+          name: apigee-remote-service-envoy
+      - name: tls-volume
+        secret:
+          defaultMode: 420
+          secretName: apigee-udca-{{.EncodedName}}-tls
+      - name: policy-secret
+        secret:
+          defaultMode: 420
+          secretName: {{.Org}}-{{.Env}}-policy-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apigee-remote-service-envoy
+  namespace: {{.Namespace}}
+  labels:
+    app: apigee-remote-service-envoy
+spec:
+  ports:
+  - port: 5000
+    name: grpc
+  selector:
+    app: apigee-remote-service-envoy
