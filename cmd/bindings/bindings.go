@@ -66,7 +66,7 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "",
 		"Apigee password (legacy or OPDK only)")
 	c.PersistentFlags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
-		"Apigee password (legacy)")
+		"Apigee multi-factor authorization token (legacy only)")
 	c.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m",
 		"", "Apigee management base URL")
 
