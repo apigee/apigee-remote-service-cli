@@ -243,13 +243,13 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 				Username:    o.Auth.Username,
 				Password:    o.Auth.Password,
 				BearerToken: o.Auth.BearerToken,
-				MFAToken:    o.Auth.MFAToken,
 			}
 		}
 		if e != nil {
 			return nil, e
 		}
-		if o.MgmtURL == defaultBaseURL || c.auth.MFAToken != "" {
+		if o.MgmtURL == defaultBaseURL || o.Auth.MFAToken != "" {
+			c.auth.MFAToken = o.Auth.MFAToken
 			e = c.getOAuthToken()
 			if e != nil {
 				return nil, e
@@ -290,7 +290,12 @@ func (c *EdgeClient) getOAuthToken() error {
 		defer res.Body.Close()
 	}
 	if err := CheckResponse(res); err != nil {
-		return err
+		var errorResponse *ErrorResponse
+		if errors.As(err, &errorResponse) {
+			return fmt.Errorf("%d %v", res.StatusCode, errorResponse.Message)
+		} else {
+			return fmt.Errorf("%d", res.StatusCode)
+		}
 	}
 	body := &OAuthResponse{}
 	if err := json.NewDecoder(res.Body).Decode(body); err != nil {
