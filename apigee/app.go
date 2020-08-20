@@ -25,8 +25,6 @@ type Application struct {
 	Name        string          `json:"name"`
 	Scopes      []string        `json:"scopes,omitempty"`
 	Status      string          `json:"status,omitempty"`
-	// CreatedAt      interface{}     `json:"createdAt,omitempty"`
-	// LastModifiedAt interface{}     `json:"lastModifiedAt,omitempty"`
 }
 
 type Credential struct {
