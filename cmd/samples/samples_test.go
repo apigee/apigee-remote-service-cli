@@ -55,8 +55,8 @@ func TestCreateNativeConfigs(t *testing.T) {
 	}
 
 	want := []string{
-		"generating native configuration files...",
-		"generating envoy-config.yaml...",
+		"Generating native configuration files...",
+		"  generating envoy-config.yaml...",
 		"config files successfully generated.",
 	}
 
@@ -91,13 +91,13 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"generating istio-1.6 configuration files...",
-		"generating apigee-envoy-adapter.yaml...",
-		"generating envoyfilter-sidecar.yaml...",
-		"generating httpbin.yaml...",
-		"generating request-authentication.yaml...",
+		"Generating istio-1.6 configuration files...",
+		"  generating apigee-envoy-adapter.yaml...",
+		"  generating envoyfilter-sidecar.yaml...",
+		"  generating httpbin.yaml...",
+		"  generating request-authentication.yaml...",
 		"config files successfully generated.",
-		"please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
+		"Please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
 	}
 
 	print.CheckPrefix(t, want)
@@ -131,12 +131,12 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"generating istio-1.6 configuration files...",
-		"generating apigee-envoy-adapter.yaml...",
-		"generating envoyfilter-sidecar.yaml...",
-		"generating request-authentication.yaml...",
+		"Generating istio-1.6 configuration files...",
+		"  generating apigee-envoy-adapter.yaml...",
+		"  generating envoyfilter-sidecar.yaml...",
+		"  generating request-authentication.yaml...",
 		"config files successfully generated.",
-		"please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
+		"Please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
 	}
 
 	print.CheckPrefix(t, want)
@@ -204,9 +204,9 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 	}
 
 	want := []string{
-		"overwriting the existing directory...",
-		"generating native configuration files...",
-		"generating envoy-config.yaml...",
+		"Overwriting the existing directory!",
+		"Generating native configuration files...",
+		"  generating envoy-config.yaml...",
 		"config files successfully generated.",
 	}
 
