@@ -29,17 +29,21 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/bgentry/go-netrc/netrc"
 )
 
 const (
-	libraryVersion = "0.1.0"
-	defaultBaseURL = "https://api.enterprise.apigee.com/"
-	userAgent      = "go-apigee-edge/" + libraryVersion
-	appJSON        = "application/json"
-	octetStream    = "application/octet-stream"
+	libraryVersion  = "0.1.0"
+	defaultBaseURL  = "https://api.enterprise.apigee.com"
+	basicAuthHeader = "Basic ZWRnZWNsaTplZGdlY2xpc2VjcmV0"
+	userAgent       = "go-apigee-edge/" + libraryVersion
+	appJSON         = "application/json"
+	octetStream     = "application/octet-stream"
 )
+
+var OAuthURL = "https://login.apigee.com/oauth/token"
 
 // EdgeClient manages communication with Apigee Edge V1 Admin API.
 type EdgeClient struct {
@@ -242,6 +246,12 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 		if e != nil {
 			return nil, e
 		}
+		if o.MgmtURL == defaultBaseURL {
+			e = c.getOAuthToken()
+			if e != nil {
+				return nil, e
+			}
+		}
 	}
 
 	if o.Debug {
@@ -252,6 +262,33 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	}
 
 	return c, nil
+}
+
+func (c *EdgeClient) getOAuthToken() error {
+	oauthFormat := `username=%s&password=%s&grant_type=password`
+	oauthData := fmt.Sprintf(oauthFormat, c.auth.Username, c.auth.Password)
+	req, err := http.NewRequest(http.MethodPost, OAuthURL, strings.NewReader(oauthData))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-type", "application/x-www-form-urlencoded;charset=utf-8")
+	req.Header.Add("Authorization", basicAuthHeader)
+	res, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res != nil {
+		defer res.Body.Close()
+	}
+	if err := CheckResponse(res); err != nil {
+		return err
+	}
+	body := &OAuthResponse{}
+	if err := json.NewDecoder(res.Body).Decode(body); err != nil {
+		return err
+	}
+	c.auth.BearerToken = body.AccessToken
+	return nil
 }
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
@@ -442,4 +479,17 @@ func StreamToString(stream io.Reader) string {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(stream)
 	return buf.String()
+}
+
+func SetOAuthURL(url string) {
+	OAuthURL = url
+}
+
+type OAuthResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    uint32 `json:"expires_in,omitempty"`
+	Scope        string `json:"scope,omitempty"`
+	JTI          string `json:"jti,omitempty"`
 }
