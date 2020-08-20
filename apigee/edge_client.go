@@ -29,7 +29,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/bgentry/go-netrc/netrc"
 )
@@ -161,6 +160,9 @@ type EdgeAuth struct {
 	// Optional. Used if you explicitly specify a Password.
 	Password string
 
+	// Optional. Required if MFA (multi-factor authorization) is enabled.
+	MFAToken string
+
 	// if set to true, no auth will be set
 	SkipAuth bool
 
@@ -241,12 +243,13 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 				Username:    o.Auth.Username,
 				Password:    o.Auth.Password,
 				BearerToken: o.Auth.BearerToken,
+				MFAToken:    o.Auth.MFAToken,
 			}
 		}
 		if e != nil {
 			return nil, e
 		}
-		if o.MgmtURL == defaultBaseURL {
+		if o.MgmtURL == defaultBaseURL || c.auth.MFAToken != "" {
 			e = c.getOAuthToken()
 			if e != nil {
 				return nil, e
@@ -265,13 +268,19 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 }
 
 func (c *EdgeClient) getOAuthToken() error {
-	oauthFormat := `username=%s&password=%s&grant_type=password`
-	oauthData := fmt.Sprintf(oauthFormat, c.auth.Username, c.auth.Password)
-	req, err := http.NewRequest(http.MethodPost, OAuthURL, strings.NewReader(oauthData))
+	req, err := http.NewRequest(http.MethodPost, OAuthURL, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Content-type", "application/x-www-form-urlencoded;charset=utf-8")
+	q := req.URL.Query()
+	q.Set("username", c.auth.Username)
+	q.Set("password", c.auth.Password)
+	q.Set("grant_type", "password")
+	if c.auth.MFAToken != "" {
+		q.Set("mfa_token", c.auth.MFAToken)
+	}
+	req.URL.RawQuery = q.Encode()
+	req.Header.Add("Content-type", "application/x-www-form-urlencoded")
 	req.Header.Add("Authorization", basicAuthHeader)
 	res, err := c.client.Do(req)
 	if err != nil {

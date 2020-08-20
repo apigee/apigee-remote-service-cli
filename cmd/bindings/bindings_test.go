@@ -225,13 +225,13 @@ func TestBindingVerifyAll(t *testing.T) {
 		t.Errorf("want no error, got: %v", err)
 	}
 	wants = []string{
-		"product /product1/ is unbound to any target, no need to verify",
-		"product /product/ is unbound to any target, no need to verify",
-		"verifying apps associated with product /product2/:",
+		"Product /product1/ is unbound to any target, no need to verify.",
+		"Product /product/ is unbound to any target, no need to verify.",
+		"Verifying apps associated with product /product2/:",
 		"  app /app1/ associated with product /product2/ is verified",
-		"verifying apps associated with product /product0/:",
+		"Verifying apps associated with product /product0/:",
 		"  app /app0/ associated with product /product0/ is verified",
-		"no app is found associated with product /product4/",
+		"No app is found associated with product /product4/.",
 	}
 	print.Check(t, wants)
 }
@@ -256,7 +256,7 @@ func TestBindingVerifyOne(t *testing.T) {
 		t.Errorf("want no error, got: %v", err)
 	}
 	wants = []string{
-		"verifying apps associated with product /product2/:",
+		"Verifying apps associated with product /product2/:",
 		"  app /app1/ associated with product /product2/ is verified",
 	}
 	print.Check(t, wants)

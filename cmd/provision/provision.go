@@ -100,6 +100,8 @@ to your organization and environment.`,
 		"Apigee username (legacy or OPDK only)")
 	c.Flags().StringVarP(&rootArgs.Password, "password", "p", "",
 		"Apigee password (legacy or OPDK only)")
+	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
+		"Apigee password (legacy)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")

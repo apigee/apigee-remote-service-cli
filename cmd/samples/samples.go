@@ -99,7 +99,7 @@ files related to deployment of their target services.`,
 			}
 			printf("config files successfully generated.")
 			if s.template != "native" {
-				printf("please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.")
+				printf("Please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.")
 			}
 			return nil
 		},
@@ -151,11 +151,11 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 			return err
 		}
 	} else if s.overwrite {
-		printf("overwriting the existing directory...")
+		printf("Overwriting the existing directory!")
 	} else {
 		return fmt.Errorf("output directory already exists")
 	}
-	printf("generating %s configuration files...", s.template)
+	printf("Generating %s configuration files...", s.template)
 	return s.createConfig(s.template, printf)
 }
 
@@ -196,7 +196,7 @@ func (s *samples) createConfigYaml(dir string, name string, printf shared.Format
 	if err != nil {
 		return err
 	}
-	printf("generating %s...", name)
+	printf("  generating %s...", name)
 	return tmpl.Execute(f, s)
 }
 
