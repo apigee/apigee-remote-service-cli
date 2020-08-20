@@ -101,10 +101,10 @@ func AddCommandWithFlags(c *cobra.Command, rootArgs *RootArgs, cmds ...*cobra.Co
 			"", "Apigee environment name")
 
 		subC.PersistentFlags().StringVarP(&rootArgs.ConfigPath, "config", "c",
-			"", "Path to Apigee Remote Service config file")
+			"", "path to Apigee Remote Service config file")
 
 		subC.PersistentFlags().BoolVarP(&rootArgs.InsecureSkipVerify, "insecure", "",
-			false, "Allow insecure server connections when using SSL")
+			false, "allow insecure server connections when using SSL")
 
 		c.AddCommand(subC)
 	}
