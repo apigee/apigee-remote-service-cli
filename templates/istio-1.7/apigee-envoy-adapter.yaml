@@ -27,7 +27,7 @@ spec:
         runAsNonRoot: true
       containers:
       - name: apigee-remote-service-envoy
-        image: "google/apigee-envoy-adapter:v1.0.0"
+        image: "google/apigee-envoy-adapter:{{.ImageTag}}"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000
