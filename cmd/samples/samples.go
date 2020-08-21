@@ -113,7 +113,7 @@ files related to deployment of their target services.`,
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
 	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host")
 	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory for tls key and crt")
-	c.Flags().StringVarP(&s.ImageTag, "tag", "", "", "version tag of the Envoy Adapter image (default to the build version)")
+	c.Flags().StringVarP(&s.ImageTag, "tag", "", getTagFromBuildVersion(), "version tag of the Envoy Adapter image")
 
 	_ = c.MarkFlagRequired("config")
 
@@ -143,23 +143,18 @@ func (s *samples) loadConfig() error {
 		s.TLS.Crt = path.Join(s.TLS.Dir, "tls.crt")
 	}
 
-	if s.ImageTag == "" {
-		s.getTagFromBuildVersion()
-	}
-
 	return nil
 }
 
-func (s *samples) getTagFromBuildVersion() {
+func getTagFromBuildVersion() string {
 	tag := shared.BuildInfo.Version
 	if e := strings.Index(tag, "-SNAPSHOT"); e != -1 {
 		tag = tag[:e]
 	}
 	if strings.HasPrefix(tag, "v") {
-		s.ImageTag = tag
-	} else {
-		s.ImageTag = "v" + tag
+		return tag
 	}
+	return "v" + tag
 }
 
 func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
