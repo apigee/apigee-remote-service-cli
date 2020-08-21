@@ -14,6 +14,7 @@
 
 package apigee
 
+// Application represets an Apigee App
 type Application struct {
 	AppID       string          `json:"appId"`
 	Attributes  interface{}     `json:"attributes,omitempty"`
@@ -27,14 +28,17 @@ type Application struct {
 	Status      string          `json:"status,omitempty"`
 }
 
+// Credential is a collection of APIProducts
 type Credential struct {
 	APIProducts []APIProductRef `json:"apiProducts,omitempty"`
 }
 
+// AppResponse is a collection of Applications
 type AppResponse struct {
 	Apps []Application `json:"app,omitempty"`
 }
 
+// APIProductRef holds the name and status of an APIProduct
 type APIProductRef struct {
 	Name   string `json:"apiproduct"`
 	Status string `json:"status,omitempty"`

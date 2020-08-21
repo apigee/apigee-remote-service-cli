@@ -356,9 +356,8 @@ func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf
 	for _, app := range apps {
 		if !app.hasRemoteService {
 			return fmt.Errorf("  app %s associated with product %s is not associated with remote-service product", app.name, p.Name)
-		} else {
-			printf("  app %s associated with product %s is verified", app.name, p.Name)
 		}
+		printf("  app %s associated with product %s is verified", app.name, p.Name)
 	}
 	return nil
 }
@@ -438,6 +437,7 @@ func (a byName) Len() int           { return len(a) }
 func (a byName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
+// App represents an Apigee App
 type App struct {
 	name             string
 	hasRemoteService bool

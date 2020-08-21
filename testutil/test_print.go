@@ -59,7 +59,7 @@ func (tp *TestPrint) Check(t *testing.T, want []string) {
 	tp.Prints = nil
 }
 
-// Check is for checking test output
+// CheckPrefix is for checking test output
 func (tp *TestPrint) CheckPrefix(t *testing.T, want []string) {
 	if want == nil {
 		want = []string{}
