@@ -101,7 +101,7 @@ to your organization and environment.`,
 	c.Flags().StringVarP(&rootArgs.Password, "password", "p", "",
 		"Apigee password (legacy or OPDK only)")
 	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
-		"Apigee password (legacy)")
+		"Apigee multi-factor authorization token (legacy only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")
@@ -260,6 +260,16 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	if verifyErrors == nil {
 		verbosef("provisioning verified OK")
+	}
+
+	if !p.IsGCPManaged {
+		return verifyErrors
+	}
+	// TODO: also check if is on Hybrid when NG SaaS support is incorporated
+	if p.rotate > 0 {
+		shared.Errorf("\nWARNING: Provisioned config with rotated secrets needs to be applied onto the k8s cluster to take effect.")
+	} else {
+		shared.Errorf("\nWARNING: Provisioned config needs to be applied onto the k8s cluster to take effect.")
 	}
 
 	return verifyErrors
