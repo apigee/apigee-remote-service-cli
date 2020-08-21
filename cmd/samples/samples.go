@@ -78,7 +78,7 @@ func cmdCreateSampleConfig(s *samples, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "create",
 		Short: "create sample configuration files for native envoy or istio",
-		Long: `create sample configuration files for native envoy or istio. A valid config
+		Long: `Create sample configuration files for native envoy or istio. A valid config
 yaml file generated through provisioning is required via --config/-c. Files will be in
 the directory specified via --out (default ./samples).
 In the case of native envoy, it takes the target service host and the desired name for
