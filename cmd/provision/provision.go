@@ -164,8 +164,23 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return nil
 	}
 
+	// replace the version using the build info
+	replaceVersion := func(proxyDir string) error {
+		calloutFile := filepath.Join(proxyDir, "policies", "Send-Version.xml")
+		oldValue := `"version":"{{version}}"`
+		newValue := fmt.Sprintf(`"version":"%s"`, shared.BuildInfo.Version)
+		if err := replaceInFile(calloutFile, oldValue, newValue); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	replaceVHAndAuthTarget := func(proxyDir string) error {
 		if err := replaceVH(proxyDir); err != nil {
+			return err
+		}
+
+		if err := replaceVersion(proxyDir); err != nil {
 			return err
 		}
 
@@ -199,7 +214,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 	// input remote-service proxy
 	var customizedProxy string
 	if p.IsGCPManaged {
-		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, nil)
+		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, replaceVersion)
 	} else {
 		customizedProxy, err = getCustomizedProxy(tempDir, legacyAuthProxyZip, replaceVHAndAuthTarget)
 	}
