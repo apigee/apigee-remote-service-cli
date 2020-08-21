@@ -267,9 +267,9 @@ func (p *provision) run(printf shared.FormatFn) error {
 	}
 	// TODO: also check if is on Hybrid when NG SaaS support is incorporated
 	if p.rotate > 0 {
-		shared.Errorf("\nWARNING: Provisioned config with rotated secrets needs to be applied onto the k8s cluster to take effect.")
+		shared.Errorf("\nIMPORTANT: Provisioned config with rotated secrets needs to be applied onto the k8s cluster to take effect.")
 	} else {
-		shared.Errorf("\nWARNING: Provisioned config needs to be applied onto the k8s cluster to take effect.")
+		shared.Errorf("\nIMPORTANT: Provisioned config needs to be applied onto the k8s cluster to take effect.")
 	}
 
 	return verifyErrors
