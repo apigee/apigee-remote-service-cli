@@ -33,7 +33,7 @@ func TestCreateNativeConfigs(t *testing.T) {
 
 	defer os.RemoveAll("./native")
 
-	config := generateConfig(t)
+	config := generateConfig(t, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -69,7 +69,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	tmpDir := "./istio-samples"
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t)
+	config := generateConfig(t, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -109,7 +109,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	tmpDir := "./istio-samples"
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t)
+	config := generateConfig(t, true)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -151,7 +151,7 @@ func TestExistingDirectoryError(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t)
+	config := generateConfig(t, true)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -181,7 +181,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t)
+	config := generateConfig(t, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -229,12 +229,15 @@ func TestLoadConfigError(t *testing.T) {
 	testutil.ErrorContains(t, err, "loading config yaml file: open badconfig: no such file or directory")
 }
 
-func generateConfig(t *testing.T) []byte {
+func generateConfig(t *testing.T, isGCPManaged bool) []byte {
 	var yamlBuffer bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
 	yamlEncoder.SetIndent(2)
 
 	config := server.DefaultConfig()
+	if !isGCPManaged {
+		config.Tenant.InternalAPI = server.LegacySaaSInternalBase
+	}
 	config.Tenant.RemoteServiceAPI = "https://RUNTIME/remote-service"
 	config.Tenant.OrgName = "hi"
 	config.Tenant.EnvName = "test"

@@ -136,7 +136,10 @@ func (s *samples) loadConfig() error {
 	s.Org = s.ServerConfig.Tenant.OrgName
 	s.Env = s.ServerConfig.Tenant.EnvName
 	s.Namespace = s.ServerConfig.Global.Namespace
-	s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
+
+	if s.ServerConfig.IsGCPManaged() {
+		s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
+	}
 
 	if s.TLS.Dir != "" {
 		s.TLS.Key = path.Join(s.TLS.Dir, "tls.key")
@@ -206,6 +209,10 @@ func (s *samples) createConfigYaml(dir string, name string, printf shared.Format
 		return err
 	}
 	f, err := os.OpenFile(path.Join(s.outDir, name), os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	err = f.Truncate(0)
 	if err != nil {
 		return err
 	}
