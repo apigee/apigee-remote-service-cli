@@ -42,6 +42,7 @@ const (
 	octetStream     = "application/octet-stream"
 )
 
+// OAuthURL is the oauth token endpoint
 var OAuthURL = "https://login.apigee.com/oauth/token"
 
 // EdgeClient manages communication with Apigee Edge V1 Admin API.
@@ -294,9 +295,8 @@ func (c *EdgeClient) getOAuthToken() error {
 		var errorResponse *ErrorResponse
 		if errors.As(err, &errorResponse) {
 			return fmt.Errorf("%d %v", res.StatusCode, errorResponse.Message)
-		} else {
-			return fmt.Errorf("%d", res.StatusCode)
 		}
+		return fmt.Errorf("%d", res.StatusCode)
 	}
 	body := &OAuthResponse{}
 	if err := json.NewDecoder(res.Body).Decode(body); err != nil {
@@ -496,10 +496,12 @@ func StreamToString(stream io.Reader) string {
 	return buf.String()
 }
 
+// SetOAuthURL sets the OAuth url
 func SetOAuthURL(url string) {
 	OAuthURL = url
 }
 
+// OAuthResponse represents the response from the token request
 type OAuthResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
