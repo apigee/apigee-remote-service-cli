@@ -57,16 +57,19 @@ spec:
         - mountPath: /config
           name: apigee-remote-service-envoy
           readOnly: true
+{{- if .EncodedName}}
         - mountPath: /opt/apigee/tls
           name: tls-volume
           readOnly: true
         - mountPath: /policy-secret
           name: policy-secret
           readOnly: true
+{{- end}}
       volumes:
       - name: apigee-remote-service-envoy
         configMap:
           name: apigee-remote-service-envoy
+{{- if .EncodedName}}
       - name: tls-volume
         secret:
           defaultMode: 420
@@ -75,6 +78,7 @@ spec:
         secret:
           defaultMode: 420
           secretName: {{.Org}}-{{.Env}}-policy-secret
+{{- end}}
 ---
 apiVersion: v1
 kind: Service
