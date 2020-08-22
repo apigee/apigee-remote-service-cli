@@ -57,16 +57,19 @@ spec:
         - mountPath: /config
           name: apigee-remote-service-envoy
           readOnly: true
-{{if .EncodedName}}        - mountPath: /opt/apigee/tls
+{{- if .EncodedName}}
+        - mountPath: /opt/apigee/tls
           name: tls-volume
           readOnly: true
         - mountPath: /policy-secret
           name: policy-secret
           readOnly: true
+{{- end}}
       volumes:
       - name: apigee-remote-service-envoy
         configMap:
           name: apigee-remote-service-envoy
+{{- if .EncodedName}}
       - name: tls-volume
         secret:
           defaultMode: 420
@@ -75,24 +78,7 @@ spec:
         secret:
           defaultMode: 420
           secretName: {{.Org}}-{{.Env}}-policy-secret
----
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: apigee-remote-service-envoy
-    namespace: {{.Namespace}}
-    labels:
-      app: apigee-remote-service-envoy
-  spec:
-    ports:
-    - port: 5000
-      name: grpc
-    selector:
-      app: apigee-remote-service-envoy
-{{else}}      volumes:
-      - name: apigee-remote-service-envoy
-        configMap:
-          name: apigee-remote-service-envoy
+{{- end}}
 ---
 apiVersion: v1
 kind: Service
@@ -107,4 +93,3 @@ spec:
     name: grpc
   selector:
     app: apigee-remote-service-envoy
-{{end}}
