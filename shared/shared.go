@@ -67,6 +67,7 @@ type RootArgs struct {
 	Env                string
 	Username           string
 	Password           string
+	MFAToken           string
 	Token              string
 	NetrcPath          string
 	IsOPDK             bool
@@ -100,10 +101,10 @@ func AddCommandWithFlags(c *cobra.Command, rootArgs *RootArgs, cmds ...*cobra.Co
 			"", "Apigee environment name")
 
 		subC.PersistentFlags().StringVarP(&rootArgs.ConfigPath, "config", "c",
-			"", "Path to Apigee Remote Service config file")
+			"", "path to Apigee Remote Service config file")
 
 		subC.PersistentFlags().BoolVarP(&rootArgs.InsecureSkipVerify, "insecure", "",
-			false, "Allow insecure server connections when using SSL")
+			false, "allow insecure server connections when using SSL")
 
 		c.AddCommand(subC)
 	}
@@ -179,6 +180,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 			Username:    r.Username,
 			Password:    r.Password,
 			BearerToken: r.Token,
+			MFAToken:    r.MFAToken,
 			SkipAuth:    skipAuth,
 		},
 		GCPManaged:         r.IsGCPManaged,
@@ -195,6 +197,9 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 				return fmt.Errorf("unable to parse managementBase url %s: %v", r.ManagementBase, err)
 			}
 			return fmt.Errorf("no auth: must have username and password or a ~/.netrc entry for %s", baseURL.Host)
+		}
+		if strings.Contains(err.Error(), "oauth") { // OAuth failure
+			return fmt.Errorf("error authorizing for OAuth token: %v", err)
 		}
 		return fmt.Errorf("error initializing Edge client: %v", err)
 	}

@@ -108,6 +108,8 @@ to your organization and environment.`,
 		"Apigee username (legacy or OPDK only)")
 	c.Flags().StringVarP(&rootArgs.Password, "password", "p", "",
 		"Apigee password (legacy or OPDK only)")
+	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
+		"Apigee multi-factor authorization token (legacy only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")
@@ -170,8 +172,23 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return nil
 	}
 
+	// replace the version using the build info
+	replaceVersion := func(proxyDir string) error {
+		calloutFile := filepath.Join(proxyDir, "policies", "Send-Version.xml")
+		oldValue := `"version":"{{version}}"`
+		newValue := fmt.Sprintf(`"version":"%s"`, shared.BuildInfo.Version)
+		if err := replaceInFile(calloutFile, oldValue, newValue); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	replaceVHAndAuthTarget := func(proxyDir string) error {
 		if err := replaceVH(proxyDir); err != nil {
+			return err
+		}
+
+		if err := replaceVersion(proxyDir); err != nil {
 			return err
 		}
 
@@ -205,7 +222,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 	// input remote-service proxy
 	var customizedProxy string
 	if p.IsGCPManaged {
-		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, nil)
+		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, replaceVersion)
 	} else {
 		customizedProxy, err = getCustomizedProxy(tempDir, legacyAuthProxyZip, replaceVHAndAuthTarget)
 	}
@@ -266,6 +283,16 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	if verifyErrors == nil {
 		verbosef("provisioning verified OK")
+	}
+
+	if !p.IsGCPManaged {
+		return verifyErrors
+	}
+	// TODO: also check if is on Hybrid when NG SaaS support is incorporated
+	if p.rotate > 0 {
+		shared.Errorf("\nIMPORTANT: Provisioned config with rotated secrets needs to be applied onto the k8s cluster to take effect.")
+	} else {
+		shared.Errorf("\nIMPORTANT: Provisioned config needs to be applied onto the k8s cluster to take effect.")
 	}
 
 	return verifyErrors

@@ -20,3 +20,4 @@ dist/
 /apigee-remote-service-cli
 /config.yaml
 /configmap.yaml
+/samples

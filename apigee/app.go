@@ -14,29 +14,31 @@
 
 package apigee
 
+// Application represets an Apigee App
 type Application struct {
-	AppID          string          `json:"appId"`
-	Attributes     []interface{}   `json:"attributes,omitempty"`
-	APIProducts    []APIProductRef `json:"apiProducts,omitempty"`
-	CallBackURL    string          `json:"callbackUrl,omitempty"`
-	CreatedAt      string          `json:"createdAt,omitempty"`
-	Credentials    []Credential    `json:"credentials,omitempty"`
-	CompanyName    string          `json:"companyName,omitempty"`
-	DeveloperID    string          `json:"developerId,omitempty"`
-	LastModifiedAt string          `json:"lastModifiedAt,omitempty"`
-	Name           string          `json:"name"`
-	Scopes         []string        `json:"scopes,omitempty"`
-	Status         string          `json:"status,omitempty"`
+	AppID       string          `json:"appId"`
+	Attributes  interface{}     `json:"attributes,omitempty"`
+	APIProducts []APIProductRef `json:"apiProducts,omitempty"`
+	CallBackURL string          `json:"callbackUrl,omitempty"`
+	Credentials []Credential    `json:"credentials,omitempty"`
+	CompanyName string          `json:"companyName,omitempty"`
+	DeveloperID string          `json:"developerId,omitempty"`
+	Name        string          `json:"name"`
+	Scopes      []string        `json:"scopes,omitempty"`
+	Status      string          `json:"status,omitempty"`
 }
 
+// Credential is a collection of APIProducts
 type Credential struct {
 	APIProducts []APIProductRef `json:"apiProducts,omitempty"`
 }
 
+// AppResponse is a collection of Applications
 type AppResponse struct {
 	Apps []Application `json:"app,omitempty"`
 }
 
+// APIProductRef holds the name and status of an APIProduct
 type APIProductRef struct {
 	Name   string `json:"apiproduct"`
 	Status string `json:"status,omitempty"`

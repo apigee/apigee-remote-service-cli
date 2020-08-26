@@ -203,16 +203,15 @@ func (p *provision) checkRuntimeVersion(config *server.Config, client *http.Clie
 }
 
 func (p *provision) encodeUDCAEndpoint(config *server.Config, verbosef shared.FormatFn) {
-	config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, envScopeEncodedName(p.Org, p.Env), p.Namespace)
+	config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, EnvScopeEncodedName(p.Org, p.Env), p.Namespace)
 	verbosef("UDCA endpoint encoded")
 }
 
 // createSecretPropertyset creates an environment-scoped propertyset to store the secrets
 func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props []byte, verbosef shared.FormatFn) error {
 	m := map[string]string{
-		"crt":  string(jwk),
-		"key1": strings.ReplaceAll(string(privateKey[:len(privateKey)/2]), "\n", `\n`),
-		"key2": strings.ReplaceAll(string(privateKey[len(privateKey)/2:]), "\n", `\n`),
+		"crt": string(jwk),
+		"key": strings.ReplaceAll(string(privateKey), "\n", `\n`),
 	}
 	propsBuf := new(bytes.Buffer)
 	if err := server.WriteProperties(propsBuf, m); err != nil {
@@ -269,8 +268,8 @@ func shortSha(s string) string {
 	return sha[:7]
 }
 
-// envScopeEncodedName returns the encoded resource name to avoid the 63 chars limit
-func envScopeEncodedName(org, env string) string {
+// EnvScopeEncodedName returns the encoded resource name to avoid the 63 chars limit
+func EnvScopeEncodedName(org, env string) string {
 	sha := shortSha(fmt.Sprintf("%s:%s", org, env))
 	return fmt.Sprintf("%s-%s-%s", shortName(org), shortName(env), sha)
 }

@@ -65,6 +65,8 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		"Apigee username (legacy or OPDK only)")
 	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "",
 		"Apigee password (legacy or OPDK only)")
+	c.PersistentFlags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
+		"Apigee multi-factor authorization token (legacy only)")
 	c.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m",
 		"", "Apigee management base URL")
 
@@ -342,21 +344,20 @@ func (b *bindings) verifyAll(appMap map[string][]App, printf shared.FormatFn) er
 
 func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf shared.FormatFn) error {
 	if p.GetBoundTargets() == nil {
-		printf("product %s is unbound to any target, no need to verify", p.Name)
+		printf("Product %s is unbound to any target, no need to verify.", p.Name)
 		return nil
 	}
 	apps, ok := appMap[p.Name]
 	if !ok {
-		printf("no app is found associated with product %s", p.Name)
+		printf("No app is found associated with product %s.", p.Name)
 		return nil
 	}
-	printf("verifying apps associated with product %s:", p.Name)
+	printf("Verifying apps associated with product %s:", p.Name)
 	for _, app := range apps {
 		if !app.hasRemoteService {
 			return fmt.Errorf("  app %s associated with product %s is not associated with remote-service product", app.name, p.Name)
-		} else {
-			printf("  app %s associated with product %s is verified", app.name, p.Name)
 		}
+		printf("  app %s associated with product %s is verified", app.name, p.Name)
 	}
 	return nil
 }
@@ -436,6 +437,7 @@ func (a byName) Len() int           { return len(a) }
 func (a byName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
+// App represents an Apigee App
 type App struct {
 	name             string
 	hasRemoteService bool

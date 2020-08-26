@@ -34,12 +34,16 @@ import (
 )
 
 const (
-	libraryVersion = "0.1.0"
-	defaultBaseURL = "https://api.enterprise.apigee.com/"
-	userAgent      = "go-apigee-edge/" + libraryVersion
-	appJSON        = "application/json"
-	octetStream    = "application/octet-stream"
+	libraryVersion  = "0.1.0"
+	defaultBaseURL  = "https://api.enterprise.apigee.com"
+	basicAuthHeader = "Basic ZWRnZWNsaTplZGdlY2xpc2VjcmV0"
+	userAgent       = "go-apigee-edge/" + libraryVersion
+	appJSON         = "application/json"
+	octetStream     = "application/octet-stream"
 )
+
+// OAuthURL is the oauth token endpoint
+var OAuthURL = "https://login.apigee.com/oauth/token"
 
 // EdgeClient manages communication with Apigee Edge V1 Admin API.
 type EdgeClient struct {
@@ -157,6 +161,9 @@ type EdgeAuth struct {
 	// Optional. Used if you explicitly specify a Password.
 	Password string
 
+	// Optional. Required if MFA (multi-factor authorization) is enabled.
+	MFAToken string
+
 	// if set to true, no auth will be set
 	SkipAuth bool
 
@@ -237,10 +244,18 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 				Username:    o.Auth.Username,
 				Password:    o.Auth.Password,
 				BearerToken: o.Auth.BearerToken,
+				MFAToken:    o.Auth.MFAToken,
 			}
 		}
 		if e != nil {
 			return nil, e
+		}
+		if o.MgmtURL == defaultBaseURL {
+			c.auth.MFAToken = o.Auth.MFAToken
+			e = c.getOAuthToken()
+			if e != nil {
+				return nil, e
+			}
 		}
 	}
 
@@ -252,6 +267,43 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	}
 
 	return c, nil
+}
+
+func (c *EdgeClient) getOAuthToken() error {
+	req, err := http.NewRequest(http.MethodPost, OAuthURL, nil)
+	if err != nil {
+		return err
+	}
+	q := req.URL.Query()
+	q.Set("username", c.auth.Username)
+	q.Set("password", c.auth.Password)
+	q.Set("grant_type", "password")
+	if c.auth.MFAToken != "" {
+		q.Set("mfa_token", c.auth.MFAToken)
+	}
+	req.URL.RawQuery = q.Encode()
+	req.Header.Add("Content-type", "application/x-www-form-urlencoded")
+	req.Header.Add("Authorization", basicAuthHeader)
+	res, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res != nil {
+		defer res.Body.Close()
+	}
+	if err := CheckResponse(res); err != nil {
+		var errorResponse *ErrorResponse
+		if errors.As(err, &errorResponse) {
+			return fmt.Errorf("%d %v", res.StatusCode, errorResponse.Message)
+		}
+		return fmt.Errorf("%d", res.StatusCode)
+	}
+	body := &OAuthResponse{}
+	if err := json.NewDecoder(res.Body).Decode(body); err != nil {
+		return err
+	}
+	c.auth.BearerToken = body.AccessToken
+	return nil
 }
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
@@ -442,4 +494,19 @@ func StreamToString(stream io.Reader) string {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(stream)
 	return buf.String()
+}
+
+// SetOAuthURL sets the OAuth url
+func SetOAuthURL(url string) {
+	OAuthURL = url
+}
+
+// OAuthResponse represents the response from the token request
+type OAuthResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    uint32 `json:"expires_in,omitempty"`
+	Scope        string `json:"scope,omitempty"`
+	JTI          string `json:"jti,omitempty"`
 }
