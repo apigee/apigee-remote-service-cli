@@ -9,7 +9,7 @@
                 <Step>
                     <Name>Raise-Fault-Missing-Secret</Name>
                     <Condition>
-                        (private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null) and (propertyset.remote-service.key1 is null || propertyset.remote-service.key2 is null || propertyset.remote-service.kid is null)
+                        (private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null) and (propertyset.remote-service.key is null || propertyset.remote-service.kid is null)
                     </Condition>
                 </Step>
                 <Step>
@@ -74,7 +74,7 @@
                 <Step>
                     <Name>Raise-Fault-Missing-Secret</Name>
                     <Condition>
-                        (private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null) and (propertyset.remote-service.key1 is null || propertyset.remote-service.key2 is null || propertyset.remote-service.kid is null)
+                        (private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null) and (propertyset.remote-service.key is null || propertyset.remote-service.kid is null)
                     </Condition>
                 </Step>
                 <Step>
