@@ -343,6 +343,9 @@ func (b *bindings) verifyAll(appMap map[string][]App, printf shared.FormatFn) er
 }
 
 func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf shared.FormatFn) error {
+	if p == nil {
+		return nil
+	}
 	if p.GetBoundTargets() == nil {
 		printf("Product %s is unbound to any target, no need to verify.", p.Name)
 		return nil
