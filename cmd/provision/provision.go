@@ -59,6 +59,7 @@ type provision struct {
 	forceProxyInstall bool
 	virtualHosts      string
 	rotate            int
+	serviceAccount    string
 }
 
 // Cmd returns base command
@@ -102,6 +103,9 @@ to your organization and environment.`,
 		"Apigee password (legacy or OPDK only)")
 	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
 		"Apigee multi-factor authorization token (legacy only)")
+
+	c.Flags().StringVarP(&p.serviceAccount, "service-account", "", "",
+		"path to the service account json file (for GCP-managed analytics only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")

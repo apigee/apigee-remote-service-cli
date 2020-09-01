@@ -14,7 +14,17 @@
 
 package provision
 
-import "testing"
+import (
+	"bytes"
+	"io/ioutil"
+	"os"
+	"testing"
+
+	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/testutil"
+	"github.com/apigee/apigee-remote-service-envoy/server"
+	"gopkg.in/yaml.v2"
+)
 
 func TestEncodedName(t *testing.T) {
 	org := "thisorgnameistoolong"
@@ -24,4 +34,81 @@ func TestEncodedName(t *testing.T) {
 	if got != want {
 		t.Errorf("encoding is incorrect, want %s, got %s", want, got)
 	}
+}
+
+func TestConfig(t *testing.T) {
+	print := testutil.Printer("TestConfig")
+
+	r := &shared.RootArgs{
+		Namespace:             "apigee",
+		Org:                   "hi",
+		Env:                   "test",
+		IsGCPManaged:          true,
+		InternalProxyURL:      "https://mock.com/internal",
+		RemoteServiceProxyURL: "https://mock.com/remote-service",
+	}
+
+	tmpFile, err := ioutil.TempFile("", "client_secret.json")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if _, err := tmpFile.Write(fakeServiceAccount()); err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	p := &provision{
+		RootArgs:       r,
+		serviceAccount: tmpFile.Name(),
+	}
+
+	cfg := p.createConfig(nil)
+
+	keyID, privateKey, jwks, err := p.CreateNewKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Tenant.PrivateKey = privateKey
+	cfg.Tenant.PrivateKeyID = keyID
+	cfg.Tenant.JWKS = jwks
+
+	err = p.printConfig(cfg, print.Printf, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(print.Prints) != 3 {
+		t.Errorf("want 3 prints, got %d", len(print.Prints))
+	}
+
+	// test if the generated config has all three CRDs
+	cfgBytes := []byte(print.Prints[2])
+	configMap := &server.ConfigMapCRD{}
+	secret := &server.SecretCRD{}
+	decoder := yaml.NewDecoder(bytes.NewReader(cfgBytes))
+	if err := decoder.Decode(configMap); err != nil {
+		t.Errorf("decoding ConfigMap error: %v", err)
+	}
+	if err := decoder.Decode(secret); err != nil {
+		t.Errorf("decoding policy Secret error: %v", err)
+	}
+	if err := decoder.Decode(secret); err != nil {
+		t.Errorf("decoding analytics Secret error: %v", err)
+	}
+}
+
+func fakeServiceAccount() []byte {
+	sa := []byte(`{
+	"type": "service_account",
+	"project_id": "hi",
+	"private_key_id": "5a0ef8b44fe312a005ac6e6fe59e2e559b40bff3",
+	"private_key": "-----BEGIN PRIVATE KEY-----\n-----END PRIVATE KEY-----\n",
+	"client_email": "client@hi.iam.gserviceaccount.com",
+	"client_id": "111111111111111111",
+	"auth_uri": "https://mock.com/o/oauth2/auth",
+	"token_uri": "https://mock.com/token",
+	"auth_provider_x509_cert_url": "https://mock.com/oauth2/v1/certs",
+	"client_x509_cert_url": "https://mock.com/robot/v1/metadata/x509/client%40hi.iam.gserviceaccount.com"
+}`)
+	return sa
 }
