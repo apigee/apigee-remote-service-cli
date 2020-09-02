@@ -349,6 +349,9 @@ func (b *bindings) verifyAll(appMap map[string][]App, printf shared.FormatFn) er
 // verify checks if all apps associated with the specific API product are also associated with remote-service product
 // and returns error if the verification fails. it returns nil if the given product is nil
 func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf shared.FormatFn) error {
+	if p == nil {
+		return nil
+	}
 	if p.GetBoundTargets() == nil {
 		printf("Product %s is unbound to any target, no need to verify.", p.Name)
 		return nil
@@ -361,7 +364,9 @@ func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf
 	printf("Verifying apps associated with product %s:", p.Name)
 	for _, app := range apps {
 		if !app.hasRemoteService {
-			return fmt.Errorf("  app %s associated with product %s is not associated with remote-service product", app.name, p.Name)
+			errStr := fmt.Sprintf("  app %s associated with product %s is not associated with remote-service product", app.name, p.Name)
+			printf(errStr)
+			return fmt.Errorf(errStr)
 		}
 		printf("  app %s associated with product %s is verified", app.name, p.Name)
 	}

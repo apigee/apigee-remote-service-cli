@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -39,10 +40,11 @@ const (
 	defaultApigeeCertFile = "/opt/apigee/tls/tls.crt"
 	defaultApigeeKeyFile  = "/opt/apigee/tls/tls.key"
 
-	policySecretNameFormat = "%s-%s-policy-secret"
-
 	propertysetPOSTURL = `/resourcefiles?name=%s&type=properties`
 	propertysetPUTURL  = `/resourcefiles/properties/%s`
+
+	policySecretNameFormat    = "%s-%s-policy-secret"
+	analyticsSecretNameFormat = "%s-%s-analytics-secret"
 )
 
 func (p *provision) createConfig(cred *keySecret) *server.Config {
@@ -109,12 +111,12 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		return err
 	}
 
-	// secret for IsGCPManaged
+	// secrets for IsGCPManaged
 	if p.IsGCPManaged {
 		privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
 			Bytes: x509.MarshalPKCS1PrivateKey(config.Tenant.PrivateKey)})
 
-		// create CRD for secret
+		// create CRD for policy secret
 		jwksBytes, err := json.Marshal(config.Tenant.JWKS)
 		if err != nil {
 			return err
@@ -126,8 +128,9 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 			return err
 		}
 
+		// encode policy secret
 		secretData := map[string]string{
-			server.SecretJKWSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
+			server.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
 			server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
 			server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 		}
@@ -152,6 +155,34 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		err = yamlEncoder.Encode(secretCRD)
 		if err != nil {
 			return err
+		}
+
+		// load analytics service account credentials
+		if p.serviceAccount != "" {
+			cred, err := ioutil.ReadFile(p.serviceAccount)
+			if err != nil {
+				return err
+			}
+
+			// encode service account credentials into secret
+			secretData := map[string]string{
+				server.ServiceAccount: base64.StdEncoding.EncodeToString(cred),
+			}
+			secretCRD := server.SecretCRD{
+				APIVersion: "v1",
+				Kind:       "Secret",
+				Type:       "Opaque",
+				Metadata: server.Metadata{
+					Name:      fmt.Sprintf(analyticsSecretNameFormat, p.Org, p.Env),
+					Namespace: p.Namespace,
+				},
+				Data: secretData,
+			}
+
+			err = yamlEncoder.Encode(secretCRD)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

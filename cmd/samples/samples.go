@@ -122,7 +122,7 @@ files related to deployment of their target services.`,
 
 func (s *samples) loadConfig() error {
 	s.ServerConfig = &server.Config{}
-	err := s.ServerConfig.Load(s.ConfigPath, "")
+	err := s.ServerConfig.Load(s.ConfigPath, "", "")
 	if err != nil {
 		return err
 	}
