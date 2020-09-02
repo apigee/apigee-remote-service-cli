@@ -521,7 +521,7 @@ func generateConfig(t *testing.T) []byte {
 	}
 
 	secretData := map[string]string{
-		server.SecretJKWSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
+		server.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
 		server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
 		server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 	}

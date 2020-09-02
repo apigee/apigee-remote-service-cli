@@ -23,7 +23,7 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
 	"github.com/apigee/apigee-remote-service-envoy/server"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func TestEncodedName(t *testing.T) {

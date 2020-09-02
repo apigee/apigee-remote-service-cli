@@ -2,10 +2,6 @@ module github.com/apigee/apigee-remote-service-cli
 
 go 1.15
 
-//replace github.com/apigee/apigee-remote-service-golib => ../apigee-remote-service-golib
-
-//replace github.com/apigee/apigee-remote-service-envoy => ../apigee-remote-service-envoy
-
 require (
 	github.com/apigee/apigee-remote-service-envoy v1.1.0
 	github.com/apigee/apigee-remote-service-golib v1.1.0
@@ -14,6 +10,5 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.0.0
 	go.uber.org/multierr v1.5.0
-	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )

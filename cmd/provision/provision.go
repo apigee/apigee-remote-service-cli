@@ -104,7 +104,7 @@ to your organization and environment.`,
 	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
 		"Apigee multi-factor authorization token (legacy only)")
 
-	c.Flags().StringVarP(&p.serviceAccount, "service-account", "", "",
+	c.Flags().StringVarP(&p.serviceAccount, "analytics-sa", "", "",
 		"path to the service account json file (for GCP-managed analytics only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
