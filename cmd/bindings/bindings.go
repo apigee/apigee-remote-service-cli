@@ -60,7 +60,7 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	c.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "", false,
 		"Apigee opdk")
 	c.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t", "",
-		"Apigee OAuth or SAML token (hybrid only)")
+		"Apigee OAuth or SAML token (overrides any other given credentials)")
 	c.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u", "",
 		"Apigee username (legacy or OPDK only)")
 	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "",

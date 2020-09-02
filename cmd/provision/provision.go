@@ -96,7 +96,7 @@ to your organization and environment.`,
 		"Apigee opdk")
 
 	c.Flags().StringVarP(&rootArgs.Token, "token", "t", "",
-		"Apigee OAuth or SAML token (hybrid only)")
+		"Apigee OAuth or SAML token (overrides any other given credentials)")
 	c.Flags().StringVarP(&rootArgs.Username, "username", "u", "",
 		"Apigee username (legacy or OPDK only)")
 	c.Flags().StringVarP(&rootArgs.Password, "password", "p", "",
