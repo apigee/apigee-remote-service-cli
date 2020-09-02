@@ -250,7 +250,9 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 		if e != nil {
 			return nil, e
 		}
-		if o.MgmtURL == defaultBaseURL {
+		// not overriding if auth token is given
+		// otherwise enforcing oauth on legacy saas
+		if o.Auth.BearerToken == "" && o.MgmtURL == defaultBaseURL {
 			c.auth.MFAToken = o.Auth.MFAToken
 			e = c.getOAuthToken()
 			if e != nil {
