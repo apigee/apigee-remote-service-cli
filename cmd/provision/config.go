@@ -132,7 +132,7 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 			server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 		}
 
-		if p.runtimeType == "CLOUD" {
+		if p.isCloud() {
 			if err := p.createSecretPropertyset(jwksBytes, privateKeyBytes, propsBuf.Bytes(), verbosef); err != nil {
 				return err
 			}
@@ -155,6 +155,7 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		}
 	}
 
+	// TODO: Now that GCP can refer to NG SaaS, the naming needs some change.
 	platform := "GCP"
 	if p.IsLegacySaaS {
 		platform = "SaaS"

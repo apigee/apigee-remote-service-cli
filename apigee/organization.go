@@ -14,6 +14,7 @@
 
 package apigee
 
+// Organization represents a GCP-managed Apigee organization
 type Organization struct {
 	Name              string      `json:"name"`
 	CreatedAt         string      `json:"createdAt,omitempty"`

@@ -285,10 +285,12 @@ func (p *provision) run(printf shared.FormatFn) error {
 		verbosef("provisioning verified OK")
 	}
 
-	if !p.IsGCPManaged {
+	// return possible errors if not hybrid
+	if !p.IsGCPManaged || p.isCloud() {
 		return verifyErrors
 	}
-	// TODO: also check if is on Hybrid when NG SaaS support is incorporated
+
+	// output this warning for hybrid
 	if p.rotate > 0 {
 		shared.Errorf("\nIMPORTANT: Provisioned config with rotated secrets needs to be applied onto the k8s cluster to take effect.")
 	} else {
@@ -298,6 +300,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 	return verifyErrors
 }
 
+// getRuntimeType fetches the organization information from the management base and extracts the runtime type
 func (p *provision) getRuntimeType() error {
 	req, err := p.ApigeeClient.NewRequestNoEnv(http.MethodGet, "", nil)
 	if err != nil {
@@ -315,6 +318,11 @@ func (p *provision) getRuntimeType() error {
 	p.runtimeType = org.RuntimeType
 
 	return nil
+}
+
+// isCloud determines whether it is NG SaaS
+func (p *provision) isCloud() bool {
+	return p.IsGCPManaged && p.runtimeType == "CLOUD"
 }
 
 func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {
