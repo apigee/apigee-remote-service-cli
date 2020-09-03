@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/pkg/errors"
@@ -56,10 +57,13 @@ var (
 
 type provision struct {
 	*shared.RootArgs
-	forceProxyInstall bool
-	virtualHosts      string
-	rotate            int
-	serviceAccount    string
+	forceProxyInstall       bool
+	virtualHosts            string
+	rotate                  int
+	runtimeType             string
+	analyticsServiceAccount string
+	policySecretData        map[string]string
+	analyticsSecretData     map[string]string
 }
 
 // Cmd returns base command
@@ -84,6 +88,12 @@ to your organization and environment.`,
 		},
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if p.IsGCPManaged {
+				err := p.retrieveRuntimeType()
+				if err != nil {
+					return errors.Wrapf(err, "getting runtime type")
+				}
+			}
 			return p.run(printf)
 		},
 	}
@@ -104,7 +114,7 @@ to your organization and environment.`,
 	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
 		"Apigee multi-factor authorization token (legacy only)")
 
-	c.Flags().StringVarP(&p.serviceAccount, "analytics-sa", "", "",
+	c.Flags().StringVarP(&p.analyticsServiceAccount, "analytics-sa", "", "",
 		"path to the service account json file (for GCP-managed analytics only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
@@ -269,11 +279,25 @@ func (p *provision) run(printf shared.FormatFn) error {
 	var verifyErrors error
 	if p.IsGCPManaged {
 		verifyErrors = p.verifyWithRetry(config, verbosef)
+
+		// creates the policy secrets if is GCP managed
+		err := p.createPolicySecretData(config, verbosef)
+		if err != nil {
+			return errors.Wrapf(err, "creating policy secret data")
+		}
+
+		// creates the analytics secret if service account is specified
+		if p.analyticsServiceAccount != "" {
+			err := p.createAnalyticsSecretData()
+			if err != nil {
+				return errors.Wrapf(err, "creating analytics secret data")
+			}
+		}
 	} else {
 		verifyErrors = p.verifyWithoutRetry(config, verbosef)
 	}
 
-	if err := p.printConfig(config, printf, verifyErrors); err != nil {
+	if err := p.printConfig(config, printf, verifyErrors, verbosef); err != nil {
 		return errors.Wrapf(err, "generating config")
 	}
 
@@ -281,10 +305,12 @@ func (p *provision) run(printf shared.FormatFn) error {
 		verbosef("provisioning verified OK")
 	}
 
-	if !p.IsGCPManaged {
+	// return possible errors if not hybrid
+	if !p.IsGCPManaged || p.isCloud() {
 		return verifyErrors
 	}
-	// TODO: also check if is on Hybrid when NG SaaS support is incorporated
+
+	// output this warning for hybrid
 	if p.rotate > 0 {
 		shared.Errorf("\nIMPORTANT: Provisioned config with rotated secrets needs to be applied onto the k8s cluster to take effect.")
 	} else {
@@ -292,6 +318,31 @@ func (p *provision) run(printf shared.FormatFn) error {
 	}
 
 	return verifyErrors
+}
+
+// retrieveRuntimeType fetches the organization information from the management base and extracts the runtime type
+func (p *provision) retrieveRuntimeType() error {
+	req, err := p.ApigeeClient.NewRequestNoEnv(http.MethodGet, "", nil)
+	if err != nil {
+		return err
+	}
+
+	org := &apigee.Organization{}
+	res, err := p.ApigeeClient.Do(req, org)
+	if err != nil {
+		return err
+	}
+	if res != nil {
+		defer res.Body.Close()
+	}
+	p.runtimeType = org.RuntimeType
+
+	return nil
+}
+
+// isCloud determines whether it is NG SaaS
+func (p *provision) isCloud() bool {
+	return p.IsGCPManaged && p.runtimeType == "CLOUD"
 }
 
 func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {

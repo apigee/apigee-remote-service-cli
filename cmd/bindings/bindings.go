@@ -186,6 +186,7 @@ func cmdBindingsVerify(b *bindings, printf shared.FormatFn) *cobra.Command {
 	return c
 }
 
+// getProduct queries the API product with the given name from Apigee
 func (b *bindings) getProduct(name string) (*product.APIProduct, error) {
 	path := fmt.Sprintf(productURLFormat, name)
 	req, err := b.ApigeeClient.NewRequestNoEnv(http.MethodGet, path, nil)
@@ -207,6 +208,7 @@ func (b *bindings) getProduct(name string) (*product.APIProduct, error) {
 	return p, nil
 }
 
+// getProducts queries all API products from Apigee
 func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	if b.products != nil {
 		return b.products, nil
@@ -324,6 +326,8 @@ func printProducts(products []product.APIProduct, printf shared.FormatFn) error 
 	return nil
 }
 
+// verify checks all API products and verify if their associated apps are also associated with remote-service product
+// and returns error if the verification fails. it returns nil if no API product exists
 func (b *bindings) verifyAll(appMap map[string][]App, printf shared.FormatFn) error {
 	products, err := b.getProducts()
 	if err != nil {
@@ -342,6 +346,8 @@ func (b *bindings) verifyAll(appMap map[string][]App, printf shared.FormatFn) er
 	return verifyErrors
 }
 
+// verify checks if all apps associated with the specific API product are also associated with remote-service product
+// and returns error if the verification fails. it returns nil if the given product is nil
 func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf shared.FormatFn) error {
 	if p == nil {
 		return nil

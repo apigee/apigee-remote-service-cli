@@ -58,8 +58,8 @@ func TestConfig(t *testing.T) {
 	defer os.Remove(tmpFile.Name())
 
 	p := &provision{
-		RootArgs:       r,
-		serviceAccount: tmpFile.Name(),
+		RootArgs:                r,
+		analyticsServiceAccount: tmpFile.Name(),
 	}
 
 	cfg := p.createConfig(nil)
@@ -72,7 +72,17 @@ func TestConfig(t *testing.T) {
 	cfg.Tenant.PrivateKeyID = keyID
 	cfg.Tenant.JWKS = jwks
 
-	err = p.printConfig(cfg, print.Printf, nil)
+	err = p.createPolicySecretData(cfg, print.Printf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = p.createAnalyticsSecretData()
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = p.printConfig(cfg, print.Printf, nil, print.Printf)
 	if err != nil {
 		t.Error(err)
 	}

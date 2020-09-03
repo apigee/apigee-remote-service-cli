@@ -1,46 +1,48 @@
-<APIProxy revision="48" name="remote-service">
+<APIProxy revision="1" name="remote-service">
     <DisplayName>remote-service</DisplayName>
     <Description>remote-service</Description>
-    <CreatedAt>1594661244862</CreatedAt>
-    <LastModifiedAt>1594661244862</LastModifiedAt>
+    <CreatedAt>1597681686371</CreatedAt>
+    <LastModifiedAt>1597681686371</LastModifiedAt>
     <BasePaths>/remote-service</BasePaths>
     <Policies>
-        <Policy>Send-JWKs-Message</Policy>
-        <Policy>Lookup-Products</Policy>
-        <Policy>Set-Quota-Response</Policy>
-        <Policy>Send-Product-List</Policy>
-        <Policy>Set-Quota-Variables</Policy>
-        <Policy>Extract-API-Key</Policy>
-        <Policy>Raise-Fault-Missing-Secret</Policy>
-        <Policy>JavaCallout</Policy>
-        <Policy>Generate-VerifyKey-Token</Policy>
-        <Policy>Create-OAuth-Request</Policy>
-        <Policy>Raise-Fault-Unknown-Request</Policy>
-        <Policy>Verify-Internal-JWT</Policy>
         <Policy>Generate-Access-Token</Policy>
-        <Policy>Get-Runtime-Version</Policy>
-        <Policy>Extract-OAuth-Params</Policy>
-        <Policy>Send-Version</Policy>
-        <Policy>Set-Response</Policy>
-        <Policy>Set-JWT-Variables</Policy>
-        <Policy>Products-to-JSON</Policy>
-        <Policy>Verify-API-Key</Policy>
-        <Policy>AccessTokenRequest</Policy>
-        <Policy>Access-App-Info</Policy>
         <Policy>Eval-Quota-Result</Policy>
+        <Policy>Set-JWT-Variables</Policy>
+        <Policy>Verify-API-Key</Policy>
+        <Policy>Verify-Internal-JWT</Policy>
+        <Policy>JavaCallout</Policy>
+        <Policy>Send-JWKs-Message</Policy>
+        <Policy>Generate-VerifyKey-Token</Policy>
+        <Policy>Send-Version</Policy>
+        <Policy>Access-App-Info</Policy>
+        <Policy>Extract-API-Key</Policy>
+        <Policy>Get-Runtime-Version</Policy>
         <Policy>DistributedQuota</Policy>
+        <Policy>Lookup-Products</Policy>
+        <Policy>Create-OAuth-Request</Policy>
         <Policy>Populate-Product-List</Policy>
+        <Policy>Raise-Fault-Unknown-Request</Policy>
+        <Policy>Set-Quota-Response</Policy>
+        <Policy>AccessTokenRequest</Policy>
+        <Policy>Set-Response</Policy>
+        <Policy>Send-Product-List</Policy>
+        <Policy>Products-to-JSON</Policy>
+        <Policy>Raise-Fault-Missing-Secret</Policy>
+        <Policy>Extract-OAuth-Params</Policy>
+        <Policy>Set-Quota-Variables</Policy>
+        <Policy>Set-JWKS</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>
     </ProxyEndpoints>
     <Resources>
-        <Resource>java://products-javacallout-2.0.0.jar</Resource>
-        <Resource>jsc://set-quota-variables.js</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
-        <Resource>jsc://set-response.js</Resource>
         <Resource>jsc://set-jwt-variables.js</Resource>
+        <Resource>jsc://set-response.js</Resource>
+        <Resource>jsc://set-quota-variables.js</Resource>
         <Resource>py://get-runtime-version.py</Resource>
+        <Resource>java://products-javacallout-2.0.0.jar</Resource>
+        <Resource>jsc://set-jwks-variable.js</Resource>
     </Resources>
     <TargetServers></TargetServers>
     <TargetEndpoints></TargetEndpoints>

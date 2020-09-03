@@ -5,7 +5,7 @@
     <Set>
         <Headers/>
         <!-- .crt is actually JWKs JSON -->
-        <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">@private.secret.remote-service.crt#</Payload>
+        <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">@remote-service.crt#</Payload>
         <StatusCode>200</StatusCode>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
