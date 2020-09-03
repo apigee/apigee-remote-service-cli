@@ -315,8 +315,10 @@ func serveMux(t *testing.T) *http.ServeMux {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("{}"))
 		case http.MethodPut:
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("{}"))
+			if strings.Contains(r.URL.Path, "notfoundng") {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+			w.WriteHeader(http.StatusNotFound) // to trigger the POST following PUT
 		case http.MethodPost:
 			if strings.Contains(r.URL.Path, "apiproducts") {
 				ap := apiProduct{}
@@ -510,7 +512,7 @@ func TestProvisionNGSaaS(t *testing.T) {
 
 	print := testutil.Printer("TestProvisionHybrid")
 
-	// 	// good provision with rotate
+	// good provision with rotate
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
@@ -553,16 +555,6 @@ data:
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "404")
 
-	// propertyset remote-service already exists
-	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "ng", "-e", "conflictproperty", "-r", ts.URL, "-n", "ns", "-t", "token", "-v"}
-	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
-
-	if err := rootCmd.Execute(); err != nil {
-		t.Errorf("want no error: %v", err)
-	}
-
 	// propertyset creation request returns 404
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token"}
@@ -571,6 +563,15 @@ data:
 
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "404")
+
+	// propertyset rotation request returns 400
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "400")
 }
 
 func TestInvalidRuntimeVersion(t *testing.T) {

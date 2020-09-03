@@ -186,7 +186,6 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		}
 	}
 
-	// TODO: Now that GCP can refer to NG SaaS, the naming needs some change.
 	platform := "GCP"
 	if p.IsLegacySaaS {
 		platform = "SaaS"
@@ -251,6 +250,7 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	}
 	props = append(props, propsBuf.Bytes()...)
 
+	// PUT request to rotate the remote-service propertyset
 	if p.rotate > 0 {
 		req, err := p.ApigeeClient.NewRequest(http.MethodPut, fmt.Sprintf(propertysetPUTURL, "remote-service"), bytes.NewReader(props))
 		if err != nil {
@@ -261,9 +261,12 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 		if res != nil {
 			defer res.Body.Close()
 		}
-		return err
+		if err != nil && res.StatusCode != http.StatusNotFound { // proceed to POST if 404 Not Found
+			return err
+		}
 	}
 
+	// otherwise try POST to avoid overwriting existing propertyset
 	req, err := p.ApigeeClient.NewRequest(http.MethodPost, fmt.Sprintf(propertysetPOSTURL, "remote-service"), bytes.NewReader(props))
 	if err != nil {
 		return err
@@ -273,15 +276,8 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	if res != nil {
 		defer res.Body.Close()
 	}
-	if err != nil {
-		if res.StatusCode != http.StatusConflict {
-			return err
-		} else {
-			verbosef("property set remote-service already exists")
-		}
-	}
-
-	return nil
+	// returns error even on 409 Conflict
+	return err
 }
 
 // shortName returns a substring with up to the first 15 characters of the input string

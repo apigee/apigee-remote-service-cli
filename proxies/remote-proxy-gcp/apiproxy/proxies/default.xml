@@ -46,6 +46,9 @@
             <Description/>
             <Request>
                 <Step>
+                    <Name>Set-JWKS</Name>
+                </Step>
+                <Step>
                     <Name>Verify-Internal-JWT</Name>
                 </Step>
                 <Step>
@@ -152,6 +155,9 @@
         </Flow>
         <Flow name="DistributedQuota">
             <Request>
+                <Step>
+                    <Name>Set-JWKS</Name>
+                </Step>
                 <Step>
                     <Name>Verify-Internal-JWT</Name>
                 </Step>
