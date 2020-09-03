@@ -57,11 +57,13 @@ var (
 
 type provision struct {
 	*shared.RootArgs
-	forceProxyInstall bool
-	virtualHosts      string
-	rotate            int
-	runtimeType       string
-	serviceAccount    string
+	forceProxyInstall       bool
+	virtualHosts            string
+	rotate                  int
+	runtimeType             string
+	analyticsServiceAccount string
+	policySecretData        map[string]string
+	analyticsSecretData     map[string]string
 }
 
 // Cmd returns base command
@@ -87,7 +89,7 @@ to your organization and environment.`,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if p.IsGCPManaged {
-				err := p.getRuntimeType()
+				err := p.retrieveRuntimeType()
 				if err != nil {
 					return errors.Wrapf(err, "getting runtime type")
 				}
@@ -112,7 +114,7 @@ to your organization and environment.`,
 	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
 		"Apigee multi-factor authorization token (legacy only)")
 
-	c.Flags().StringVarP(&p.serviceAccount, "analytics-sa", "", "",
+	c.Flags().StringVarP(&p.analyticsServiceAccount, "analytics-sa", "", "",
 		"path to the service account json file (for GCP-managed analytics only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
@@ -277,6 +279,20 @@ func (p *provision) run(printf shared.FormatFn) error {
 	var verifyErrors error
 	if p.IsGCPManaged {
 		verifyErrors = p.verifyWithRetry(config, verbosef)
+
+		// creates the policy secrets if is GCP managed
+		err := p.createPolicySecretData(config, verbosef)
+		if err != nil {
+			return errors.Wrapf(err, "creating policy secret data")
+		}
+
+		// creates the analytics secret if service account is specified
+		if p.analyticsServiceAccount != "" {
+			err := p.createAnalyticsSecretData()
+			if err != nil {
+				return errors.Wrapf(err, "creating analytics secret data")
+			}
+		}
 	} else {
 		verifyErrors = p.verifyWithoutRetry(config, verbosef)
 	}
@@ -304,8 +320,8 @@ func (p *provision) run(printf shared.FormatFn) error {
 	return verifyErrors
 }
 
-// getRuntimeType fetches the organization information from the management base and extracts the runtime type
-func (p *provision) getRuntimeType() error {
+// retrieveRuntimeType fetches the organization information from the management base and extracts the runtime type
+func (p *provision) retrieveRuntimeType() error {
 	req, err := p.ApigeeClient.NewRequestNoEnv(http.MethodGet, "", nil)
 	if err != nil {
 		return err

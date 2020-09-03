@@ -317,8 +317,9 @@ func serveMux(t *testing.T) *http.ServeMux {
 		case http.MethodPut:
 			if strings.Contains(r.URL.Path, "notfoundng") {
 				w.WriteHeader(http.StatusBadRequest)
+			} else {
+				w.WriteHeader(http.StatusNotFound) // to trigger the POST following PUT
 			}
-			w.WriteHeader(http.StatusNotFound) // to trigger the POST following PUT
 		case http.MethodPost:
 			if strings.Contains(r.URL.Path, "apiproducts") {
 				ap := apiProduct{}

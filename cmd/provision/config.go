@@ -111,36 +111,8 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		return err
 	}
 
-	// secrets for IsGCPManaged
-	if p.IsGCPManaged {
-		privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
-			Bytes: x509.MarshalPKCS1PrivateKey(config.Tenant.PrivateKey)})
-
-		// create CRD for policy secret
-		jwksBytes, err := json.Marshal(config.Tenant.JWKS)
-		if err != nil {
-			return err
-		}
-
-		props := map[string]string{server.SecretPropsKIDKey: config.Tenant.PrivateKeyID}
-		propsBuf := new(bytes.Buffer)
-		if err := server.WriteProperties(propsBuf, props); err != nil {
-			return err
-		}
-
-		// encode policy secret
-		secretData := map[string]string{
-			server.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
-			server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
-			server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
-		}
-
-		if p.isCloud() {
-			if err := p.createSecretPropertyset(jwksBytes, privateKeyBytes, propsBuf.Bytes(), verbosef); err != nil {
-				return err
-			}
-		}
-
+	// encodes the policy secrets in GCP managed cases
+	if p.policySecretData != nil {
 		secretCRD := server.SecretCRD{
 			APIVersion: "v1",
 			Kind:       "Secret",
@@ -149,40 +121,31 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 				Name:      fmt.Sprintf(policySecretNameFormat, p.Org, p.Env),
 				Namespace: p.Namespace,
 			},
-			Data: secretData,
+			Data: p.policySecretData,
 		}
 
 		err = yamlEncoder.Encode(secretCRD)
 		if err != nil {
 			return err
 		}
+	}
 
-		// load analytics service account credentials
-		if p.serviceAccount != "" {
-			cred, err := ioutil.ReadFile(p.serviceAccount)
-			if err != nil {
-				return err
-			}
+	// encodes the service account credentials
+	if p.analyticsSecretData != nil {
+		secretCRD := server.SecretCRD{
+			APIVersion: "v1",
+			Kind:       "Secret",
+			Type:       "Opaque",
+			Metadata: server.Metadata{
+				Name:      fmt.Sprintf(analyticsSecretNameFormat, p.Org, p.Env),
+				Namespace: p.Namespace,
+			},
+			Data: p.analyticsSecretData,
+		}
 
-			// encode service account credentials into secret
-			secretData := map[string]string{
-				server.ServiceAccount: base64.StdEncoding.EncodeToString(cred),
-			}
-			secretCRD := server.SecretCRD{
-				APIVersion: "v1",
-				Kind:       "Secret",
-				Type:       "Opaque",
-				Metadata: server.Metadata{
-					Name:      fmt.Sprintf(analyticsSecretNameFormat, p.Org, p.Env),
-					Namespace: p.Namespace,
-				},
-				Data: secretData,
-			}
-
-			err = yamlEncoder.Encode(secretCRD)
-			if err != nil {
-				return err
-			}
+		err = yamlEncoder.Encode(secretCRD)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -200,6 +163,53 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		printf("# WARNING: verification of provision failed. May not be valid.")
 	}
 	printf(yamlBuffer.String())
+
+	return nil
+}
+
+// createPolicySecretData creates the policySecretData to be encoded into the config file
+// if the runtime type is CLOUD (NG SaaS), it creates the related property set in Apigee
+func (p *provision) createPolicySecretData(config *server.Config, verbosef shared.FormatFn) error {
+	privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
+		Bytes: x509.MarshalPKCS1PrivateKey(config.Tenant.PrivateKey)})
+
+	// create CRD for policy secret
+	jwksBytes, err := json.Marshal(config.Tenant.JWKS)
+	if err != nil {
+		return err
+	}
+
+	props := map[string]string{server.SecretPropsKIDKey: config.Tenant.PrivateKeyID}
+	propsBuf := new(bytes.Buffer)
+	if err := server.WriteProperties(propsBuf, props); err != nil {
+		return err
+	}
+
+	// encode policy secret
+	p.policySecretData = map[string]string{
+		server.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
+		server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
+		server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
+	}
+
+	if p.isCloud() {
+		err = p.createSecretPropertyset(jwksBytes, privateKeyBytes, propsBuf.Bytes(), verbosef)
+	}
+
+	return err
+}
+
+func (p *provision) createAnalyticsSecretData() error {
+	// load analytics service account credentials
+	cred, err := ioutil.ReadFile(p.analyticsServiceAccount)
+	if err != nil {
+		return err
+	}
+
+	// encode service account credentials into secret
+	p.analyticsSecretData = map[string]string{
+		server.ServiceAccount: base64.StdEncoding.EncodeToString(cred),
+	}
 
 	return nil
 }
@@ -261,7 +271,10 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 		if res != nil {
 			defer res.Body.Close()
 		}
-		if err != nil && res.StatusCode != http.StatusNotFound { // proceed to POST if 404 Not Found
+		if err == nil { // returns if successful
+			return nil
+		}
+		if res.StatusCode != http.StatusNotFound { // proceed to POST if 404 Not Found
 			return err
 		}
 	}
