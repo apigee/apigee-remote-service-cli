@@ -296,9 +296,9 @@ func (c *EdgeClient) getOAuthToken() error {
 	if err := CheckResponse(res); err != nil {
 		var errorResponse *ErrorResponse
 		if errors.As(err, &errorResponse) {
-			return fmt.Errorf("%d %v", res.StatusCode, errorResponse.Message)
+			return fmt.Errorf("oauth: %d %v", res.StatusCode, errorResponse.Message)
 		}
-		return fmt.Errorf("%d", res.StatusCode)
+		return fmt.Errorf("oauth: %d", res.StatusCode)
 	}
 	body := &OAuthResponse{}
 	if err := json.NewDecoder(res.Body).Decode(body); err != nil {

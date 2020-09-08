@@ -241,8 +241,6 @@ func (w *formatFnWriter) Write(p []byte) (n int, err error) {
 	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(Errorf).Pointer() {
 		fmt.Fprintf(os.Stderr, "%s", p)
 	}
-	// if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(NoPrintf).Pointer() {
-	// }
 	tp := testutil.TestPrint{}
 	if reflect.ValueOf(w.formatFn).Pointer() == reflect.ValueOf(tp.Printf).Pointer() {
 		w.formatFn("%s", p)
