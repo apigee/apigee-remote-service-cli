@@ -269,7 +269,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 		config.Tenant.PrivateKey = privateKey
 		config.Tenant.PrivateKeyID = keyID
 
-		if jwks, err = p.RotateJKWS(jwks, p.rotate); err != nil {
+		if jwks, err = p.RotateJWKS(jwks, p.rotate); err != nil {
 			return err
 		}
 
