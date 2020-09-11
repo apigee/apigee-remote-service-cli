@@ -36,14 +36,10 @@ const proxiesPath = "apis"
 // ProxiesService is an interface for interfacing with the Apigee Edge Admin API
 // dealing with apiproxies.
 type ProxiesService interface {
-	// List() ([]string, *Response, error)
 	Get(string) (*Proxy, *Response, error)
 	Import(proxyName string, source string) (*ProxyRevision, *Response, error)
-	// Delete(string) (*DeletedProxyInfo, *Response, error)
-	// DeleteRevision(string, Revision) (*ProxyRevision, *Response, error)
 	Deploy(string, string, Revision) (*ProxyRevisionDeployment, *Response, error)
 	Undeploy(string, string, Revision) (*ProxyRevisionDeployment, *Response, error)
-	// Export(string, Revision) (string, *Response, error)
 	GetDeployment(proxy string) (*EnvironmentDeployment, *Response, error)
 	GetDeployedRevision(proxy string) (*Revision, error)
 	GetGCPDeployments(proxy string) ([]GCPDeployment, *Response, error)
@@ -158,24 +154,6 @@ type DeletedProxyInfo struct {
 	Name string `json:"name,omitempty"`
 }
 
-// type proxiesRoot struct {
-//   Proxies []Proxy `json:"proxies"`
-// }
-
-// // List retrieves the list of apiproxy names for the organization referred by the EdgeClient.
-// func (s *ProxiesServiceOp) List() ([]string, *Response, error) {
-// 	req, e := s.client.NewRequest("GET", proxiesPath, nil)
-// 	if e != nil {
-// 		return nil, nil, e
-// 	}
-// 	namelist := make([]string, 0)
-// 	resp, e := s.client.Do(req, &namelist)
-// 	if e != nil {
-// 		return nil, resp, e
-// 	}
-// 	return namelist, resp, e
-// }
-
 // Get retrieves the information about an API Proxy in an organization, information including
 // the list of available revisions, and the created and last modified dates and actors.
 func (s *ProxiesServiceOp) Get(proxy string) (*Proxy, *Response, error) {
@@ -214,7 +192,7 @@ func zipDirectory(source string, target string, filter func(string) bool) error 
 
 	info, err := os.Stat(source)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	var baseDir string
@@ -298,7 +276,6 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 		if e != nil {
 			return nil, nil, fmt.Errorf("while creating temp dir, error: %#v", e)
 		}
-		//fmt.Printf("zipped %s into %s\n\n", source, zipfileName)
 	}
 
 	if !strings.HasSuffix(zipfileName, ".zip") {
@@ -359,62 +336,6 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 	}
 	return &returnedProxyRevision, res, err
 }
-
-// // Export a revision of an API proxy within an organization, to a filesystem file.
-// func (s *ProxiesServiceOp) Export(proxyName string, rev Revision) (string, *Response, error) {
-// 	// curl -u USER:PASSWORD \
-// 	//  http://MGMTSERVER/v1/organizations/ORGNAME/apis/APINAME/revisions/REVNUMBER?format=bundle > bundle.zip
-
-// 	urlPath := path.Join(proxiesPath, proxyName, "revisions", fmt.Sprintf("%d", rev))
-// 	// append the required query param
-// 	origURL, err := url.Parse(urlPath)
-// 	if err != nil {
-// 		return "", nil, err
-// 	}
-// 	q := origURL.Query()
-// 	q.Add("format", "bundle")
-// 	origURL.RawQuery = q.Encode()
-// 	urlPath = origURL.String()
-
-// 	req, e := s.client.NewRequestNoEnv("GET", urlPath, nil)
-// 	if e != nil {
-// 		return "", nil, e
-// 	}
-// 	req.Header.Del("Accept")
-
-// 	t := time.Now()
-// 	filename := fmt.Sprintf("proxyName-r%d-%d%02d%02d-%02d%02d%02d.zip",
-// 		rev, t.Year(), t.Month(), t.Day(),
-// 		t.Hour(), t.Minute(), t.Second())
-
-// 	out, e := os.Create(filename)
-// 	if e != nil {
-// 		return "", nil, e
-// 	}
-
-// 	resp, e := s.client.Do(req, out)
-// 	if e != nil {
-// 		return "", resp, e
-// 	}
-// 	out.Close()
-// 	return filename, resp, e
-// }
-
-// // DeleteRevision deletes a specific revision of an API Proxy from an organization.
-// // The revision must exist, and must not be currently deployed.
-// func (s *ProxiesServiceOp) DeleteRevision(proxyName string, rev Revision) (*ProxyRevision, *Response, error) {
-// 	urlPath := path.Join(proxiesPath, proxyName, "revisions", fmt.Sprintf("%d", rev))
-// 	req, e := s.client.NewRequestNoEnv("DELETE", urlPath, nil)
-// 	if e != nil {
-// 		return nil, nil, e
-// 	}
-// 	proxyRev := ProxyRevision{}
-// 	resp, e := s.client.Do(req, &proxyRev)
-// 	if e != nil {
-// 		return nil, resp, e
-// 	}
-// 	return &proxyRev, resp, e
-// }
 
 // Undeploy a specific revision of an API Proxy from a particular environment within an Edge organization.
 func (s *ProxiesServiceOp) Undeploy(proxyName, env string, rev Revision) (*ProxyRevisionDeployment, *Response, error) {
@@ -480,23 +401,6 @@ func (s *ProxiesServiceOp) Deploy(proxyName, env string, rev Revision) (*ProxyRe
 	}
 	return &deployment, resp, e
 }
-
-// // Delete an API Proxy and all its revisions from an organization. This method
-// // will fail if any of the revisions of the named API Proxy are currently deployed
-// // in any environment.
-// func (s *ProxiesServiceOp) Delete(proxyName string) (*DeletedProxyInfo, *Response, error) {
-// 	urlPath := path.Join(proxiesPath, proxyName)
-// 	req, e := s.client.NewRequestNoEnv("DELETE", urlPath, nil)
-// 	if e != nil {
-// 		return nil, nil, e
-// 	}
-// 	proxy := DeletedProxyInfo{}
-// 	resp, e := s.client.Do(req, &proxy)
-// 	if e != nil {
-// 		return nil, resp, e
-// 	}
-// 	return &proxy, resp, e
-// }
 
 // GetDeployment retrieves the information about the deployment of an API Proxy in an environment.
 // DOES NOT WORK WITH GCP API!
