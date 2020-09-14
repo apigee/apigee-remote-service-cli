@@ -59,9 +59,9 @@ func (r *RootArgs) CreateNewKey() (keyID string, privateKey *rsa.PrivateKey, jwk
 	return
 }
 
-// RotateJKWS returns a jwk.Set including passed keys and keys from existing endpoint,
+// RotateJWKS returns a jwk.Set including passed keys and keys from existing endpoint,
 // sorted by key ID and truncated per the truncate param.
-func (r *RootArgs) RotateJKWS(jwks *jwk.Set, truncate int) (*jwk.Set, error) {
+func (r *RootArgs) RotateJWKS(jwks *jwk.Set, truncate int) (*jwk.Set, error) {
 
 	keys := jwks.Keys
 
@@ -92,7 +92,7 @@ func (r *RootArgs) CreateJWKS(truncate int, verbosef FormatFn) (keyID string, pk
 		return
 	}
 
-	if jwks, err = r.RotateJKWS(jwks, truncate); err != nil {
+	if jwks, err = r.RotateJWKS(jwks, truncate); err != nil {
 		return
 	}
 

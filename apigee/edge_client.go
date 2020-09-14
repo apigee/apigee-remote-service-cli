@@ -237,7 +237,7 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 
 	if !o.Auth.SkipAuth {
 		var e error
-		if o.Auth == nil || (o.Auth.Password == "" && o.Auth.BearerToken == "") {
+		if o.Auth.Password == "" && o.Auth.BearerToken == "" {
 			c.auth, e = retrieveAuthFromNetrc(o.Auth.NetrcPath, baseURL.Host)
 		} else {
 			c.auth = &EdgeAuth{
@@ -252,7 +252,7 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 		}
 		// not overriding if auth token is given
 		// otherwise enforcing oauth on legacy saas
-		if o.Auth.BearerToken == "" && o.MgmtURL == defaultBaseURL {
+		if o.Auth.BearerToken == "" && mgmtURL == defaultBaseURL {
 			c.auth.MFAToken = o.Auth.MFAToken
 			e = c.getOAuthToken()
 			if e != nil {
@@ -296,9 +296,9 @@ func (c *EdgeClient) getOAuthToken() error {
 	if err := CheckResponse(res); err != nil {
 		var errorResponse *ErrorResponse
 		if errors.As(err, &errorResponse) {
-			return fmt.Errorf("%d %v", res.StatusCode, errorResponse.Message)
+			return fmt.Errorf("oauth: %d %v", res.StatusCode, errorResponse.Message)
 		}
-		return fmt.Errorf("%d", res.StatusCode)
+		return fmt.Errorf("oauth: %d", res.StatusCode)
 	}
 	body := &OAuthResponse{}
 	if err := json.NewDecoder(res.Body).Decode(body); err != nil {
