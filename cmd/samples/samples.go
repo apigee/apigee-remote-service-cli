@@ -144,6 +144,7 @@ func (s *samples) loadConfig() error {
 		// SA credentials supersede the fluentd enpoint
 		if s.ServerConfig.Analytics.CredentialsJSON != nil {
 			s.AnalyticsSecret = true
+			fmt.Fprintf(os.Stderr, "service account credentials are found in config, the fluentd endpoint if present will be superseded")
 		} else if s.ServerConfig.Analytics.FluentdEndpoint != "" {
 			s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
 		}

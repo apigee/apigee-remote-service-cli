@@ -31,7 +31,11 @@ import (
 func TestCreateNativeConfigs(t *testing.T) {
 	print := testutil.Printer("TestCreateNativeConfigs")
 
-	tmpDir := "./native"
+	tmpDir, err := ioutil.TempDir("", "native")
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, false, false)
@@ -50,7 +54,7 @@ func TestCreateNativeConfigs(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "-t", "native", "--out", "./native", "-c", tmpFile.Name(), "--tls", "./"}
+	flags := []string{"samples", "create", "-t", "native", "--out", tmpDir, "-c", tmpFile.Name(), "--tls", "./"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -72,7 +76,11 @@ func TestCreateNativeConfigs(t *testing.T) {
 func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithHttpbin")
 
-	tmpDir := "./istio-samples"
+	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, false, false)
@@ -115,7 +123,11 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithoutHttpbin")
 
-	tmpDir := "./istio-samples"
+	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, true, false)
@@ -154,7 +166,11 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithAnalyticsSecret")
 
-	tmpDir := "./istio-samples"
+	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, true, true)
@@ -184,7 +200,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 func TestExistingDirectoryError(t *testing.T) {
 	print := testutil.Printer("TestExistingDirectoryError")
 
-	tmpDir, err := ioutil.TempDir("./", "native")
+	tmpDir, err := ioutil.TempDir("", "native")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +230,7 @@ func TestExistingDirectoryError(t *testing.T) {
 func TestExistingDirectoryOverwrite(t *testing.T) {
 	print := testutil.Printer("TestExistingDirectoryOverwrite")
 
-	tmpDir, err := ioutil.TempDir("./", "native")
+	tmpDir, err := ioutil.TempDir("", "native")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +271,10 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 func TestLoadConfigError(t *testing.T) {
 	print := testutil.Printer("TestLoadConfigError")
 
-	tmpDir := "./native"
+	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer os.RemoveAll(tmpDir)
 
 	// bad config file path
@@ -264,7 +283,7 @@ func TestLoadConfigError(t *testing.T) {
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
-	err := rootCmd.Execute()
+	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "loading config yaml file: open badconfig: no such file or directory")
 }
 
