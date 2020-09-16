@@ -18,11 +18,11 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/apigee/apigee-remote-service-cli/templates"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"gopkg.in/yaml.v3"
@@ -31,9 +31,10 @@ import (
 func TestCreateNativeConfigs(t *testing.T) {
 	print := testutil.Printer("TestCreateNativeConfigs")
 
-	defer os.RemoveAll("./native")
+	tmpDir := "./native"
+	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t, false)
+	config := generateConfig(t, false, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -43,6 +44,9 @@ func TestCreateNativeConfigs(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	defer os.Remove(tmpFile.Name())
+
+	// make a fake tag
+	shared.BuildInfo.Version = "v0.0.0-SNAPSHOT"
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
@@ -61,6 +65,8 @@ func TestCreateNativeConfigs(t *testing.T) {
 	}
 
 	print.CheckPrefix(t, want)
+
+	verifyNativeConfig(t, path.Join(tmpDir, "envoy-config.yaml"))
 }
 
 func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
@@ -69,7 +75,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	tmpDir := "./istio-samples"
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t, false)
+	config := generateConfig(t, false, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -79,6 +85,9 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	defer os.Remove(tmpFile.Name())
+
+	// make a fake tag
+	shared.BuildInfo.Version = "0.0.0-SNAPSHOT"
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
@@ -109,7 +118,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	tmpDir := "./istio-samples"
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t, true)
+	config := generateConfig(t, true, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -142,6 +151,36 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	print.CheckPrefix(t, want)
 }
 
+func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
+	print := testutil.Printer("TestCreateIstioConfigsWithAnalyticsSecret")
+
+	tmpDir := "./istio-samples"
+	defer os.RemoveAll(tmpDir)
+
+	config := generateConfig(t, true, true)
+
+	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if _, err := tmpFile.Write(config); err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// a good command
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"samples", "create", "--out", tmpDir, "-c", tmpFile.Name()}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Errorf("want no error: %v", err)
+	}
+
+	verifyIstioConfig(t, path.Join(tmpDir, "apigee-envoy-adapter.yaml"))
+}
+
 func TestExistingDirectoryError(t *testing.T) {
 	print := testutil.Printer("TestExistingDirectoryError")
 
@@ -151,7 +190,7 @@ func TestExistingDirectoryError(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t, true)
+	config := generateConfig(t, true, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -181,7 +220,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	config := generateConfig(t, false)
+	config := generateConfig(t, false, false)
 
 	tmpFile, err := ioutil.TempFile("", "config.yaml")
 	if err != nil {
@@ -229,7 +268,7 @@ func TestLoadConfigError(t *testing.T) {
 	testutil.ErrorContains(t, err, "loading config yaml file: open badconfig: no such file or directory")
 }
 
-func generateConfig(t *testing.T, isGCPManaged bool) []byte {
+func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byte {
 	var yamlBuffer bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
 	yamlEncoder.SetIndent(2)
@@ -265,15 +304,105 @@ func generateConfig(t *testing.T, isGCPManaged bool) []byte {
 		t.Fatal(err)
 	}
 
+	policySecretCRD := server.SecretCRD{
+		APIVersion: "v1",
+		Kind:       "Secret",
+		Metadata: server.Metadata{
+			Name:      "hi-test-policy-secret",
+			Namespace: "apigee",
+		},
+		Data: map[string]string{},
+	}
+	if err := yamlEncoder.Encode(policySecretCRD); err != nil {
+		t.Fatal(err)
+	}
+
+	if !analyticsSecret {
+		return yamlBuffer.Bytes()
+	}
+
+	analyticsSecretCRD := server.SecretCRD{
+		APIVersion: "v1",
+		Kind:       "Secret",
+		Metadata: server.Metadata{
+			Name:      "hi-test-analytics-secret",
+			Namespace: "apigee",
+		},
+		Data: map[string]string{
+			"client_secret.json": "secret",
+		},
+	}
+	if err := yamlEncoder.Encode(analyticsSecretCRD); err != nil {
+		t.Fatal(err)
+	}
+
 	return yamlBuffer.Bytes()
 }
 
-func TestTemp(t *testing.T) {
-	files, err := templates.AssetDir("native")
+// verifyIstioConfig checks part of the envoy-config.yaml
+// it checks if the runtime host if configured in the auth service
+func verifyNativeConfig(t *testing.T, filename string) {
+	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		t.Log(err)
+		t.Fatal(err)
 	}
-	for _, f := range files {
-		t.Log(f)
+
+	decoder := yaml.NewDecoder(bytes.NewReader(yamlFile))
+	cfg := make(map[string]interface{})
+
+	if err := decoder.Decode(&cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	sr := cfg["static_resources"].(map[string]interface{})
+	cls := sr["clusters"].([]interface{})
+	for _, c := range cls {
+		c := c.(map[string]interface{})
+		if c["name"].(string) != "apigee-auth-service" {
+			continue
+		}
+		ts := c["transport_socket"].(map[string]interface{})
+		tc := ts["typed_config"].(map[string]interface{})
+		if tc["sni"].(string) != "RUNTIME" {
+			t.Errorf("runtime host not configured correctly, got %s want RUNTIME", ts["sni"].(string))
+		}
+	}
+}
+
+// verifyIstioConfig reads part of the apigee-envoy-adapter.yaml
+// it checks if the secret names are correct when present
+func verifyIstioConfig(t *testing.T, filename string) {
+	yamlFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	decoder := yaml.NewDecoder(bytes.NewReader(yamlFile))
+	cfg := make(map[string]interface{})
+
+	if err := decoder.Decode(&cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	spec := cfg["spec"].(map[string]interface{})
+	tmpl := spec["template"].(map[string]interface{})
+	spec = tmpl["spec"].(map[string]interface{})
+	vols := spec["volumes"].([]interface{})
+	for _, v := range vols {
+		c := v.(map[string]interface{})
+		if c["name"].(string) == "analytics-secret" {
+			s := c["secret"].(map[string]interface{})
+			name := s["secretName"].(string)
+			if name != "hi-test-analytics-secret" {
+				t.Errorf("secret name not correct, want 'hi-test-analytics-secret' got %s", name)
+			}
+		}
+		if c["name"].(string) == "policy-secret" {
+			s := c["secret"].(map[string]interface{})
+			name := s["secretName"].(string)
+			if name != "hi-test-policy-secret" {
+				t.Errorf("secret name not correct, want 'hi-test-policy-secret' got %s", name)
+			}
+		}
 	}
 }
