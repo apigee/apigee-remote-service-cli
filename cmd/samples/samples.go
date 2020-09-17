@@ -33,14 +33,15 @@ import (
 
 type samples struct {
 	*shared.RootArgs
-	template      string
-	outDir        string
-	overwrite     bool
-	RuntimeHost   string
-	TargetService targetService
-	TLS           tls
-	EncodedName   string
-	ImageTag      string
+	template        string
+	outDir          string
+	overwrite       bool
+	RuntimeHost     string
+	TargetService   targetService
+	TLS             tls
+	EncodedName     string
+	ImageTag        string
+	AnalyticsSecret bool // existence of sa credentials for analytics uploading
 }
 
 type targetService struct {
@@ -137,8 +138,16 @@ func (s *samples) loadConfig() error {
 	s.Env = s.ServerConfig.Tenant.EnvName
 	s.Namespace = s.ServerConfig.Global.Namespace
 
+	// handle configs for analytics-related credential
 	if s.ServerConfig.IsGCPManaged() {
-		s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
+		s.IsGCPManaged = true
+		// SA credentials supersede the fluentd enpoint
+		if s.ServerConfig.Analytics.CredentialsJSON != nil {
+			s.AnalyticsSecret = true
+			fmt.Fprintf(os.Stderr, "service account credentials are found in config, the fluentd endpoint if present will be superseded")
+		} else if s.ServerConfig.Analytics.FluentdEndpoint != "" {
+			s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
+		}
 	}
 
 	if s.TLS.Dir != "" {
