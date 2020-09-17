@@ -31,11 +31,10 @@ import (
 func TestCreateNativeConfigs(t *testing.T) {
 	print := testutil.Printer("TestCreateNativeConfigs")
 
-	tmpDir, err := ioutil.TempDir("", "native")
+	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, false, false)
@@ -54,7 +53,7 @@ func TestCreateNativeConfigs(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "-t", "native", "--out", tmpDir, "-c", tmpFile.Name(), "--tls", "./"}
+	flags := []string{"samples", "create", "-t", "native", "--out", path.Join(tmpDir, "native"), "-c", tmpFile.Name(), "--tls", "./"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -70,17 +69,16 @@ func TestCreateNativeConfigs(t *testing.T) {
 
 	print.CheckPrefix(t, want)
 
-	verifyNativeConfig(t, path.Join(tmpDir, "envoy-config.yaml"))
+	verifyNativeConfig(t, path.Join(tmpDir, "native/envoy-config.yaml"))
 }
 
 func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithHttpbin")
 
-	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, false, false)
@@ -99,7 +97,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--out", tmpDir, "-c", tmpFile.Name()}
+	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name()}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -123,11 +121,10 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithoutHttpbin")
 
-	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, true, false)
@@ -143,7 +140,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--out", tmpDir, "-c", tmpFile.Name(), "-n", "target"}
+	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name(), "-n", "target"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -166,11 +163,10 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithAnalyticsSecret")
 
-	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.RemoveAll(tmpDir) // remove it for re-creation by the CLI
 	defer os.RemoveAll(tmpDir)
 
 	config := generateConfig(t, true, true)
@@ -186,7 +182,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--out", tmpDir, "-c", tmpFile.Name()}
+	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name()}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -194,13 +190,13 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 		t.Errorf("want no error: %v", err)
 	}
 
-	verifyIstioConfig(t, path.Join(tmpDir, "apigee-envoy-adapter.yaml"))
+	verifyIstioConfig(t, path.Join(tmpDir, "istio-samples/apigee-envoy-adapter.yaml"))
 }
 
 func TestExistingDirectoryError(t *testing.T) {
 	print := testutil.Printer("TestExistingDirectoryError")
 
-	tmpDir, err := ioutil.TempDir("", "native")
+	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +226,7 @@ func TestExistingDirectoryError(t *testing.T) {
 func TestExistingDirectoryOverwrite(t *testing.T) {
 	print := testutil.Printer("TestExistingDirectoryOverwrite")
 
-	tmpDir, err := ioutil.TempDir("", "native")
+	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +267,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 func TestLoadConfigError(t *testing.T) {
 	print := testutil.Printer("TestLoadConfigError")
 
-	tmpDir, err := ioutil.TempDir("", "istio-samples")
+	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
