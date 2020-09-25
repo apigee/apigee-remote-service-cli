@@ -317,3 +317,26 @@ func TestGetGCPProxyDeployment(t *testing.T) {
 		t.Errorf("want no error got %v", err)
 	}
 }
+
+func TestSmartFilter(t *testing.T) {
+	strs := []string{
+		"test",
+		"test~",
+		"#test",
+		"test#",
+		"#test#",
+	}
+	want := []bool{
+		true,
+		false,
+		true,
+		true,
+		false,
+	}
+
+	for i, s := range strs {
+		if smartFilter(s) != want[i] {
+			t.Errorf("want %v for %s, got %v", want[i], s, !want[i])
+		}
+	}
+}
