@@ -5,6 +5,7 @@
     <LastModifiedAt>1597681686371</LastModifiedAt>
     <BasePaths>/remote-service</BasePaths>
     <Policies>
+        <Policy>Create-New-Response</Policy>
         <Policy>Generate-Access-Token</Policy>
         <Policy>Eval-Quota-Result</Policy>
         <Policy>Set-JWT-Variables</Policy>
