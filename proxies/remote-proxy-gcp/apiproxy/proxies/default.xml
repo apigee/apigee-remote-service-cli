@@ -37,6 +37,9 @@
             </Request>
             <Response>
                 <Step>
+                    <Name>Create-New-Response</Name>
+                </Step>
+                <Step>
                     <Name>Set-Response</Name>
                 </Step>
             </Response>
@@ -56,6 +59,10 @@
                 </Step>
             </Request>
             <Response>
+                <Step>
+                    <Name>Create-New-Response</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
                 <Step>
                     <Name>JavaCallout</Name>
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
@@ -114,6 +121,9 @@
                 </Step>
             </Request>
             <Response>
+                <Step>
+                    <Name>Create-New-Response</Name>
+                </Step>
                 <Step>
                     <Name>Set-Response</Name>
                 </Step>
