@@ -24,19 +24,8 @@ static_resources:
               - match: { prefix: / }
                 route:
                   cluster: {{.TargetService.Name}}
-                typed_per_filter_config:
-                  envoy.filters.http.dynamic_forward_proxy:
-                    "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_forward_proxy.v3.PerRouteConfig
-                    host_rewrite_literal: {{.TargetService.Host}}  # rewrites :authority for Apigee product check
-  
+                
           http_filters:
-  
-          - name: envoy.filters.http.dynamic_forward_proxy
-            typed_config:
-              "@type": type.googleapis.com/envoy.config.filter.http.dynamic_forward_proxy.v2alpha.FilterConfig
-              dns_cache_config:
-                name: dynamic_forward_proxy_cache_config
-                dns_lookup_family: V4_ONLY
   
           # evaluate JWT tokens, allow_missing allows API Key also
           - name: envoy.filters.http.jwt_authn
