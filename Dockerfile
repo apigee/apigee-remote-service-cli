@@ -30,8 +30,6 @@ FROM ${RUN_CONTAINER}
 
 # Copy app
 COPY --from=builder /app/apigee-remote-service-cli .
-#COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-#COPY --from=builder /etc/passwd /etc/group /etc/shadow /etc/
 
 # Run entrypoint
 ENTRYPOINT ["/apigee-remote-service-cli"]
