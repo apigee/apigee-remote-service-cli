@@ -294,7 +294,7 @@ func printProducts(products []product.APIProduct, printf shared.FormatFn) error 
 			p.QuotaLimit = ""
 		}
 		p.Targets = p.GetBoundTargets()
-		if p.Targets == nil {
+		if len(p.Targets) == 0 {
 			unbound = append(unbound, p)
 		} else {
 			bound = append(bound, p)
@@ -352,7 +352,7 @@ func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf
 	if p == nil {
 		return nil
 	}
-	if p.GetBoundTargets() == nil {
+	if len(p.GetBoundTargets()) == 0 {
 		printf("Product %s is unbound to any target, no need to verify.", p.Name)
 		return nil
 	}
