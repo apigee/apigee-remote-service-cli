@@ -2,9 +2,13 @@ module github.com/apigee/apigee-remote-service-cli
 
 go 1.15
 
+// replace github.com/apigee/apigee-remote-service-golib => ../apigee-remote-service-golib
+
+// replace github.com/apigee/apigee-remote-service-envoy => ../apigee-remote-service-envoy
+
 require (
-	github.com/apigee/apigee-remote-service-envoy v1.2.0
-	github.com/apigee/apigee-remote-service-golib v1.2.0
+	github.com/apigee/apigee-remote-service-envoy v1.2.1-0.20201020222450-69c583ebd596
+	github.com/apigee/apigee-remote-service-golib v1.2.1-0.20201020221247-3391bb81c8bf
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/lestrrat-go/jwx v1.0.4
 	github.com/pkg/errors v0.9.1
