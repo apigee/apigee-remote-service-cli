@@ -98,10 +98,11 @@ func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 
 func cmdBindingsAdd(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "add [target name] [product name]",
-		Short: "Add Remote Target binding to Apigee Product",
-		Long:  "Add Remote Target binding to Apigee Product",
-		Args:  cobra.ExactArgs(2),
+		Deprecated: "please transition to APIs or UI.",
+		Use:        "add [target name] [product name]",
+		Short:      "Add Remote Target binding to Apigee Product",
+		Long:       "Add Remote Target binding to Apigee Product",
+		Args:       cobra.ExactArgs(2),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			targetName := args[0]
@@ -128,10 +129,11 @@ func cmdBindingsAdd(b *bindings, printf shared.FormatFn) *cobra.Command {
 
 func cmdBindingsRemove(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "remove [target name] [product name]",
-		Short: "Remove target binding from Apigee Product",
-		Long:  "Remove target binding from Apigee Product",
-		Args:  cobra.ExactArgs(2),
+		Deprecated: "please transition to APIs or UI.",
+		Use:        "remove [target name] [product name]",
+		Short:      "Remove target binding from Apigee Product",
+		Long:       "Remove target binding from Apigee Product",
+		Args:       cobra.ExactArgs(2),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			targetName := args[0]
@@ -285,14 +287,7 @@ func (b *bindings) cmdList(productName string, printf shared.FormatFn) error {
 func printProducts(products []product.APIProduct, printf shared.FormatFn) error {
 	var bound, unbound []product.APIProduct
 	for _, p := range products {
-		// server returns empty scopes as array with a single empty string, remove for consistency
-		if len(p.Scopes) == 1 && p.Scopes[0] == "" {
-			p.Scopes = []string{}
-		}
-		// server may return empty quota field as "null"
-		if p.QuotaLimit == "null" {
-			p.QuotaLimit = ""
-		}
+
 		p.Targets = p.GetBoundTargets()
 		if len(p.Targets) == 0 {
 			unbound = append(unbound, p)

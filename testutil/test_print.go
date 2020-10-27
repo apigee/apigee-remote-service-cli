@@ -16,6 +16,7 @@ package testutil
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -77,4 +78,27 @@ func (tp *TestPrint) CheckPrefix(t *testing.T, want []string) {
 	}
 
 	tp.Prints = nil
+}
+
+// CheckString is for checking test output
+func (tp *TestPrint) CheckString(t *testing.T, want string) {
+	strippedWant := stripSymbols(want)
+
+	var builder strings.Builder
+	for _, p := range tp.Prints {
+		builder.WriteString(p)
+	}
+	got := builder.String()
+	strippedGot := stripSymbols(got)
+
+	if strippedWant != strippedGot {
+		t.Errorf("want: '%s',\n got: '%s'", want, got)
+	}
+
+	tp.Prints = nil
+}
+
+func stripSymbols(str string) string {
+	symbols := regexp.MustCompile(`\s+`)
+	return symbols.ReplaceAllString(str, " ")
 }
