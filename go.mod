@@ -8,7 +8,7 @@ go 1.15
 
 require (
 	github.com/apigee/apigee-remote-service-envoy v1.2.1-0.20201020222450-69c583ebd596
-	github.com/apigee/apigee-remote-service-golib v1.2.1-0.20201020221247-3391bb81c8bf
+	github.com/apigee/apigee-remote-service-golib v1.2.1-0.20201027165703-a8426370e0a0
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/lestrrat-go/jwx v1.0.4
 	github.com/pkg/errors v0.9.1

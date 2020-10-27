@@ -98,10 +98,11 @@ func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 
 func cmdBindingsAdd(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "add [target name] [product name]",
-		Short: "Add Remote Target binding to Apigee Product",
-		Long:  "Add Remote Target binding to Apigee Product",
-		Args:  cobra.ExactArgs(2),
+		Deprecated: "please transition to APIs or UI.",
+		Use:        "add [target name] [product name]",
+		Short:      "Add Remote Target binding to Apigee Product",
+		Long:       "Add Remote Target binding to Apigee Product",
+		Args:       cobra.ExactArgs(2),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			targetName := args[0]
@@ -128,10 +129,11 @@ func cmdBindingsAdd(b *bindings, printf shared.FormatFn) *cobra.Command {
 
 func cmdBindingsRemove(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "remove [target name] [product name]",
-		Short: "Remove target binding from Apigee Product",
-		Long:  "Remove target binding from Apigee Product",
-		Args:  cobra.ExactArgs(2),
+		Deprecated: "please transition to APIs or UI.",
+		Use:        "remove [target name] [product name]",
+		Short:      "Remove target binding from Apigee Product",
+		Long:       "Remove target binding from Apigee Product",
+		Args:       cobra.ExactArgs(2),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			targetName := args[0]

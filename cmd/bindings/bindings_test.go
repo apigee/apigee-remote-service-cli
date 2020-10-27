@@ -45,7 +45,6 @@ func TestBindingListOPDK(t *testing.T) {
 	var flags []string
 	var rootCmd *cobra.Command
 	var rootArgs *shared.RootArgs
-	var wants []string
 
 	flags = []string{"bindings", "list", "--opdk", "--runtime", ts.URL,
 		"-o", "/org/", "-e", "/env/", "-u", "/username/", "-p", "password"}
@@ -55,40 +54,34 @@ func TestBindingListOPDK(t *testing.T) {
 	if err = rootCmd.Execute(); err != nil {
 		t.Errorf("want no error, got: %v", err)
 	}
-	wants = []string{
-		"\nAPI Products\n============",
-		"\nBound\n-----",
-		"\n",
-		"/product0/",
-		":",
-		"\n  Target bindings:",
-		"\n    ",
-		"/target/",
-		"\n  Paths:",
-		"\n",
-		"/product2/",
-		":",
-		"\n  Target bindings:",
-		"\n    ",
-		"/target/",
-		"\n  Paths:",
-		"\n",
-		"/product4/",
-		":",
-		"\n  Target bindings:",
-		"\n    ",
-		"/target/",
-		"\n  Paths:",
-		"\n\nUnbound\n-------",
-		"\n",
-		"/product/",
-		":",
-		"\n",
-		"/product1/",
-		":",
-		"\n",
-	}
-	print.Check(t, wants)
+	want := `
+	API Products
+	============
+	Bound
+	-----
+	/product0/:
+		Target bindings:
+			/target/
+		Paths:
+	/product2/:
+		Target bindings:
+			/target/
+		Paths:
+	/product4/:
+		Target bindings:
+			/target/
+		Paths:
+	/productOG/:
+		Target bindings:
+			/target/
+		Paths:
+	
+	Unbound
+	-------
+	/product/:
+	/product1/:
+	`
+	print.CheckString(t, want)
 
 	flags = []string{"bindings", "list", "/product2/", "--opdk", "--runtime", ts.URL,
 		"-o", "/org/", "-e", "/env/", "-u", "/username/", "-p", "password"}
@@ -98,19 +91,17 @@ func TestBindingListOPDK(t *testing.T) {
 	if err = rootCmd.Execute(); err != nil {
 		t.Errorf("want no error, got: %v", err)
 	}
-	wants = []string{
-		"\nAPI Products\n============",
-		"\nBound\n-----",
-		"\n",
-		"/product2/",
-		":",
-		"\n  Target bindings:",
-		"\n    ",
-		"/target/",
-		"\n  Paths:",
-		"\n",
-	}
-	print.Check(t, wants)
+	want = `
+	API Products
+	============
+	Bound
+	-----
+	/product2/:
+		Target bindings:
+			/target/
+		Paths:
+`
+	print.CheckString(t, want)
 }
 
 func TestBindingAddOPDK(t *testing.T) {
@@ -231,6 +222,8 @@ func TestBindingVerifyAll(t *testing.T) {
 		"  app /app1/ associated with product /product2/ is verified",
 		"Verifying apps associated with product /product0/:",
 		"  app /app0/ associated with product /product0/ is verified",
+		"Verifying apps associated with product /productOG/:",
+		"  app /appOG/ associated with product /productOG/ is verified",
 		"No app is found associated with product /product4/.",
 	}
 	print.Check(t, wants)
@@ -293,6 +286,25 @@ func productTestServer(t *testing.T) *httptest.Server {
 				},
 				QuotaLimit: "null",
 				Scopes:     []string{""},
+			},
+			{
+				Name:       "/productOG/",
+				Attributes: []product.Attribute{},
+				QuotaLimit: "",
+				Scopes:     []string{""},
+				OperationGroup: &product.OperationGroup{
+					OperationConfigs: []product.OperationConfig{
+						{
+							APISource: "/target/",
+							Operations: []product.Operation{
+								{
+									Resource: "/",
+									Methods:  []string{"GET"},
+								},
+							},
+						},
+					},
+				},
 			},
 			{
 				Name: "/product4/",
@@ -375,6 +387,28 @@ func productTestServer(t *testing.T) *httptest.Server {
 						APIProducts: []apigee.APIProductRef{
 							{
 								Name:   "/product3/",
+								Status: "approved",
+							},
+						},
+					},
+				},
+			},
+			{
+				AppID: "OG",
+				Name:  "/appOG/",
+				Credentials: []apigee.Credential{
+					{
+						APIProducts: []apigee.APIProductRef{
+							{
+								Name:   "remote-service",
+								Status: "approved",
+							},
+						},
+					},
+					{
+						APIProducts: []apigee.APIProductRef{
+							{
+								Name:   "/productOG/",
 								Status: "approved",
 							},
 						},
