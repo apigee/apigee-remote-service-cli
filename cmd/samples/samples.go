@@ -15,6 +15,7 @@
 package samples
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -23,7 +24,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/templates"
 	"github.com/apigee/apigee-remote-service-envoy/server"
@@ -146,7 +146,7 @@ func (s *samples) loadConfig() error {
 			s.AnalyticsSecret = true
 			fmt.Fprintf(os.Stderr, "service account credentials are found in config, the fluentd endpoint if present will be superseded")
 		} else if s.ServerConfig.Analytics.FluentdEndpoint != "" {
-			s.EncodedName = provision.EnvScopeEncodedName(s.Org, s.Env)
+			s.EncodedName = envScopeEncodedName(s.Org, s.Env)
 		}
 	}
 
@@ -235,4 +235,26 @@ func getTemplates(tempDir string, name string) error {
 		return errors.Wrapf(err, "restoring asset %s", name)
 	}
 	return nil
+}
+
+// shortName returns a substring with up to the first 15 characters of the input string
+func shortName(s string) string {
+	if len(s) < 16 {
+		return s
+	}
+	return s[:15]
+}
+
+// shortSha returns a substring with the first 7 characters of a SHA for the input string
+func shortSha(s string) string {
+	h := sha256.New()
+	_, _ = h.Write([]byte(s))
+	sha := fmt.Sprintf("%x", h.Sum(nil))
+	return sha[:7]
+}
+
+// envScopeEncodedName returns the encoded resource name to avoid the 63 chars limit
+func envScopeEncodedName(org, env string) string {
+	sha := shortSha(fmt.Sprintf("%s:%s", org, env))
+	return fmt.Sprintf("%s-%s-%s", shortName(org), shortName(env), sha)
 }

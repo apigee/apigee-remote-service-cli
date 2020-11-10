@@ -17,8 +17,11 @@ package provision
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -259,17 +262,7 @@ func serveMux(t *testing.T) *http.ServeMux {
 	})
 	// catch-all handler for remote service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "version") {
-			w.Header().Set("Content-Type", "application/json")
-			res := map[string]string{
-				"platform": "1.3.0",
-			}
-			if err := json.NewEncoder(w).Encode(res); err != nil {
-				t.Fatalf("want no error %v", err)
-			}
-		} else {
-			w.WriteHeader(http.StatusOK)
-		}
+		w.WriteHeader(http.StatusOK)
 	})
 	m.HandleFunc("/v1/organizations/gcp", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -513,9 +506,19 @@ func TestProvisionNGSaaS(t *testing.T) {
 
 	print := testutil.Printer("TestProvisionHybrid")
 
+	credDir, err := ioutil.TempDir("", "analytics-secret")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	credFile := path.Join(credDir, "client_secret.json")
+	if err := ioutil.WriteFile(credFile, []byte(`{"type": "service_account"}`), 0644); err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer os.RemoveAll(credDir)
+
 	// good provision with rotate
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1"}
+	flags := []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1", "--analytics-sa", credFile}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
@@ -535,11 +538,15 @@ data:
   config.yaml:`,
 	}
 
+	if !strings.Contains(print.Prints[len(print.Prints)-1], "client_secret.json") {
+		t.Error("analytics secret not found in the config")
+	}
+
 	print.CheckPrefix(t, want)
 
 	// good provision without rotate
 	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	flags = []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
@@ -549,16 +556,16 @@ data:
 
 	// request to get runtime type returns 404
 	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "badng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	flags = []string{"provision", "-o", "badng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
-	err := rootCmd.Execute()
+	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "404")
 
 	// propertyset creation request returns 404
 	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token"}
+	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
@@ -567,104 +574,12 @@ data:
 
 	// propertyset rotation request returns 400
 	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1"}
+	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "400")
-}
-
-func TestInvalidRuntimeVersion(t *testing.T) {
-	badHandler := func(t *testing.T) http.Handler {
-		m := serveMux(t)
-		m.HandleFunc("/remote-service/version", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("ok"))
-		})
-		return m
-	}
-
-	ts := httptest.NewServer(badHandler(t))
-	defer ts.Close()
-
-	duration = 200 * time.Millisecond
-	interval = 100 * time.Millisecond
-
-	print := testutil.Printer("TestRuntimeVersion")
-
-	rootArgs := &shared.RootArgs{}
-	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
-	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
-
-	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "Unable to get the runtime version: invalid character")
-}
-
-func TestMissingRuntimeVersion(t *testing.T) {
-	badHandler := func(t *testing.T) http.Handler {
-		m := serveMux(t)
-		m.HandleFunc("/remote-service/version", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			res := map[string]string{
-				"useless-field": "hello",
-			}
-			if err := json.NewEncoder(w).Encode(res); err != nil {
-				t.Fatalf("want no error %v", err)
-			}
-		})
-		return m
-	}
-
-	ts := httptest.NewServer(badHandler(t))
-	defer ts.Close()
-
-	duration = 200 * time.Millisecond
-	interval = 100 * time.Millisecond
-
-	print := testutil.Printer("TestRuntimeVersion")
-
-	rootArgs := &shared.RootArgs{}
-	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "-v"}
-	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
-
-	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "Unable to get the runtime version: response has no 'platform' field")
-}
-
-func TestUnknownRuntimeVersion(t *testing.T) {
-	badHandler := func(t *testing.T) http.Handler {
-		m := serveMux(t)
-		m.HandleFunc("/remote-service/version", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			res := map[string]string{
-				"platform": "unknown",
-			}
-			if err := json.NewEncoder(w).Encode(res); err != nil {
-				t.Fatalf("want no error %v", err)
-			}
-		})
-		return m
-	}
-
-	ts := httptest.NewServer(badHandler(t))
-	defer ts.Close()
-
-	duration = 200 * time.Millisecond
-	interval = 100 * time.Millisecond
-
-	print := testutil.Printer("TestRuntimeVersion")
-
-	rootArgs := &shared.RootArgs{}
-	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "-v"}
-	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
-
-	if err := rootCmd.Execute(); err != nil {
-		t.Fatalf("want no error: %v", err)
-	}
 }
 
 func TestAPIProductCreation(t *testing.T) {
