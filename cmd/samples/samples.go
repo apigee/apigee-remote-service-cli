@@ -141,11 +141,16 @@ func (s *samples) loadConfig() error {
 	// handle configs for analytics-related credential
 	if s.ServerConfig.IsGCPManaged() {
 		s.IsGCPManaged = true
+		if s.ServerConfig.Analytics.FluentdEndpoint != "" {
+			s.EncodedName = envScopeEncodedName(s.Org, s.Env)
+		}
 		// SA credentials supersede the fluentd enpoint
 		if s.ServerConfig.Analytics.CredentialsJSON != nil {
 			s.AnalyticsSecret = true
-		} else if s.ServerConfig.Analytics.FluentdEndpoint != "" {
-			s.EncodedName = envScopeEncodedName(s.Org, s.Env)
+			if s.EncodedName != "" {
+				fmt.Fprintf(os.Stderr, "The fluentd endpoint is superseded with the given analytics service account.\n")
+				s.EncodedName = ""
+			}
 		}
 	}
 
