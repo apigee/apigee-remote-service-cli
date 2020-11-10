@@ -64,8 +64,16 @@
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
                 </Step>
                 <Step>
-                    <Name>JavaCallout</Name>
+                    <Name>Get-Runtime-Version</Name>
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
+                    <Name>Products-Callout-Legacy</Name>
+                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version LesserThan "1.4.0")</Condition>
+                </Step>
+                <Step>
+                    <Name>Products-Callout</Name>
+                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version GreaterThanOrEquals "1.4.0")</Condition>
                 </Step>
                 <Step>
                     <Name>Populate-Product-List</Name>
