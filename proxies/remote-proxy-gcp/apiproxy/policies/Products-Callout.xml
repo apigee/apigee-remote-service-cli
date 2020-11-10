@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<JavaCallout async="false" continueOnError="false" enabled="true" name="Products-Callout">
+    <DisplayName>Products Callout</DisplayName>
+    <Properties>
+        <Property name="products.filter.attributes">apigee-remote-service-targets</Property>
+    </Properties>
+    <ClassName>io.apigee.hybrid.microgateway.javacallout.Callout</ClassName>
+    <ResourceURL>java://envoy-javacallout-1.0.2.jar</ResourceURL>
+</JavaCallout>
