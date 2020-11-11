@@ -26,16 +26,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestEncodedName(t *testing.T) {
-	org := "thisorgnameistoolong"
-	env := "thisenvnameisevenworse"
-	want := "thisorgnameisto-thisenvnameisev-fe4ea4e"
-	got := EnvScopeEncodedName(org, env)
-	if got != want {
-		t.Errorf("encoding is incorrect, want %s, got %s", want, got)
-	}
-}
-
 func TestConfig(t *testing.T) {
 	print := testutil.Printer("TestConfig")
 

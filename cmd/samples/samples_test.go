@@ -64,7 +64,7 @@ func TestCreateNativeConfigs(t *testing.T) {
 	want := []string{
 		"Generating native configuration files...",
 		"  generating envoy-config.yaml...",
-		"config files successfully generated.",
+		"Config files successfully generated.",
 	}
 
 	print.CheckPrefix(t, want)
@@ -111,7 +111,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 		"  generating envoyfilter-sidecar.yaml...",
 		"  generating httpbin.yaml...",
 		"  generating request-authentication.yaml...",
-		"config files successfully generated.",
+		"Config files successfully generated.",
 		"Please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
 	}
 
@@ -153,7 +153,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 		"  generating apigee-envoy-adapter.yaml...",
 		"  generating envoyfilter-sidecar.yaml...",
 		"  generating request-authentication.yaml...",
-		"config files successfully generated.",
+		"Config files successfully generated.",
 		"Please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.",
 	}
 
@@ -258,7 +258,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 		"Overwriting the existing directory!",
 		"Generating native configuration files...",
 		"  generating envoy-config.yaml...",
-		"config files successfully generated.",
+		"Config files successfully generated.",
 	}
 
 	print.CheckPrefix(t, want)

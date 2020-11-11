@@ -16,7 +16,6 @@ package provision
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -33,13 +32,6 @@ import (
 )
 
 const (
-	fluentdInternalFormat        = "apigee-udca-%s-%s.%s:20001" // org, env, namespace
-	fluentdInternalEncodedFormat = "apigee-udca-%s.%s:20001"    // org-env-sha, namespace
-
-	defaultApigeeCAFile   = "/opt/apigee/tls/ca.crt"
-	defaultApigeeCertFile = "/opt/apigee/tls/tls.crt"
-	defaultApigeeKeyFile  = "/opt/apigee/tls/tls.key"
-
 	propertysetPOSTURL = `/resourcefiles?name=%s&type=properties`
 	propertysetPUTURL  = `/resourcefiles/properties/%s`
 
@@ -66,12 +58,6 @@ func (p *provision) createConfig(cred *keySecret) *server.Config {
 	if p.IsGCPManaged {
 		config.Tenant.InternalAPI = "" // no internal API for GCP
 		config.Analytics.CollectionInterval = 10 * time.Second
-
-		config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalFormat, p.Org, p.Env, p.Namespace)
-
-		config.Analytics.TLS.CAFile = defaultApigeeCAFile
-		config.Analytics.TLS.CertFile = defaultApigeeCertFile
-		config.Analytics.TLS.KeyFile = defaultApigeeKeyFile
 	}
 
 	if p.IsOPDK {
@@ -214,40 +200,6 @@ func (p *provision) createAnalyticsSecretData() error {
 	return nil
 }
 
-// checkRuntimeVersion gets the version of the hybrid runtime and change the fluentd endpoint when necessary
-func (p *provision) checkRuntimeVersion(config *server.Config, client *http.Client, verbosef shared.FormatFn) (string, error) {
-	targetURL := fmt.Sprintf("%s/version", p.RemoteServiceProxyURL)
-	req, err := http.NewRequest(http.MethodGet, targetURL, nil)
-	if err != nil {
-		return "", err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	if res != nil {
-		defer res.Body.Close()
-	}
-	jsonBody := make(map[string]string)
-	if err := json.NewDecoder(res.Body).Decode(&jsonBody); err != nil {
-		return "", err
-	}
-	version, ok := jsonBody["platform"]
-	if !ok {
-		return "", fmt.Errorf("response has no 'platform' field")
-	}
-	if version == "unknown" {
-		verbosef("runtime version unknown")
-	}
-
-	return version, nil
-}
-
-func (p *provision) encodeUDCAEndpoint(config *server.Config, verbosef shared.FormatFn) {
-	config.Analytics.FluentdEndpoint = fmt.Sprintf(fluentdInternalEncodedFormat, EnvScopeEncodedName(p.Org, p.Env), p.Namespace)
-	verbosef("UDCA endpoint encoded")
-}
-
 // createSecretPropertyset creates an environment-scoped propertyset to store the secrets
 func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props []byte, verbosef shared.FormatFn) error {
 	m := map[string]string{
@@ -291,26 +243,4 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	}
 	// returns error even on 409 Conflict
 	return err
-}
-
-// shortName returns a substring with up to the first 15 characters of the input string
-func shortName(s string) string {
-	if len(s) < 16 {
-		return s
-	}
-	return s[:15]
-}
-
-// shortSha returns a substring with the first 7 characters of a SHA for the input string
-func shortSha(s string) string {
-	h := sha256.New()
-	_, _ = h.Write([]byte(s))
-	sha := fmt.Sprintf("%x", h.Sum(nil))
-	return sha[:7]
-}
-
-// EnvScopeEncodedName returns the encoded resource name to avoid the 63 chars limit
-func EnvScopeEncodedName(org, env string) string {
-	sha := shortSha(fmt.Sprintf("%s:%s", org, env))
-	return fmt.Sprintf("%s-%s-%s", shortName(org), shortName(env), sha)
 }
