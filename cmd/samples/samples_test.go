@@ -16,6 +16,7 @@ package samples
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path"
@@ -283,6 +284,21 @@ func TestLoadConfigError(t *testing.T) {
 	testutil.ErrorContains(t, err, "loading config yaml file: open badconfig: no such file or directory")
 }
 
+func TestGetTemplatesError(t *testing.T) {
+	err := getTemplates("no such dir", "no such template")
+	if err == nil {
+		t.Fatal("want error got none")
+	}
+	testutil.ErrorContains(t, err, "restoring asset no such template: Asset no such template not found")
+}
+
+func TestShortName(t *testing.T) {
+	longName := "asdfasdfasdfasdfasdf"
+	if s := shortName(longName); s != longName[:15] {
+		t.Errorf("want %q got %q", longName[:15], s)
+	}
+}
+
 func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byte {
 	var yamlBuffer bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
@@ -344,7 +360,7 @@ func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byt
 			Namespace: "apigee",
 		},
 		Data: map[string]string{
-			"client_secret.json": "secret",
+			"client_secret.json": fakeServiceAccount(),
 		},
 	}
 	if err := yamlEncoder.Encode(analyticsSecretCRD); err != nil {
@@ -420,4 +436,20 @@ func verifyIstioConfig(t *testing.T, filename string) {
 			}
 		}
 	}
+}
+
+func fakeServiceAccount() string {
+	sa := []byte(`{
+	"type": "service_account",
+	"project_id": "hi",
+	"private_key_id": "5a0ef8b44fe312a005ac6e6fe59e2e559b40bff3",
+	"private_key": "-----BEGIN PRIVATE KEY-----\n-----END PRIVATE KEY-----\n",
+	"client_email": "client@hi.iam.gserviceaccount.com",
+	"client_id": "111111111111111111",
+	"auth_uri": "https://mock.com/o/oauth2/auth",
+	"token_uri": "https://mock.com/token",
+	"auth_provider_x509_cert_url": "https://mock.com/oauth2/v1/certs",
+	"client_x509_cert_url": "https://mock.com/robot/v1/metadata/x509/client%40hi.iam.gserviceaccount.com"
+}`)
+	return base64.StdEncoding.EncodeToString(sa)
 }
