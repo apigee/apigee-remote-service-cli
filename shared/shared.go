@@ -260,7 +260,7 @@ func (r *RootArgs) loadConfig() error {
 	}
 
 	r.ServerConfig = &server.Config{}
-	err := r.ServerConfig.Load(r.ConfigPath, "", "")
+	err := r.ServerConfig.Load(r.ConfigPath, "", "", false)
 	if err != nil {
 		return err
 	}
