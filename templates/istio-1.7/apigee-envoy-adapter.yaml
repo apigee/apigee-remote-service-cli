@@ -28,7 +28,7 @@ spec:
       containers:
       - name: apigee-remote-service-envoy
         image: "google/apigee-envoy-adapter:{{.ImageTag}}"
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
         livenessProbe:
