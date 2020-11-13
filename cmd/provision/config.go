@@ -38,7 +38,7 @@ const (
 	policySecretNameFormat    = "%s-%s-policy-secret"
 	analyticsSecretNameFormat = "%s-%s-analytics-secret"
 
-	defaultName = "apigee-remote-service-envoy"
+	defaultResourceName = "apigee-remote-service-envoy"
 )
 
 func (p *provision) createConfig(cred *keySecret) *server.Config {
@@ -85,7 +85,7 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		APIVersion: "v1",
 		Kind:       "ConfigMap",
 		Metadata: server.Metadata{
-			Name:      defaultName,
+			Name:      defaultResourceName,
 			Namespace: p.Namespace,
 		},
 		Data: data,
@@ -255,7 +255,7 @@ func (p *provision) serviceAccountCRD() *server.ConfigMapCRD {
 		APIVersion: "v1",
 		Kind:       "ServiceAccount",
 		Metadata: server.Metadata{
-			Name:      defaultName,
+			Name:      defaultResourceName,
 			Namespace: p.Namespace,
 		},
 	}
