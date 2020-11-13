@@ -21,6 +21,7 @@ spec:
         app: apigee-remote-service-envoy
         version: v1
     spec:
+      serviceAccountName: apigee-remote-service-envoy
       securityContext:  
         runAsUser: 999
         runAsGroup: 999

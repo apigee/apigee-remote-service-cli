@@ -85,15 +85,30 @@ func TestConfig(t *testing.T) {
 	cfgBytes := []byte(print.Prints[2])
 	configMap := &server.ConfigMapCRD{}
 	secret := &server.SecretCRD{}
+	serviceAccount := &server.ConfigMapCRD{}
 	decoder := yaml.NewDecoder(bytes.NewReader(cfgBytes))
 	if err := decoder.Decode(configMap); err != nil {
 		t.Errorf("decoding ConfigMap error: %v", err)
+	} else if configMap.Kind != "ConfigMap" {
+		t.Errorf("ConfigMap has the wrong Kind: %q", configMap.Kind)
 	}
+
 	if err := decoder.Decode(secret); err != nil {
 		t.Errorf("decoding policy Secret error: %v", err)
+	} else if secret.Kind != "Secret" {
+		t.Errorf("policy Secret has the wrong Kind: %q", secret.Kind)
 	}
+
 	if err := decoder.Decode(secret); err != nil {
 		t.Errorf("decoding analytics Secret error: %v", err)
+	} else if secret.Kind != "Secret" {
+		t.Errorf("analytics Secret has the wrong Kind: %q", secret.Kind)
+	}
+
+	if err := decoder.Decode(serviceAccount); err != nil {
+		t.Errorf("decoding ServiceAccount error: %v", err)
+	} else if serviceAccount.Kind != "ServiceAccount" {
+		t.Errorf("ServiceAccount has the wrong Kind: %q", serviceAccount.Kind)
 	}
 }
 
