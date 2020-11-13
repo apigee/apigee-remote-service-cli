@@ -37,6 +37,8 @@ const (
 
 	policySecretNameFormat    = "%s-%s-policy-secret"
 	analyticsSecretNameFormat = "%s-%s-analytics-secret"
+
+	defaultResourceName = "apigee-remote-service-envoy"
 )
 
 func (p *provision) createConfig(cred *keySecret) *server.Config {
@@ -83,7 +85,7 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		APIVersion: "v1",
 		Kind:       "ConfigMap",
 		Metadata: server.Metadata{
-			Name:      "apigee-remote-service-envoy",
+			Name:      defaultResourceName,
 			Namespace: p.Namespace,
 		},
 		Data: data,
@@ -133,6 +135,11 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		if err != nil {
 			return err
 		}
+	}
+
+	if p.IsGCPManaged {
+		// no need to check error as p.serviceAccountCRD() returns a static value
+		_ = yamlEncoder.Encode(p.serviceAccountCRD())
 	}
 
 	platform := "GCP"
@@ -243,4 +250,15 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	}
 	// returns error even on 409 Conflict
 	return err
+}
+
+func (p *provision) serviceAccountCRD() *server.ConfigMapCRD {
+	return &server.ConfigMapCRD{
+		APIVersion: "v1",
+		Kind:       "ServiceAccount",
+		Metadata: server.Metadata{
+			Name:      defaultResourceName,
+			Namespace: p.Namespace,
+		},
+	}
 }
