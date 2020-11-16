@@ -137,10 +137,8 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 		}
 	}
 
-	if p.IsGCPManaged {
-		// no need to check error as p.serviceAccountCRD() returns a static value
-		_ = yamlEncoder.Encode(p.serviceAccountCRD())
-	}
+	// no need to check error as p.serviceAccountCRD() returns a static value
+	_ = yamlEncoder.Encode(p.serviceAccountCRD())
 
 	platform := "GCP"
 	if p.IsLegacySaaS {

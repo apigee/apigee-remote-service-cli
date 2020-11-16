@@ -100,7 +100,7 @@ func istio16ApigeeEnvoyAdapterYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.6/apigee-envoy-adapter.yaml", size: 2813, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.6/apigee-envoy-adapter.yaml", size: 2813, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -120,7 +120,7 @@ func istio16EnvoyfilterSidecarYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.6/envoyfilter-sidecar.yaml", size: 2759, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.6/envoyfilter-sidecar.yaml", size: 2759, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -140,7 +140,7 @@ func istio16HttpbinYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.6/httpbin.yaml", size: 704, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.6/httpbin.yaml", size: 704, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -160,7 +160,7 @@ func istio16RequestAuthenticationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.6/request-authentication.yaml", size: 838, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.6/request-authentication.yaml", size: 838, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -180,7 +180,7 @@ func istio17ApigeeEnvoyAdapterYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.7/apigee-envoy-adapter.yaml", size: 2813, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.7/apigee-envoy-adapter.yaml", size: 2813, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -200,7 +200,7 @@ func istio17EnvoyfilterSidecarYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.7/envoyfilter-sidecar.yaml", size: 3049, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.7/envoyfilter-sidecar.yaml", size: 3049, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -220,7 +220,7 @@ func istio17HttpbinYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.7/httpbin.yaml", size: 704, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.7/httpbin.yaml", size: 704, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -240,7 +240,7 @@ func istio17RequestAuthenticationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "istio-1.7/request-authentication.yaml", size: 838, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "istio-1.7/request-authentication.yaml", size: 838, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -260,7 +260,7 @@ func nativeEnvoyConfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "native/envoy-config.yaml", size: 6132, mode: os.FileMode(416), modTime: time.Unix(1605299337, 0)}
+	info := bindataFileInfo{name: "native/envoy-config.yaml", size: 6132, mode: os.FileMode(416), modTime: time.Unix(1605568037, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
