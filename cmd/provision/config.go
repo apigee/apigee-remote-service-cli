@@ -252,8 +252,8 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	return err
 }
 
-func (p *provision) serviceAccountCRD() *server.ConfigMapCRD {
-	return &server.ConfigMapCRD{
+func (p *provision) serviceAccountCRD() *ServiceAccountCRD {
+	return &ServiceAccountCRD{
 		APIVersion: "v1",
 		Kind:       "ServiceAccount",
 		Metadata: server.Metadata{
@@ -261,4 +261,10 @@ func (p *provision) serviceAccountCRD() *server.ConfigMapCRD {
 			Namespace: p.Namespace,
 		},
 	}
+}
+
+type ServiceAccountCRD struct {
+	APIVersion string          `yaml:"apiVersion"`
+	Kind       string          `yaml:"kind"`
+	Metadata   server.Metadata `yaml:"metadata"`
 }
