@@ -21,7 +21,9 @@ spec:
         app: apigee-remote-service-envoy
         version: v1
     spec:
+{{- if .IsGCPManaged}}
       serviceAccountName: apigee-remote-service-envoy
+{{- end}}
       securityContext:  
         runAsUser: 999
         runAsGroup: 999
