@@ -37,6 +37,7 @@ type samples struct {
 	outDir          string
 	overwrite       bool
 	RuntimeHost     string
+	AdapterHost     string
 	TargetService   targetService
 	TLS             tls
 	EncodedName     string
@@ -111,6 +112,7 @@ files related to deployment of their target services.`,
 	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.6", "template name (options are istio-1.6, istio-1.7, native)")
 	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
+	c.Flags().StringVarP(&s.AdapterHost, "adapter-host", "", "localhost", "adapter host name")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
 	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host")
 	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory for tls key and crt")
