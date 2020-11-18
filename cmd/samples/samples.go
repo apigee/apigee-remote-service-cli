@@ -31,6 +31,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	supportedTemplates = map[string]struct{}{
+		"native":    struct{}{},
+		"istio-1.6": struct{}{},
+		"istio-1.7": struct{}{},
+	}
+)
+
 type samples struct {
 	*shared.RootArgs
 	template        string
@@ -92,7 +100,12 @@ files related to deployment of their target services.`,
 		Args: cobra.NoArgs,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			err := s.loadConfig()
+			var err error
+			err = s.validateFieldsFromFlags()
+			if err != nil {
+				return errors.Wrap(err, "validating flags")
+			}
+			err = s.loadConfig()
 			if err != nil {
 				return errors.Wrap(err, "loading config yaml file")
 			}
@@ -112,15 +125,42 @@ files related to deployment of their target services.`,
 	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.6", "template name (options are istio-1.6, istio-1.7, native)")
 	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
-	c.Flags().StringVarP(&s.AdapterHost, "adapter-host", "", "localhost", "adapter host name")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
-	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host")
-	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory for tls key and crt")
-	c.Flags().StringVarP(&s.ImageTag, "tag", "", getTagFromBuildVersion(), "version tag of the Envoy Adapter image")
+	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "", "target service host (native template only)")
+	c.Flags().StringVarP(&s.AdapterHost, "adapter-host", "", "", "adapter host name (native template only)")
+	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory containing tls.key and tls.crt used for the adapter service (native template only)")
+	c.Flags().StringVarP(&s.ImageTag, "tag", "", "", "version tag of the Envoy Adapter image (istio templates only)")
 
 	_ = c.MarkFlagRequired("config")
 
 	return c
+}
+
+func (s *samples) validateFieldsFromFlags() error {
+	if _, ok := supportedTemplates[s.template]; !ok {
+		return fmt.Errorf("template option: %q not found", s.template)
+	}
+
+	if s.template == "native" {
+		if s.ImageTag != "" {
+			return fmt.Errorf("flag --tag should only be used for the istio template")
+		}
+		if s.AdapterHost == "" {
+			s.AdapterHost = "localhost"
+		}
+		if s.TargetService.Host == "" {
+			s.TargetService.Host = "httpbin.org"
+		}
+	} else {
+		if s.AdapterHost != "" || s.TargetService.Host != "" || s.TLS.Dir != "" {
+			return fmt.Errorf("flags --adapter-host, --host or --tls should only be used for native templates")
+		}
+		if s.ImageTag == "" {
+			s.ImageTag = getTagFromBuildVersion()
+		}
+	}
+
+	return nil
 }
 
 func (s *samples) loadConfig() error {

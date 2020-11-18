@@ -29,6 +29,55 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func TestFlagValidation(t *testing.T) {
+	testSamples := []*samples{
+		&samples{
+			template: "native",
+		},
+		&samples{
+			template: "native",
+			ImageTag: "tag",
+		},
+		&samples{
+			template: "istio-1.6",
+		},
+		&samples{
+			template:    "istio-1.6",
+			AdapterHost: "localhost",
+		},
+		&samples{
+			template: "istio-1.6",
+			TargetService: targetService{
+				Host: "targethost",
+			},
+		},
+		&samples{
+			template: "istio-1.6",
+			TLS: tls{
+				Dir: "tls-dir",
+			},
+		},
+		&samples{
+			template: "istio-1.9",
+		},
+	}
+
+	wantedErrors := []string{
+		"",
+		"flag --tag should only be used for the istio template",
+		"",
+		"flags --adapter-host, --host or --tls should only be used for native templates",
+		"flags --adapter-host, --host or --tls should only be used for native templates",
+		"flags --adapter-host, --host or --tls should only be used for native templates",
+		"template option: \"istio-1.9\" not found",
+	}
+
+	for i, s := range testSamples {
+		err := s.validateFieldsFromFlags()
+		testutil.ErrorContains(t, err, wantedErrors[i])
+	}
+}
+
 func TestCreateNativeConfigs(t *testing.T) {
 	print := testutil.Printer("TestCreateNativeConfigs")
 
