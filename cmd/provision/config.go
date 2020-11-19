@@ -50,6 +50,9 @@ func (p *provision) createConfig(cred *keySecret) *server.Config {
 			EnvName:                p.Env,
 			AllowUnverifiedSSLCert: p.InsecureSkipVerify,
 		},
+		Auth: server.AuthConfig{
+			JWTProviderKey: fmt.Sprintf(tokenURLFormat, p.RemoteServiceProxyURL),
+		},
 	}
 
 	if cred != nil {
