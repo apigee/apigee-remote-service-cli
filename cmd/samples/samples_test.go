@@ -30,36 +30,14 @@ import (
 )
 
 func TestFlagValidation(t *testing.T) {
-	testSamples := []*samples{
-		&samples{
-			template: "native",
-		},
-		&samples{
-			template: "native",
-			ImageTag: "tag",
-		},
-		&samples{
-			template: "istio-1.6",
-		},
-		&samples{
-			template:    "istio-1.6",
-			AdapterHost: "localhost",
-		},
-		&samples{
-			template: "istio-1.6",
-			TargetService: targetService{
-				Host: "targethost",
-			},
-		},
-		&samples{
-			template: "istio-1.6",
-			TLS: tls{
-				Dir: "tls-dir",
-			},
-		},
-		&samples{
-			template: "istio-0.9",
-		},
+	testSamples := [][]string{
+		{"--template", "native"},
+		{"--template", "native", "--tag", "tag"},
+		{"--template", "istio-1.6"},
+		{"--template", "istio-1.6", "--host", "localhost"},
+		{"--template", "istio-1.6", "--adapter-host", "targethost"},
+		{"--template", "istio-1.6", "--tls", "tls-dir"},
+		{"--template", "istio-0.9"},
 	}
 
 	wantedErrors := []string{
@@ -72,8 +50,25 @@ func TestFlagValidation(t *testing.T) {
 		"template option: \"istio-0.9\" not found",
 	}
 
-	for i, s := range testSamples {
-		err := s.validateFieldsFromFlags()
+	config := generateConfig(t, true, true)
+	configFile, err := ioutil.TempFile("", "config.yaml")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if _, err := configFile.Write(config); err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer os.Remove(configFile.Name())
+
+	for i, f := range testSamples {
+		print := testutil.Printer("TestFlagValidation")
+		rootArgs := &shared.RootArgs{}
+		flags := []string{"samples", "create", "--config", configFile.Name()}
+		flags = append(flags, f...)
+		rootCmd := cmd.GetRootCmd(flags, print.Printf)
+		shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+		err := rootCmd.Execute()
 		testutil.ErrorContains(t, err, wantedErrors[i])
 	}
 }

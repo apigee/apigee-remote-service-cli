@@ -133,7 +133,7 @@ files related to deployment of their target services.`,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			var err error
-			err = s.validateFieldsFromFlags()
+			err = s.validateFieldsFromFlags(cmd)
 			if err != nil {
 				return errors.Wrap(err, "validating flags")
 			}
@@ -158,17 +158,17 @@ files related to deployment of their target services.`,
 	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
-	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "", "target service host (envoy templates only)")
-	c.Flags().StringVarP(&s.AdapterHost, "adapter-host", "", "", "adapter host name (envoy templates only)")
+	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host (envoy templates only)")
+	c.Flags().StringVarP(&s.AdapterHost, "adapter-host", "", "localhost", "adapter host name (envoy templates only)")
 	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory containing tls.key and tls.crt used for the adapter service (envoy templates only)")
-	c.Flags().StringVarP(&s.ImageTag, "tag", "", "", "version tag of the Envoy Adapter image (istio templates only)")
+	c.Flags().StringVarP(&s.ImageTag, "tag", "", getTagFromBuildVersion(), "version tag of the Envoy Adapter image (istio templates only)")
 
 	_ = c.MarkFlagRequired("config")
 
 	return c
 }
 
-func (s *samples) validateFieldsFromFlags() error {
+func (s *samples) validateFieldsFromFlags(c *cobra.Command) error {
 	dir, ok := supportedTemplates[s.template]
 	if !ok {
 		return fmt.Errorf("template option: %q not found", s.template)
@@ -176,21 +176,12 @@ func (s *samples) validateFieldsFromFlags() error {
 	s.templateDir = dir
 
 	if strings.Contains(s.template, "envoy") || s.template == "native" {
-		if s.ImageTag != "" {
+		if c.Flags().Changed("tag") {
 			return fmt.Errorf("flag --tag should only be used for the istio template")
 		}
-		if s.AdapterHost == "" {
-			s.AdapterHost = "localhost"
-		}
-		if s.TargetService.Host == "" {
-			s.TargetService.Host = "httpbin.org"
-		}
 	} else {
-		if s.AdapterHost != "" || s.TargetService.Host != "" || s.TLS.Dir != "" {
+		if c.Flags().Changed("adapter-host") || c.Flags().Changed("host") || c.Flags().Changed("tls") {
 			return fmt.Errorf("flags --adapter-host, --host or --tls should only be used for envoy templates")
-		}
-		if s.ImageTag == "" {
-			s.ImageTag = getTagFromBuildVersion()
 		}
 	}
 
