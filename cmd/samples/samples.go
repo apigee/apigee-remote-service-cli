@@ -33,14 +33,14 @@ import (
 )
 
 var (
-	supportedTemplates = map[string]struct{}{
-		"native":     struct{}{}, // deprecated
-		"envoy-1.14": struct{}{},
-		"envoy-1.15": struct{}{},
-		"envoy-1.16": struct{}{},
-		"istio-1.5":  struct{}{},
-		"istio-1.6":  struct{}{},
-		"istio-1.7":  struct{}{},
+	supportedTemplates = map[string]string{
+		"native":     "envoy-1.16", // deprecated
+		"envoy-1.14": "envoy-1.16",
+		"envoy-1.15": "envoy-1.16",
+		"envoy-1.16": "envoy-1.16",
+		"istio-1.5":  "istio-1.6",
+		"istio-1.6":  "istio-1.6",
+		"istio-1.7":  "istio-1.7",
 	}
 )
 
@@ -169,9 +169,11 @@ files related to deployment of their target services.`,
 }
 
 func (s *samples) validateFieldsFromFlags() error {
-	if _, ok := supportedTemplates[s.template]; !ok {
+	dir, ok := supportedTemplates[s.template]
+	if !ok {
 		return fmt.Errorf("template option: %q not found", s.template)
 	}
+	s.templateDir = dir
 
 	if strings.Contains(s.template, "envoy") || s.template == "native" {
 		if s.ImageTag != "" {
@@ -183,22 +185,12 @@ func (s *samples) validateFieldsFromFlags() error {
 		if s.TargetService.Host == "" {
 			s.TargetService.Host = "httpbin.org"
 		}
-
-		// assign the value of the template directory that actually exists
-		s.templateDir = "envoy-1.16"
 	} else {
 		if s.AdapterHost != "" || s.TargetService.Host != "" || s.TLS.Dir != "" {
 			return fmt.Errorf("flags --adapter-host, --host or --tls should only be used for envoy templates")
 		}
 		if s.ImageTag == "" {
 			s.ImageTag = getTagFromBuildVersion()
-		}
-
-		// rewrite the value of the template directory that actually exists
-		if s.template > "istio-1.6" {
-			s.templateDir = "istio-1.7"
-		} else {
-			s.templateDir = "istio-1.6"
 		}
 	}
 
