@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -31,12 +32,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	supportedTemplates = map[string]string{
+		"native":     "envoy-1.16", // deprecated
+		"envoy-1.14": "envoy-1.16",
+		"envoy-1.15": "envoy-1.16",
+		"envoy-1.16": "envoy-1.16",
+		"istio-1.5":  "istio-1.6",
+		"istio-1.6":  "istio-1.6",
+		"istio-1.7":  "istio-1.7",
+	}
+)
+
 type samples struct {
 	*shared.RootArgs
 	template        string
+	templateDir     string
 	outDir          string
 	overwrite       bool
 	RuntimeHost     string
+	RuntimePort     string
+	RuntimeTLS      bool
+	AdapterHost     string
 	TargetService   targetService
 	TLS             tls
 	EncodedName     string
@@ -71,8 +88,32 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	}
 
 	c.AddCommand(cmdCreateSampleConfig(s, printf))
+	c.AddCommand(cmdListTemplateOptions(printf))
 
 	return c
+}
+
+func cmdListTemplateOptions(printf shared.FormatFn) *cobra.Command {
+	return &cobra.Command{
+		Use:   "templates",
+		Short: "list available options for --template flag in \"samples create\" command",
+		Long: `List available options for --template flag in "samples create" command.
+Values outside those that are listed here will not be accepted.
+Note the "native" options has been deprecated.`,
+		Args: cobra.NoArgs,
+
+		Run: func(cmd *cobra.Command, _ []string) {
+			printf("Supported templates (native is deprecated):")
+			keys := []string{}
+			for k := range supportedTemplates {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				printf("  %s", k)
+			}
+		},
+	}
 }
 
 func cmdCreateSampleConfig(s *samples, printf shared.FormatFn) *cobra.Command {
@@ -91,7 +132,12 @@ files related to deployment of their target services.`,
 		Args: cobra.NoArgs,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			err := s.loadConfig()
+			var err error
+			err = s.validateFieldsFromFlags()
+			if err != nil {
+				return errors.Wrap(err, "validating flags")
+			}
+			err = s.loadConfig()
 			if err != nil {
 				return errors.Wrap(err, "loading config yaml file")
 			}
@@ -100,7 +146,7 @@ files related to deployment of their target services.`,
 				return errors.Wrap(err, "creating sample config files")
 			}
 			printf("Config files successfully generated.")
-			if s.template != "native" {
+			if strings.Contains(s.template, "istio") {
 				printf("Please enable istio sidecar injection on the default namespace before running kubectl apply on the directory with config files.")
 			}
 			return nil
@@ -108,17 +154,47 @@ files related to deployment of their target services.`,
 	}
 
 	c.Flags().StringVarP(&s.ConfigPath, "config", "c", "", "path to Apigee Remote Service config file")
-	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.6", "template name (options are istio-1.6, istio-1.7, native)")
+	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.6", "template name (run \"samples templates\" to see available options)")
 	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
-	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host")
-	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory for tls key and crt")
-	c.Flags().StringVarP(&s.ImageTag, "tag", "", getTagFromBuildVersion(), "version tag of the Envoy Adapter image")
+	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "", "target service host (envoy templates only)")
+	c.Flags().StringVarP(&s.AdapterHost, "adapter-host", "", "", "adapter host name (envoy templates only)")
+	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory containing tls.key and tls.crt used for the adapter service (envoy templates only)")
+	c.Flags().StringVarP(&s.ImageTag, "tag", "", "", "version tag of the Envoy Adapter image (istio templates only)")
 
 	_ = c.MarkFlagRequired("config")
 
 	return c
+}
+
+func (s *samples) validateFieldsFromFlags() error {
+	dir, ok := supportedTemplates[s.template]
+	if !ok {
+		return fmt.Errorf("template option: %q not found", s.template)
+	}
+	s.templateDir = dir
+
+	if strings.Contains(s.template, "envoy") || s.template == "native" {
+		if s.ImageTag != "" {
+			return fmt.Errorf("flag --tag should only be used for the istio template")
+		}
+		if s.AdapterHost == "" {
+			s.AdapterHost = "localhost"
+		}
+		if s.TargetService.Host == "" {
+			s.TargetService.Host = "httpbin.org"
+		}
+	} else {
+		if s.AdapterHost != "" || s.TargetService.Host != "" || s.TLS.Dir != "" {
+			return fmt.Errorf("flags --adapter-host, --host or --tls should only be used for envoy templates")
+		}
+		if s.ImageTag == "" {
+			s.ImageTag = getTagFromBuildVersion()
+		}
+	}
+
+	return nil
 }
 
 func (s *samples) loadConfig() error {
@@ -128,12 +204,26 @@ func (s *samples) loadConfig() error {
 		return err
 	}
 
+	return s.parseConfig()
+}
+
+func (s *samples) parseConfig() error {
 	s.RuntimeBase = strings.Split(s.ServerConfig.Tenant.RemoteServiceAPI, "/remote-service")[0]
 	url, err := url.Parse(s.RuntimeBase)
 	if err != nil {
 		return err
 	}
 	s.RuntimeHost = url.Hostname()
+	if url.Scheme == "https" {
+		s.RuntimeTLS = true
+		s.RuntimePort = "443"
+	} else {
+		s.RuntimeTLS = false
+		s.RuntimePort = "80"
+	}
+	if url.Port() != "" {
+		s.RuntimePort = url.Port()
+	}
 	s.Org = s.ServerConfig.Tenant.OrgName
 	s.Env = s.ServerConfig.Tenant.EnvName
 	s.Namespace = s.ServerConfig.Global.Namespace
@@ -185,7 +275,7 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 		return fmt.Errorf("output directory already exists")
 	}
 	printf("Generating %s configuration files...", s.template)
-	return s.createConfig(s.template, printf)
+	return s.createConfig(s.templateDir, printf)
 }
 
 func (s *samples) createConfig(templateDir string, printf shared.FormatFn) error {

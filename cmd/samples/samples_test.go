@@ -29,8 +29,132 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestCreateNativeConfigs(t *testing.T) {
-	print := testutil.Printer("TestCreateNativeConfigs")
+func TestFlagValidation(t *testing.T) {
+	testSamples := []*samples{
+		&samples{
+			template: "native",
+		},
+		&samples{
+			template: "native",
+			ImageTag: "tag",
+		},
+		&samples{
+			template: "istio-1.6",
+		},
+		&samples{
+			template:    "istio-1.6",
+			AdapterHost: "localhost",
+		},
+		&samples{
+			template: "istio-1.6",
+			TargetService: targetService{
+				Host: "targethost",
+			},
+		},
+		&samples{
+			template: "istio-1.6",
+			TLS: tls{
+				Dir: "tls-dir",
+			},
+		},
+		&samples{
+			template: "istio-0.9",
+		},
+	}
+
+	wantedErrors := []string{
+		"",
+		"flag --tag should only be used for the istio template",
+		"",
+		"flags --adapter-host, --host or --tls should only be used for envoy templates",
+		"flags --adapter-host, --host or --tls should only be used for envoy templates",
+		"flags --adapter-host, --host or --tls should only be used for envoy templates",
+		"template option: \"istio-0.9\" not found",
+	}
+
+	for i, s := range testSamples {
+		err := s.validateFieldsFromFlags()
+		testutil.ErrorContains(t, err, wantedErrors[i])
+	}
+}
+
+func TestTemplatesListing(t *testing.T) {
+	print := testutil.Printer("TemplatesListing")
+
+	// a good command
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"samples", "templates"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Errorf("want no error: %v", err)
+	}
+
+	want := []string{
+		"Supported templates (native is deprecated):",
+		"  envoy-1.14",
+		"  envoy-1.15",
+		"  envoy-1.16",
+		"  istio-1.5",
+		"  istio-1.6",
+		"  istio-1.7",
+		"  native",
+	}
+
+	print.CheckPrefix(t, want)
+}
+
+func TestSamplesParseConfigs(t *testing.T) {
+	cfg := server.DefaultConfig()
+	cfg.Tenant.RemoteServiceAPI = "http://runtime/remote-service"
+	cfg.Tenant.OrgName = "hi"
+	cfg.Tenant.EnvName = "test"
+	cfg.Analytics.FluentdEndpoint = "fluentd"
+
+	s := &samples{
+		RootArgs: &shared.RootArgs{
+			ServerConfig: cfg,
+		},
+		TargetService: targetService{},
+		TLS:           tls{},
+	}
+
+	if err := s.parseConfig(); err != nil {
+		t.Errorf("want no error, got %v", err)
+	}
+	if s.RuntimeTLS {
+		t.Errorf("runtime TLS should not be true")
+	}
+	if s.RuntimePort != "80" {
+		t.Errorf("want runtime port to be %q got %q", "80", s.RuntimePort)
+	}
+	if n := envScopeEncodedName("hi", "test"); n != s.EncodedName {
+		t.Errorf("want encoded name to be %q got %q", n, s.EncodedName)
+	}
+
+	cfg.Analytics.CredentialsJSON = []byte("secret")
+	if err := s.parseConfig(); err != nil {
+		t.Errorf("want no error, got %v", err)
+	}
+	if s.EncodedName != "" {
+		t.Errorf("want encoded name to be empty, got %q", s.EncodedName)
+	}
+
+	s.TLS.Dir = "dir"
+	if err := s.parseConfig(); err != nil {
+		t.Errorf("want no error, got %v", err)
+	}
+	if s.TLS.Key != "dir/tls.key" {
+		t.Errorf("want tls key to be %q got %q", "dir/tls.key", s.TLS.Key)
+	}
+	if s.TLS.Crt != "dir/tls.crt" {
+		t.Errorf("want tls cert to be %q got %q", "dir/tls.cert", s.TLS.Crt)
+	}
+}
+
+func TestCreateEnvoyConfigs(t *testing.T) {
+	print := testutil.Printer("TestCreateEnvoyConfigs")
 
 	tmpDir, err := ioutil.TempDir("", "samples")
 	if err != nil {
@@ -54,7 +178,7 @@ func TestCreateNativeConfigs(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "-t", "native", "--out", path.Join(tmpDir, "native"), "-c", tmpFile.Name(), "--tls", "./"}
+	flags := []string{"samples", "create", "-t", "envoy-1.16", "--out", path.Join(tmpDir, "native"), "-c", tmpFile.Name(), "--tls", "./"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -63,7 +187,7 @@ func TestCreateNativeConfigs(t *testing.T) {
 	}
 
 	want := []string{
-		"Generating native configuration files...",
+		"Generating envoy-1.16 configuration files...",
 		"  generating envoy-config.yaml...",
 		"Config files successfully generated.",
 	}
@@ -183,7 +307,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name()}
+	flags := []string{"samples", "create", "--template", "istio-1.7", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name()}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -308,7 +432,7 @@ func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byt
 	if !isGCPManaged {
 		config.Tenant.InternalAPI = server.LegacySaaSInternalBase
 	}
-	config.Tenant.RemoteServiceAPI = "https://RUNTIME/remote-service"
+	config.Tenant.RemoteServiceAPI = "https://RUNTIME:9001/remote-service"
 	config.Tenant.OrgName = "hi"
 	config.Tenant.EnvName = "test"
 	config.Analytics.FluentdEndpoint = "apigee-udca-hi-test-1q2w3e4r.apigee:20001"
