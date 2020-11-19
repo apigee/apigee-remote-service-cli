@@ -47,6 +47,7 @@ const (
 	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
 	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
 	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
+	tokenURLFormat        = "%s/token"        // RemoteServiceProxyURL
 )
 
 // default durations for the proxy verification retry

@@ -41,6 +41,7 @@ var (
 		"istio-1.5":  "istio-1.6",
 		"istio-1.6":  "istio-1.6",
 		"istio-1.7":  "istio-1.7",
+		"istio-1.8":  "istio-1.7",
 	}
 )
 
@@ -50,6 +51,7 @@ type samples struct {
 	templateDir     string
 	outDir          string
 	overwrite       bool
+	JWTProviderKey  string
 	RuntimeHost     string
 	RuntimePort     string
 	RuntimeTLS      bool
@@ -218,6 +220,7 @@ func (s *samples) parseConfig() error {
 	s.Org = s.ServerConfig.Tenant.OrgName
 	s.Env = s.ServerConfig.Tenant.EnvName
 	s.Namespace = s.ServerConfig.Global.Namespace
+	s.JWTProviderKey = s.ServerConfig.Auth.JWTProviderKey
 
 	// handle configs for analytics-related credential
 	if s.ServerConfig.IsGCPManaged() {

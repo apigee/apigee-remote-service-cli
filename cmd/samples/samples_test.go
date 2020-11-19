@@ -94,6 +94,7 @@ func TestTemplatesListing(t *testing.T) {
 		"  istio-1.5",
 		"  istio-1.6",
 		"  istio-1.7",
+		"  istio-1.8",
 		"  native",
 	}
 

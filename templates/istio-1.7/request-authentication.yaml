@@ -13,7 +13,7 @@ spec:
     matchLabels:
       managed-by: apigee
   jwtRules:
-  - issuer: https://{{.RuntimeHost}}/remote-service/token
+  - issuer: {{.JWTProviderKey}}
     jwksUri: https://{{.RuntimeHost}}/remote-service/certs
 # ---
 # apiVersion: security.istio.io/v1beta1

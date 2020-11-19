@@ -43,7 +43,7 @@ static_resources:
                       timeout: 5s
                     cache_duration:
                       seconds: 300
-                  payload_in_metadata: apigee
+                  payload_in_metadata: {{.JWTProviderKey}}
               rules:
               - match:
                   prefix: /
