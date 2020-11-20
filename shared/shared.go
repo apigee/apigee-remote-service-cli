@@ -42,8 +42,8 @@ const (
 	// RuntimeBaseFormat is a format for base of the organization runtime URL (legacy SaaS and OPDK)
 	RuntimeBaseFormat = "https://%s-%s.apigee.net"
 
-	internalProxyURLFormat      = "%s://istioservices.%s/edgemicro" // runtime scheme, runtime domain (legacy SaaS and OPDK)
-	internalProxyURLFormatOPDK  = "%s/edgemicro"                    // runtimeBase
+	internalProxyURLLegacySaaS  = "https://istioservices.apigee.net/edgemicro"
+	internalProxyURLFormatOPDK  = "%s/edgemicro" // runtimeBase
 	remoteServicePath           = "/remote-service"
 	remoteServiceProxyURLFormat = "%s" + remoteServicePath // runtimeBase
 )
@@ -157,12 +157,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 		r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormatOPDK, r.RuntimeBase)
 	}
 	if r.IsLegacySaaS {
-		u, err := url.Parse(r.RuntimeBase)
-		if err != nil {
-			return err
-		}
-		domain := u.Host[strings.Index(u.Host, ".")+1:]
-		r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormat, u.Scheme, domain)
+		r.InternalProxyURL = internalProxyURLLegacySaaS
 	}
 
 	r.RemoteServiceProxyURL = fmt.Sprintf(remoteServiceProxyURLFormat, r.RuntimeBase)
