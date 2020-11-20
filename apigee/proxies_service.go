@@ -212,7 +212,8 @@ func zipDirectory(source string, target string, filter func(string) bool) error 
 			}
 
 			if baseDir != "" {
-				header.Name = filepath.Join(baseDir, strings.TrimPrefix(rootPath, source))
+				name := filepath.Join(baseDir, strings.TrimPrefix(rootPath, source))
+				header.Name = strings.ReplaceAll(name, `\`, `/`)
 			}
 
 			// This archive will be unzipped by a Java process.  When ZIP64 extensions
