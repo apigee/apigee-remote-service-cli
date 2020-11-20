@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/proxies"
@@ -277,6 +278,8 @@ func zipDir(source, file string) error {
 				}
 				continue
 			}
+
+			zipFQName = strings.ReplaceAll(zipFQName, `\`, `/`)
 
 			bytes, err := ioutil.ReadFile(fqName)
 			if err != nil {
