@@ -257,15 +257,19 @@ func (p *provision) serviceAccountCRD() *ServiceAccountCRD {
 	return &ServiceAccountCRD{
 		APIVersion: "v1",
 		Kind:       "ServiceAccount",
-		Metadata: server.Metadata{
-			Name:      defaultResourceName,
-			Namespace: p.Namespace,
+		Metadata: map[string]interface{}{
+			"name":      defaultResourceName,
+			"namespace": p.Namespace,
+			"labels": map[string]string{
+				"org": p.Org,
+				"env": p.Env,
+			},
 		},
 	}
 }
 
 type ServiceAccountCRD struct {
-	APIVersion string          `yaml:"apiVersion"`
-	Kind       string          `yaml:"kind"`
-	Metadata   server.Metadata `yaml:"metadata"`
+	APIVersion string                 `yaml:"apiVersion"`
+	Kind       string                 `yaml:"kind"`
+	Metadata   map[string]interface{} `yaml:"metadata"`
 }
