@@ -34,18 +34,18 @@ static_resources:
               providers:
                 apigee:
                 {{- if .RuntimeTLS}}
-                  issuer: https://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/token
+                  issuer: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-service/token
                 {{- else}}
-                  issuer: http://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/token
+                  issuer: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-service/token
                 {{- end}}
                   audiences:
                   - remote-service-client
                   remote_jwks:
                     http_uri:
                     {{- if .RuntimeTLS}}
-                      uri: https://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/certs
+                      uri: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-service/certs
                     {{- else}}
-                      uri: http://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/certs
+                      uri: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-service/certs
                     {{- end}}
                       cluster: apigee-auth-service
                       timeout: 5s
