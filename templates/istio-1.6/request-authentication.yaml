@@ -14,7 +14,11 @@ spec:
       managed-by: apigee
   jwtRules:
   - issuer: {{.JWTProviderKey}}
-    jwksUri: https://{{.RuntimeHost}}/remote-service/certs
+  {{- if .RuntimeTLS}}
+    jwksUri: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-service/certs
+  {{- else}}
+    jwksUri: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-service/certs
+  {{- end}}
 # ---
 # apiVersion: security.istio.io/v1beta1
 # kind: AuthorizationPolicy
