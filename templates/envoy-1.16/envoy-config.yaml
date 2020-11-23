@@ -33,12 +33,20 @@ static_resources:
               "@type": type.googleapis.com/envoy.config.filter.http.jwt_authn.v2alpha.JwtAuthentication
               providers:
                 apigee:
-                  issuer: https://{{.RuntimeHost}}/remote-service/token
+                {{- if .RuntimeTLS}}
+                  issuer: https://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/token
+                {{- else}}
+                  issuer: http://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/token
+                {{- end}}
                   audiences:
                   - remote-service-client
                   remote_jwks:
                     http_uri:
-                      uri: https://{{.RuntimeHost}}/remote-service/certs
+                    {{- if .RuntimeTLS}}
+                      uri: https://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/certs
+                    {{- else}}
+                      uri: http://{{.RuntimeHost}}:{{.RuntimePort}}/remote-service/certs
+                    {{- end}}
                       cluster: apigee-auth-service
                       timeout: 5s
                     cache_duration:
