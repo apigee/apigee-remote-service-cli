@@ -20,6 +20,8 @@ spec:
       labels:
         app: apigee-remote-service-envoy
         version: v1
+        org: {{.Org}}
+        env: {{.Env}}
     spec:
       serviceAccountName: apigee-remote-service-envoy
       securityContext:  
@@ -101,6 +103,8 @@ metadata:
   namespace: {{.Namespace}}
   labels:
     app: apigee-remote-service-envoy
+    org: {{.Org}}
+    env: {{.Env}}
 spec:
   ports:
   - port: 5000
