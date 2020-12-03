@@ -12,27 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+var appName = context.getVariable('AccessEntity.ChildNodes.Access-App-Info.App.Attributes.Attribute.1.Value')
+context.setVariable("appName", appName);
+var appStatus = context.getVariable('AccessEntity.ChildNodes.Access-App-Info.App.Status')
 var apiCredential = JSON.parse(context.getVariable('apiCredential'));
-var apiKey = context.getVariable('apikey');
-//{"Credentials":{"Credential":[{"Attributes":{},"ConsumerKey":"xxx","ConsumerSecret":"xx","ExpiresAt":"-1","IssuedAt":"1530046158362","ApiProducts":{"ApiProduct":{"Name":"details product","Status":"approved"}},"Scopes":{},"Status":"approved"}]}}
+// {"Credentials":{"Credential":[
+//    {"Attributes":{},"ConsumerKey":"xxx","ConsumerSecret":"xx",
+//      "ExpiresAt":"-1","IssuedAt":"1530046158362","ApiProducts":
+//      {"ApiProduct": {"Name":"details product","Status":"approved"}},
+//      "Scopes":{},"Status":"approved"}]}}
+
+var apikey = context.getVariable('apikey');
+var now = Date.now()
 var credentials = apiCredential.Credentials.Credential;
+var isValidApiKey = false
 
 var apiProductsList = [];
 try {
-    credentials.forEach(function(credential) {
-        if (credential.ConsumerKey == apiKey) {
-            credential.ApiProducts.ApiProduct.forEach(function(apiProduct){
-                apiProductsList.push(apiProduct.Name);
-            });
-        }
-    });
+    if (appStatus == "approved") {
+        credentials.forEach(function(credential) {
+            if (credential.ConsumerKey == apikey 
+            && (credential.ExpiresAt == -1 || credential.ExpiresAt > now)
+            && credential.Status == "approved") {
+                isValidApiKey = true
+                credential.ApiProducts.ApiProduct.forEach(function(apiProduct){
+                    if (apiProduct.Status == "approved") {
+                      apiProductsList.push(apiProduct.Name);
+                    }
+                });
+            }
+        });
+    }
+    
+    if (isValidApiKey) {
+        context.setVariable("isValidApiKey", "true");
+    }
 } catch (err) {
     print(err);
 }
 
 context.setVariable("scope", context.getVariable("oauthv2accesstoken.AccessTokenRequest.scope"));
 context.setVariable("apiProductList", apiProductsList.join());
-context.setVariable("nbf", new Date().toUTCString());
+context.setVariable("nbf", new Date(now).toUTCString());
 context.setVariable("iss", context.getVariable("proxyProto") + "://" + context.getVariable("proxyHost") + context.getVariable("proxy.basepath") + context.getVariable("proxy.pathsuffix"));
 context.setVariable("jti", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0,

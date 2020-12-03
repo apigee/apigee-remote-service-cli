@@ -25,23 +25,27 @@
                     <Name>Extract-API-Key</Name>
                 </Step>
                 <Step>
-                    <Name>Raise-Fault-Missing-JWKS</Name>
-                    <Condition> apikey is null</Condition>
+                    <Name>Raise-Fault-Invalid-API-Key</Name>
+                    <Condition>apikey is null</Condition>
                 </Step>
                 <Step>
-                    <Name>Verify-API-Key</Name>
+                    <Name>Access-App-Info</Name>
                 </Step>
                 <Step>
-                    <Name>Access-App-Info-2</Name>
-                </Step>
-                <Step>
-                    <Name>Products-to-JSON-2</Name>
+                    <Name>Products-to-JSON</Name>
                 </Step>
                 <Step>
                     <Name>Get-Private-Key</Name>
                 </Step>
                 <Step>
                     <Name>Set-JWT-Variables</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Invalid-API-Key</Name>
+                    <Condition>isValidApiKey != "true"</Condition>
+                </Step>
+                <Step>
+                    <Name>Access-Developer-Info</Name>
                 </Step>
                 <Step>
                     <Name>Generate-VerifyKey-Token</Name>
@@ -91,11 +95,8 @@
                     <Name>Extract-OAuth-Params</Name>
                 </Step>
                 <Step>
-                    <Name>Raise-Fault-Missing-JWKS</Name>
+                    <Name>Raise-Fault-Unknown-Request</Name>
                     <Condition>client_id is null OR client_secret is null OR grant_type is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Verify-API-Key</Name>
                 </Step>
                 <Step>
                     <Name>Create-OAuth-Request</Name>
@@ -110,7 +111,7 @@
                     <Name>AccessTokenRequest</Name>
                 </Step>
                 <Step>
-                    <Name>Raise-Fault-Missing-JWKS</Name>
+                    <Name>Raise-Fault-Unknown-Request</Name>
                     <Condition>oauthV2.AccessTokenRequest.failed is true</Condition>
                 </Step>
                 <Step>
