@@ -4,7 +4,7 @@
     <FaultRules/>
     <Properties/>
     <OutputVariable>apiCredential</OutputVariable>
-    <Source>AccessEntity.ChildNodes.Access-App-Info.App.Credentials</Source>
+    <Source>AccessEntity.Access-App-Info.App.Credentials</Source>
     <Options>
         <TreatAsArray>
             <Path>Credentials/Credential</Path>
