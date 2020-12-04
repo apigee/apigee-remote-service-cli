@@ -32,6 +32,9 @@
                     <Name>Access-App-Info</Name>
                 </Step>
                 <Step>
+                    <Name>Extract-App-Name</Name>
+                </Step>
+                <Step>
                     <Name>Products-to-JSON</Name>
                 </Step>
                 <Step>
@@ -103,6 +106,9 @@
                 </Step>
                 <Step>
                     <Name>Access-App-Info</Name>
+                </Step>
+                <Step>
+                    <Name>Extract-App-Name</Name>
                 </Step>
                 <Step>
                     <Name>Products-to-JSON</Name>

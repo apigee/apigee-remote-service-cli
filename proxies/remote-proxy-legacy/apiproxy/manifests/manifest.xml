@@ -10,6 +10,7 @@
         <VersionInfo resourceName="DistributedQuota" version="SHA-512:3b2869ded83130ab7d79e08b4a9beeacc0973c2b39350e0ced0c968f5eae500a9495b2b69bb273ae12ca2ba31bee0c4ed2a31cd3e042791c6bc16b7687e042ef"/>
         <VersionInfo resourceName="Eval-Quota-Result" version="SHA-512:7dad7db6f2b0a2d7de562572fd0fe8531c80ba9526027cb8ac97efb5bfa6fbdc5ba396c448cfc2b7735da1d6c09b590f471eb08725a2f018a526d3ca739a5811"/>
         <VersionInfo resourceName="Extract-API-Key" version="SHA-512:b366e09cc60ac1a1bad7bcbeb2429adec08287c59f7667921471081b2520990ee0f0cb1a45482a40cfb9ecfa7b7da90b8c145fee730e7c4e01cb06f86e3f78ce"/>
+        <VersionInfo resourceName="Extract-App-Name" version="SHA-512:30171eedaad59c28e7de89013a6ca17a2c3dadd28181f17f61a1e649296aabf0e7dee24a3bad9e5fc11c3fac8e8d0bd0d985b73bbd2d50f09fc9410df892af88"/>
         <VersionInfo resourceName="Extract-OAuth-Params" version="SHA-512:1526aae995d23500e0b0b44bdaaeef3042dcfec1f1c2c35db331b3164c1b8be8d6c45fe70bad6822bb22988667d5300f9828825ae519befbfa81fade6bdb16a5"/>
         <VersionInfo resourceName="Extract-Rotate-Variables" version="SHA-512:75c675a88883315f50cc09338d0c4c65ea4f9d82078ae78176c23e1034183c6258680d4593ef79f5daa709fd73ca9e3f187f9d0f755b7dc0a51df3d4de495ed7"/>
         <VersionInfo resourceName="Generate-Access-Token" version="SHA-512:28d2ecb4b34f57e9037c5e7683b38599ecf6f39720023b3cd06424d86d0aa990294bd64d8c4639c863277e0ba31b397b28bbfdf97dd603af4ef8291ca87b28f9"/>
@@ -33,12 +34,12 @@
         <VersionInfo resourceName="Update-Keys" version="SHA-512:2177dd7838c2baddeebd99d726dee7b11e42158fdbf24b10d8a32920a27167be4749d890c3ad519f10d08bb311ac68c2d7526dbe90fd5e36af5becd800997bf5"/>
     </Policies>
     <ProxyEndpoints>
-        <VersionInfo resourceName="default" version="SHA-512:371ae80682e8e8b46abe44b0795cc4f8b01f9601a4e419511e3b3c1376f441b7e48b09706e45a1f91f57c9cba273172753c0c1edb6829c78604e30d40bad2ac9"/>
+        <VersionInfo resourceName="default" version="SHA-512:a1e2114b9cd7035552d426a302c384e51aafa70fde9c2c480b8a0b5c1039ff029a3c48a006009223564647b96739bff8a9e82ba725d164345403d62a56ed91fc"/>
     </ProxyEndpoints>
     <Resources>
         <VersionInfo resourceName="java://products-javacallout-2.0.0.jar" version="SHA-512:c8b3654d4f8526b3cdd4b44a270e54a3b2a37e5593b3c700d6c29169dc2e32a37fcf806f05fde9f06342cd254e71d9a6f6a05a91bfa8fc5ca3e198a231b19802"/>
         <VersionInfo resourceName="jsc://eval-quota-result.js" version="SHA-512:0d6d041e6d3aeb601ddbc215329509b4ac4feedc3f160948568f50576094af05eb81ee7b06e0da7b00b82fe9aab9b9d2c093e6285f28c41a8240e6c3354e301f"/>
-        <VersionInfo resourceName="jsc://set-jwt-variables.js" version="SHA-512:8418b44d946a518ca937edf0641fa7df5c9fdd2320a7cc773f78be399757c65a4bf7276faa20c856235392e17f5e68b1d13d36b8288ecb63d349f97ae9f3d5b4"/>
+        <VersionInfo resourceName="jsc://set-jwt-variables.js" version="SHA-512:06c5d132b9af0940421edb1a0dfbb8d2922107bfd8d6178cc3fd37a7f1e17e11d9a5516181ab980caa29f102c058c2e7c9f492dc6218957eb014f94ca7c80c69"/>
         <VersionInfo resourceName="jsc://set-quota-variables.js" version="SHA-512:361e8417c187ca41d24a6077d196fffcc0abd73080e22983f8e9391a4ff9a915b27197ed45932370458b34de5b7491f9e89dda42c64062497029e453c0ec814f"/>
         <VersionInfo resourceName="jsc://set-response.js" version="SHA-512:0ac7b126ef5dae7c6ab4eb94ed1c126eab25c158741bc1e041eb55bc4acf4dad060bfd26669dc63694d43cfaa7522a9730ef191e360663790eb7ac00e57a1ac8"/>
     </Resources>

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="39" name="remote-service">
+<APIProxy revision="40" name="remote-service">
     <Basepaths>/remote-service</Basepaths>
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
     <CreatedAt>1585868518843</CreatedAt>
     <CreatedBy>theganyo+1@google.com</CreatedBy>
     <Description>remote-service</Description>
     <DisplayName>remote-service</DisplayName>
-    <LastModifiedAt>1607042409023</LastModifiedAt>
+    <LastModifiedAt>1607118258525</LastModifiedAt>
     <LastModifiedBy>theganyo+1@google.com</LastModifiedBy>
-    <ManifestVersion>SHA-512:233d63158e189858f91c789f8edc3ac6450fd83532d8d4c00cb2d00d5cf6863030af77972f6a99bb5b9905b163c978c689eba302ae396ebd275a3c316444509b:us-west-2</ManifestVersion>
+    <ManifestVersion>SHA-512:b5de3a5ba773f9d8ad0a460fdc5b4bee83d8cc22ac1423fc8fd2e31efbdc7f84fb39a64a692f996b4ef5aa703b49f3036a9f128b227fc97cabc7aa84ccaaf8ad:us-west-2</ManifestVersion>
     <Policies>
         <Policy>Access-App-Info</Policy>
         <Policy>Access-Developer-Info</Policy>
@@ -19,6 +19,7 @@
         <Policy>DistributedQuota</Policy>
         <Policy>Eval-Quota-Result</Policy>
         <Policy>Extract-API-Key</Policy>
+        <Policy>Extract-App-Name</Policy>
         <Policy>Extract-OAuth-Params</Policy>
         <Policy>Extract-Rotate-Variables</Policy>
         <Policy>Generate-Access-Token</Policy>

@@ -29,6 +29,9 @@
                     <Name>Access-App-Info</Name>
                 </Step>
                 <Step>
+                    <Name>Extract-App-Name</Name>
+                </Step>
+                <Step>
                     <Name>Raise-Fault-Invalid-API-Key</Name>
                     <Condition>AccessEntity.ChildNodes.Access-App-Info.App.Credentials is null</Condition>
                 </Step>
@@ -121,6 +124,9 @@
                 </Step>
                 <Step>
                     <Name>Access-App-Info</Name>
+                </Step>
+                <Step>
+                    <Name>Extract-App-Name</Name>
                 </Step>
                 <Step>
                     <Name>Products-to-JSON</Name>

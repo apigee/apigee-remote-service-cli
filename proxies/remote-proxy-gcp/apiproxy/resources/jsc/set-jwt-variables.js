@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var appName = context.getVariable('AccessEntity.ChildNodes.Access-App-Info.App.Attributes.Attribute.Value')
-context.setVariable("appName", appName);
 var appStatus = context.getVariable('AccessEntity.ChildNodes.Access-App-Info.App.Status')
 var apiCredential = JSON.parse(context.getVariable('apiCredential'));
 // {"Credentials":{"Credential":[
