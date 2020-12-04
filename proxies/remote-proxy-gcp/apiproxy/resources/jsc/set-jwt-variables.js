@@ -25,7 +25,6 @@ var apiCredential = JSON.parse(context.getVariable('apiCredential'));
 var apikey = context.getVariable('apikey');
 var now = Date.now()
 var credentials = apiCredential.Credentials.Credential;
-var isValidApiKey = false
 
 var apiProductsList = [];
 try {
@@ -34,7 +33,6 @@ try {
             if (credential.ConsumerKey == apikey 
             && (credential.ExpiresAt == -1 || credential.ExpiresAt > now)
             && credential.Status == "approved") {
-                isValidApiKey = true
                 credential.ApiProducts.ApiProduct.forEach(function(apiProduct){
                     if (apiProduct.Status == "approved") {
                       apiProductsList.push(apiProduct.Name);
@@ -44,7 +42,7 @@ try {
         });
     }
     
-    if (isValidApiKey) {
+    if (apiProductsList.length > 0) {
         context.setVariable("isValidApiKey", "true");
     }
 } catch (err) {
