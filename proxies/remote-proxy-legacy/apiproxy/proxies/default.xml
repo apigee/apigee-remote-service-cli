@@ -32,6 +32,10 @@
                     <Name>Access-App-Info</Name>
                 </Step>
                 <Step>
+                    <Name>Raise-Fault-Invalid-API-Key</Name>
+                    <Condition>AccessEntity.Access-App-Info is null</Condition>
+                </Step>
+                <Step>
                     <Name>Extract-App-Name</Name>
                 </Step>
                 <Step>
