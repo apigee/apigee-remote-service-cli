@@ -126,6 +126,10 @@
                     <Name>Access-App-Info</Name>
                 </Step>
                 <Step>
+                    <Name>Raise-Fault-Unknown-Request</Name>
+                    <Condition>AccessEntity.Access-App-Info is null</Condition>
+                </Step>
+                <Step>
                     <Name>Extract-App-Name</Name>
                 </Step>
                 <Step>
@@ -140,6 +144,10 @@
                 </Step>
                 <Step>
                     <Name>Set-JWT-Variables</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Unknown-Request</Name>
+                    <Condition>isValidApiKey != "true"</Condition>
                 </Step>
                 <Step>
                     <Name>Generate-Access-Token</Name>
