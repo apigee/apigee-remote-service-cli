@@ -13,6 +13,12 @@
                     </Condition>
                 </Step>
                 <Step>
+                    <Name>Set-JWKS</Name>
+                </Step>
+                <Step>
+                    <Name>Verify-Internal-JWT</Name>
+                </Step>
+                <Step>
                     <Name>Extract-API-Key</Name>
                 </Step>
                 <Step>
@@ -20,16 +26,27 @@
                     <Condition>apikey is null</Condition>
                 </Step>
                 <Step>
-                    <Name>Verify-API-Key</Name>
+                    <Name>Access-App-Info</Name>
                 </Step>
                 <Step>
-                    <Name>Access-App-Info</Name>
+                    <Name>Extract-App-Name</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Invalid-API-Key</Name>
+                    <Condition>AccessEntity.ChildNodes.Access-App-Info.App.Credentials is null</Condition>
                 </Step>
                 <Step>
                     <Name>Products-to-JSON</Name>
                 </Step>
                 <Step>
                     <Name>Set-JWT-Variables</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Invalid-API-Key</Name>
+                    <Condition>isValidApiKey != "true"</Condition>
+                </Step>
+                <Step>
+                    <Name>Access-Developer-Info</Name>
                 </Step>
                 <Step>
                     <Name>Generate-VerifyKey-Token</Name>
@@ -103,13 +120,17 @@
                     <Condition>client_id is null OR client_secret is null OR grant_type is null</Condition>
                 </Step>
                 <Step>
-                    <Name>Verify-API-Key</Name>
-                </Step>
-                <Step>
                     <Name>Create-OAuth-Request</Name>
                 </Step>
                 <Step>
                     <Name>Access-App-Info</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Unknown-Request</Name>
+                    <Condition>AccessEntity.Access-App-Info is null</Condition>
+                </Step>
+                <Step>
+                    <Name>Extract-App-Name</Name>
                 </Step>
                 <Step>
                     <Name>Products-to-JSON</Name>
@@ -123,6 +144,10 @@
                 </Step>
                 <Step>
                     <Name>Set-JWT-Variables</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Unknown-Request</Name>
+                    <Condition>isValidApiKey != "true"</Condition>
                 </Step>
                 <Step>
                     <Name>Generate-Access-Token</Name>

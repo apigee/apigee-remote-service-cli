@@ -241,11 +241,6 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return errors.Wrapf(err, "deploying proxy %s", authProxyName)
 	}
 
-	// create API product
-	if err := p.createAPIProduct(verbosef); err != nil {
-		return errors.Wrapf(err, "creating remote-service API product")
-	}
-
 	if !p.IsGCPManaged {
 		cred, err = p.createLegacyCredential(verbosef) // TODO: on missing or force new cred
 		if err != nil {

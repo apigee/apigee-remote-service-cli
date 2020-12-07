@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="29" name="remote-service">
+<APIProxy revision="40" name="remote-service">
     <Basepaths>/remote-service</Basepaths>
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
-    <CreatedAt>1590622040560</CreatedAt>
+    <CreatedAt>1585868518843</CreatedAt>
     <CreatedBy>theganyo+1@google.com</CreatedBy>
     <Description>remote-service</Description>
     <DisplayName>remote-service</DisplayName>
-    <LastModifiedAt>1590622040560</LastModifiedAt>
+    <LastModifiedAt>1607118258525</LastModifiedAt>
     <LastModifiedBy>theganyo+1@google.com</LastModifiedBy>
-    <ManifestVersion>SHA-512:37446f74525a919ffba7b539a7aac8529d22097b7c64a4ccef99a663aaf02d6e3e0e772141753364e5fc950b8bcb9dd17ef710d384c800aafb116ed940e8c760</ManifestVersion>
+    <ManifestVersion>SHA-512:b5de3a5ba773f9d8ad0a460fdc5b4bee83d8cc22ac1423fc8fd2e31efbdc7f84fb39a64a692f996b4ef5aa703b49f3036a9f128b227fc97cabc7aa84ccaaf8ad:us-west-2</ManifestVersion>
     <Policies>
-        <Policy>Access-App-Info-2</Policy>
         <Policy>Access-App-Info</Policy>
+        <Policy>Access-Developer-Info</Policy>
         <Policy>AccessTokenRequest</Policy>
         <Policy>Authenticate-Call</Policy>
         <Policy>AuthenticationError</Policy>
@@ -19,6 +19,7 @@
         <Policy>DistributedQuota</Policy>
         <Policy>Eval-Quota-Result</Policy>
         <Policy>Extract-API-Key</Policy>
+        <Policy>Extract-App-Name</Policy>
         <Policy>Extract-OAuth-Params</Policy>
         <Policy>Extract-Rotate-Variables</Policy>
         <Policy>Generate-Access-Token</Policy>
@@ -28,9 +29,10 @@
         <Policy>JavaCallout</Policy>
         <Policy>Lookup-Products</Policy>
         <Policy>Populate-Product-List</Policy>
-        <Policy>Products-to-JSON-2</Policy>
         <Policy>Products-to-JSON</Policy>
+        <Policy>Raise-Fault-Invalid-API-Key</Policy>
         <Policy>Raise-Fault-Missing-JWKS</Policy>
+        <Policy>Raise-Fault-Unknown-Request</Policy>
         <Policy>Send-JWKs-Message</Policy>
         <Policy>Send-Product-List</Policy>
         <Policy>Send-Version</Policy>
@@ -39,7 +41,6 @@
         <Policy>Set-Quota-Variables</Policy>
         <Policy>Set-Response</Policy>
         <Policy>Update-Keys</Policy>
-        <Policy>Verify-API-Key</Policy>
     </Policies>
     <ProxyEndpoints>
         <ProxyEndpoint>default</ProxyEndpoint>

@@ -3,6 +3,6 @@
     <DisplayName>Access App Info</DisplayName>
     <FaultRules/>
     <Properties/>
-    <EntityIdentifier ref="request.formparam.client_id" type="consumerkey"/>
+    <EntityIdentifier ref="apikey" type="consumerkey"/>
     <EntityType value="app"/>
 </AccessEntity>
