@@ -166,40 +166,6 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 	return nil
 }
 
-// ensures that there's a remote-proxy API product
-func (p *provision) createAPIProduct(verbosef shared.FormatFn) error {
-	const removeServiceName = "remote-service"
-
-	// create product
-	product := apiProduct{
-		Name:         removeServiceName,
-		DisplayName:  removeServiceName,
-		ApprovalType: "auto",
-		Attributes: []attribute{
-			{Name: "access", Value: "private"},
-		},
-		Description:  removeServiceName + " access",
-		APIResources: []string{"/verifyApiKey", "/token"},
-		Environments: []string{p.Env},
-		Proxies:      []string{removeServiceName},
-	}
-
-	req, err := p.ApigeeClient.NewRequestNoEnv(http.MethodPost, apiProductsPath, product)
-	if err != nil {
-		return err
-	}
-	res, err := p.ApigeeClient.Do(req, nil)
-	if err != nil {
-		if res.StatusCode != http.StatusConflict { // exists
-			return err
-		}
-		verbosef("product %s already exists", removeServiceName)
-	}
-
-	return nil
-
-}
-
 func unzipFile(src, dest string) error {
 	r, err := zip.OpenReader(src)
 	if err != nil {
