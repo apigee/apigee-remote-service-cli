@@ -41,8 +41,6 @@ const (
 
 	remoteServiceProxyZip = "remote-service-gcp.zip"
 
-	apiProductsPath = "apiproducts"
-
 	certsURLFormat        = "%s/certs"        // RemoteServiceProxyURL
 	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
 	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
@@ -447,6 +445,9 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		res, err := client.Do(req)
 		if res != nil {
 			defer res.Body.Close()
+			if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError && res.StatusCode != http.StatusUnauthorized {
+				return fmt.Errorf("GET request to %q returns %d", targetURL, res.StatusCode)
+			}
 		}
 		return err
 	}
@@ -468,9 +469,12 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		res, err = client.Do(req)
 		if res != nil {
 			defer res.Body.Close()
+			if res.StatusCode != http.StatusUnauthorized { // 401 is ok, we didn't use a valid api key
+				verifyErrors = multierr.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", verifyAPIKeyURL, res.StatusCode))
+			}
 		}
 	}
-	if err != nil && (res == nil || res.StatusCode != 401) { // 401 is ok, we didn't use a valid api key
+	if err != nil {
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
 
@@ -481,6 +485,9 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		res, err = client.Do(req)
 		if res != nil {
 			defer res.Body.Close()
+			if res.StatusCode != http.StatusUnauthorized { // 401 is ok, we didn't use a valid api key
+				verifyErrors = multierr.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", quotasURL, res.StatusCode))
+			}
 		}
 	}
 	if err != nil {

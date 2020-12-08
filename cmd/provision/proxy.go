@@ -269,19 +269,3 @@ func zipDir(source, file string) error {
 
 	return w.Close()
 }
-
-type apiProduct struct {
-	Name         string      `json:"name,omitempty"`
-	DisplayName  string      `json:"displayName,omitempty"`
-	ApprovalType string      `json:"approvalType,omitempty"`
-	Attributes   []attribute `json:"attributes,omitempty"`
-	Description  string      `json:"description,omitempty"`
-	APIResources []string    `json:"apiResources,omitempty"`
-	Environments []string    `json:"environments,omitempty"`
-	Proxies      []string    `json:"proxies,omitempty"`
-}
-
-type attribute struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
-}
