@@ -37,10 +37,8 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 
 	count := 0
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if _, err := w.Write([]byte("{}")); err != nil {
-			t.Fatalf("want no error %v", err)
-		}
+		// 401 is accepted status code for most endpoints since no internal JWT used
+		w.WriteHeader(http.StatusUnauthorized)
 		count++
 	}))
 	defer ts.Close()
@@ -262,7 +260,8 @@ func serveMux(t *testing.T) *http.ServeMux {
 	})
 	// catch-all handler for remote service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+		// 401 is accepted status code for most endpoints since no internal JWT used
+		w.WriteHeader(http.StatusUnauthorized)
 	})
 	m.HandleFunc("/v1/organizations/gcp", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -314,17 +313,7 @@ func serveMux(t *testing.T) *http.ServeMux {
 				w.WriteHeader(http.StatusNotFound) // to trigger the POST following PUT
 			}
 		case http.MethodPost:
-			if strings.Contains(r.URL.Path, "apiproducts") {
-				ap := apiProduct{}
-				if err := json.NewDecoder(r.Body).Decode(&ap); err != nil {
-					t.Fatalf("incorrect apiproduct %v", err)
-				}
-				if strings.Contains(r.URL.Path, "conflict") {
-					w.WriteHeader(http.StatusConflict)
-				} else if strings.Contains(r.URL.Path, "noapiprod") {
-					w.WriteHeader(http.StatusForbidden)
-				}
-			} else if strings.Contains(r.URL.Path, "keyvaluemaps") {
+			if strings.Contains(r.URL.Path, "keyvaluemaps") {
 				if strings.Contains(r.URL.Path, "conflictkvm") {
 					w.WriteHeader(http.StatusConflict)
 					_, _ = w.Write([]byte("{}"))
@@ -703,5 +692,29 @@ func TestInternalProxyVerification(t *testing.T) {
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
+	}
+}
+
+func TestVerifyRemoteServiceProxyError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	p := &provision{
+		RootArgs: &shared.RootArgs{
+			RuntimeBase:        ts.URL,
+			Token:              "-",
+			InsecureSkipVerify: false,
+			IsLegacySaaS:       true,
+			Org:                "hi",
+			Env:                "test",
+		},
+	}
+	if err := p.Resolve(false, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.verifyRemoteServiceProxy(http.DefaultClient, shared.Printf); err == nil {
+		t.Errorf("got nil error, want remote-service proxy verification failure")
 	}
 }
