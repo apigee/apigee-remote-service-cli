@@ -354,6 +354,25 @@ func (p *provision) isCloud() bool {
 	return p.IsGCPManaged && p.runtimeType == "CLOUD"
 }
 
+// policySecretsFromPropertyset retrieves the policy secret from the remote-service propertyset
+// the returned values will be empty or nil if such propertyset does not exist or there is other error fetching it
+func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rsa.PrivateKey, jwks *jwk.Set, err error) {
+	req, err := p.ApigeeClient.NewRequest(http.MethodGet, fmt.Sprintf(propertysetGETOrPUTURL, "remote-service"), nil)
+	if err != nil {
+		return
+	}
+
+	res, err := p.ApigeeClient.Do(req, nil)
+	if res != nil {
+		defer res.Body.Close()
+	}
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {
 
 	// add authorization to transport

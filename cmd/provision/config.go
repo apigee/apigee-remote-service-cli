@@ -16,7 +16,6 @@ package provision
 
 import (
 	"bytes"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -30,7 +29,6 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-envoy/server"
-	"github.com/lestrrat-go/jwx/jwk"
 	"gopkg.in/yaml.v3"
 )
 
@@ -255,23 +253,6 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 		defer res.Body.Close()
 	}
 	return err
-}
-
-func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rsa.PrivateKey, jwks *jwk.Set, err error) {
-	req, err := p.ApigeeClient.NewRequest(http.MethodGet, fmt.Sprintf(propertysetGETOrPUTURL, "remote-service"), nil)
-	if err != nil {
-		return
-	}
-
-	res, err := p.ApigeeClient.Do(req, nil)
-	if res != nil {
-		defer res.Body.Close()
-	}
-	if err != nil {
-		return
-	}
-
-	return
 }
 
 func (p *provision) serviceAccountCRD() *ServiceAccountCRD {
