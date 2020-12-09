@@ -558,18 +558,9 @@ data:
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "404")
 
-	// propertyset creation request returns 404
-	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
-	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
-
-	err = rootCmd.Execute()
-	testutil.ErrorContains(t, err, "404")
-
 	// propertyset rotation request returns 400
 	rootArgs = &shared.RootArgs{}
-	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1", "--analytics-sa", credFile}
+	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
 

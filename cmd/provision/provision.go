@@ -17,6 +17,7 @@ package provision
 import (
 	"crypto/rsa"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -267,6 +268,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 			keyID, privateKey, jwks, err = p.policySecretsFromPropertyset()
 		}
 		if err != nil || privateKey == nil {
+			verbosef("no existing policy secret, creating new ones")
 			keyID, privateKey, jwks, err = p.CreateNewKey()
 			if err != nil {
 				return err
@@ -367,6 +369,42 @@ func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rs
 		defer res.Body.Close()
 	}
 	if err != nil {
+		return
+	}
+
+	// read the response into a map
+	m, err := server.ReadProperties(res.Body)
+	if err != nil {
+		return
+	}
+
+	// extracts the jwks from the map
+	jwksStr, ok := m["crt"]
+	if !ok {
+		err = fmt.Errorf("crt not found in remote-service propertyset")
+		return
+	}
+	jwks = &jwk.Set{}
+	err = json.Unmarshal([]byte(jwksStr), jwks)
+	if err != nil {
+		return
+	}
+
+	// extracts the private key from the map
+	pkStr, ok := m["key"]
+	if !ok {
+		err = fmt.Errorf("key not found in remote-service propertyset")
+		return
+	}
+	privateKey, err = server.LoadPrivateKey([]byte(strings.ReplaceAll(pkStr, `\n`, "\n")), "")
+	if err != nil {
+		return
+	}
+
+	// extracts the key id from the map
+	keyID, ok = m[server.SecretPropsKIDKey]
+	if !ok {
+		err = fmt.Errorf("kid not found in remote-service propertyset")
 		return
 	}
 
