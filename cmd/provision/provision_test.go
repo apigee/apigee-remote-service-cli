@@ -37,8 +37,11 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 
 	count := 0
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 401 is accepted status code for most endpoints since no internal JWT used
-		w.WriteHeader(http.StatusUnauthorized)
+		if strings.Contains(r.URL.Path, "verifyApiKey") {
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 		count++
 	}))
 	defer ts.Close()
@@ -260,8 +263,11 @@ func serveMux(t *testing.T) *http.ServeMux {
 	})
 	// catch-all handler for remote service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
-		// 401 is accepted status code for most endpoints since no internal JWT used
-		w.WriteHeader(http.StatusUnauthorized)
+		if strings.Contains(r.URL.Path, "verifyApiKey") {
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 	})
 	m.HandleFunc("/v1/organizations/gcp", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
