@@ -15,6 +15,7 @@
 package provision
 
 import (
+	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
@@ -28,6 +29,7 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
@@ -256,9 +258,19 @@ func (p *provision) run(printf shared.FormatFn) error {
 	}
 
 	if p.IsGCPManaged && (config.Tenant.PrivateKey == nil || p.rotate > 0) {
-		keyID, privateKey, jwks, err := p.CreateNewKey()
-		if err != nil {
-			return err
+		var keyID string
+		var privateKey *rsa.PrivateKey
+		var jwks *jwk.Set
+		var err error
+
+		if p.isCloud() { // attempt to fetch secrets from propertysets
+			keyID, privateKey, jwks, err = p.policySecretsFromPropertyset()
+		}
+		if err != nil || privateKey == nil {
+			keyID, privateKey, jwks, err = p.CreateNewKey()
+			if err != nil {
+				return err
+			}
 		}
 		config.Tenant.PrivateKey = privateKey
 		config.Tenant.PrivateKeyID = keyID
