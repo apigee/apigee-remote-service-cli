@@ -156,10 +156,11 @@ func cmdBindingsRemove(b *bindings, printf shared.FormatFn) *cobra.Command {
 
 func cmdBindingsVerify(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "verify [product name (optional)]",
-		Short: "Verify the bound Apigee products and the associated Apps also have remote-service product associated",
-		Long:  "Verify the bound Apigee product (check all bound products if unspecified) and the associated Apps also have remote-service product associated",
-		Args:  cobra.MaximumNArgs(1),
+		Deprecated: "remote-service product bindings are no longer required as of v1.4.0.",
+		Use:        "verify [product name (optional)]",
+		Short:      "Verify the bound Apigee products and the associated Apps also have remote-service product associated",
+		Long:       "Verify the bound Apigee product (check all bound products if unspecified) and the associated Apps also have remote-service product associated",
+		Args:       cobra.MaximumNArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apps, err := b.getProductNameToAppMap()
