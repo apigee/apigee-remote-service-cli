@@ -26,14 +26,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	propertysetPOSTURL = `/resourcefiles?name=%s&type=properties`
-	propertysetPUTURL  = `/resourcefiles/properties/%s`
+	propertysetPOSTURL     = `/resourcefiles?name=%s&type=properties`
+	propertysetGETOrPUTURL = `/resourcefiles/properties/%s`
 
 	policySecretNameFormat    = "%s-%s-policy-secret"
 	analyticsSecretNameFormat = "%s-%s-analytics-secret"
@@ -209,9 +210,9 @@ func (p *provision) createAnalyticsSecretData() error {
 }
 
 // createSecretPropertyset creates an environment-scoped propertyset to store the secrets
-func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props []byte, verbosef shared.FormatFn) error {
+func (p *provision) createSecretPropertyset(jwks []byte, privateKey []byte, props []byte, verbosef shared.FormatFn) error {
 	m := map[string]string{
-		"crt": string(jwk),
+		"crt": string(jwks),
 		"key": strings.ReplaceAll(string(privateKey), "\n", `\n`),
 	}
 	propsBuf := new(bytes.Buffer)
@@ -220,36 +221,37 @@ func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props
 	}
 	props = append(props, propsBuf.Bytes()...)
 
+	var req *http.Request
+	var res *apigee.Response
+	var err error
+
 	// PUT request to rotate the remote-service propertyset
-	if p.rotate > 0 {
-		req, err := p.ApigeeClient.NewRequest(http.MethodPut, fmt.Sprintf(propertysetPUTURL, "remote-service"), bytes.NewReader(props))
-		if err != nil {
-			return err
-		}
-
-		res, err := p.ApigeeClient.Do(req, nil)
-		if res != nil {
-			defer res.Body.Close()
-		}
-		if err == nil { // returns if successful
-			return nil
-		}
-		if res.StatusCode != http.StatusNotFound { // proceed to POST if 404 Not Found
-			return err
-		}
-	}
-
-	// otherwise try POST to avoid overwriting existing propertyset
-	req, err := p.ApigeeClient.NewRequest(http.MethodPost, fmt.Sprintf(propertysetPOSTURL, "remote-service"), bytes.NewReader(props))
+	req, err = p.ApigeeClient.NewRequest(http.MethodPut, fmt.Sprintf(propertysetGETOrPUTURL, "remote-service"), bytes.NewReader(props))
 	if err != nil {
 		return err
 	}
 
-	res, err := p.ApigeeClient.Do(req, nil)
+	res, err = p.ApigeeClient.Do(req, nil)
 	if res != nil {
 		defer res.Body.Close()
 	}
-	// returns error even on 409 Conflict
+	if err == nil { // returns if successful
+		return nil
+	}
+	if res.StatusCode != http.StatusNotFound { // proceed to POST
+		return err
+	}
+
+	// POST if PUT returns 404 Not Found
+	req, err = p.ApigeeClient.NewRequest(http.MethodPost, fmt.Sprintf(propertysetPOSTURL, "remote-service"), bytes.NewReader(props))
+	if err != nil {
+		return err
+	}
+
+	res, err = p.ApigeeClient.Do(req, nil)
+	if res != nil {
+		defer res.Body.Close()
+	}
 	return err
 }
 

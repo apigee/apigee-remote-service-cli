@@ -15,7 +15,10 @@
 package provision
 
 import (
+	"bytes"
+	"crypto/rsa"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -28,6 +31,7 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
@@ -256,9 +260,20 @@ func (p *provision) run(printf shared.FormatFn) error {
 	}
 
 	if p.IsGCPManaged && (config.Tenant.PrivateKey == nil || p.rotate > 0) {
-		keyID, privateKey, jwks, err := p.CreateNewKey()
-		if err != nil {
-			return err
+		var keyID string
+		var privateKey *rsa.PrivateKey
+		var jwks *jwk.Set
+		var err error
+
+		if p.isCloud() { // attempt to fetch secrets from propertysets
+			keyID, privateKey, jwks, err = p.policySecretsFromPropertyset()
+		}
+		if err != nil || privateKey == nil {
+			verbosef("no existing policy secret, creating new ones")
+			keyID, privateKey, jwks, err = p.CreateNewKey()
+			if err != nil {
+				return err
+			}
 		}
 		config.Tenant.PrivateKey = privateKey
 		config.Tenant.PrivateKeyID = keyID
@@ -325,12 +340,8 @@ func (p *provision) retrieveRuntimeType() error {
 	}
 
 	org := &apigee.Organization{}
-	res, err := p.ApigeeClient.Do(req, org)
-	if err != nil {
+	if _, err := p.ApigeeClient.Do(req, org); err != nil {
 		return err
-	}
-	if res != nil {
-		defer res.Body.Close()
 	}
 	p.runtimeType = org.RuntimeType
 
@@ -340,6 +351,59 @@ func (p *provision) retrieveRuntimeType() error {
 // isCloud determines whether it is NG SaaS
 func (p *provision) isCloud() bool {
 	return p.IsGCPManaged && p.runtimeType == "CLOUD"
+}
+
+// policySecretsFromPropertyset retrieves the policy secret from the remote-service propertyset
+// the returned values will be empty or nil if such propertyset does not exist or there is other error fetching it
+func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rsa.PrivateKey, jwks *jwk.Set, err error) {
+	req, err := p.ApigeeClient.NewRequest(http.MethodGet, fmt.Sprintf(propertysetGETOrPUTURL, "remote-service"), nil)
+	if err != nil {
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	_, err = p.ApigeeClient.Do(req, buf)
+	if err != nil {
+		return
+	}
+
+	// read the response into a map
+	m, err := server.ReadProperties(buf)
+	if err != nil {
+		return
+	}
+
+	// extracts the jwks from the map
+	jwksStr, ok := m["crt"]
+	if !ok {
+		err = fmt.Errorf("crt not found in remote-service propertyset")
+		return
+	}
+	jwks = &jwk.Set{}
+	err = json.Unmarshal([]byte(jwksStr), jwks)
+	if err != nil {
+		return
+	}
+
+	// extracts the private key from the map
+	pkStr, ok := m["key"]
+	if !ok {
+		err = fmt.Errorf("key not found in remote-service propertyset")
+		return
+	}
+	privateKey, err = server.LoadPrivateKey([]byte(strings.ReplaceAll(pkStr, `\n`, "\n")), "")
+	if err != nil {
+		return
+	}
+
+	// extracts the key id from the map
+	keyID, ok = m[server.SecretPropsKIDKey]
+	if !ok {
+		err = fmt.Errorf("kid not found in remote-service propertyset")
+		return
+	}
+
+	return
 }
 
 func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {

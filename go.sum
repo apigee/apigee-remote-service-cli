@@ -54,8 +54,8 @@ github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d h1:UQZhZ2O0vMHr2c
 github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk541a8SKzHPHnH3zbiI+7dagKZ0cgpgrD7Fyho=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/apache/thrift v0.13.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
-github.com/apigee/apigee-remote-service-envoy v1.3.0 h1:H/khtC6y0zSHTv4qKI04sNwZ49lZgWE4Oe3uLV2umPE=
-github.com/apigee/apigee-remote-service-envoy v1.3.0/go.mod h1:Pre/XggdGpYI0U78yEGux5FzcdycTTLUliKKCouXz0Q=
+github.com/apigee/apigee-remote-service-envoy v1.3.1-0.20201209173003-4372da402007 h1:bgoDXzIt7yGblDq7RAfR985oA2+zEuGByc1IwqTfSSA=
+github.com/apigee/apigee-remote-service-envoy v1.3.1-0.20201209173003-4372da402007/go.mod h1:Pre/XggdGpYI0U78yEGux5FzcdycTTLUliKKCouXz0Q=
 github.com/apigee/apigee-remote-service-golib v1.3.0 h1:gXxrHiMC9QM0qo19c3+S1kWLNvi8sQWlU9c8Qyf1Xgs=
 github.com/apigee/apigee-remote-service-golib v1.3.0/go.mod h1:v8JlgWxYdj2CtCbV3qMWdjyVxtHjnbDnFZl6v1XCWEY=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
