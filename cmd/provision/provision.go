@@ -15,6 +15,7 @@
 package provision
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"crypto/tls"
 	"encoding/json"
@@ -339,12 +340,8 @@ func (p *provision) retrieveRuntimeType() error {
 	}
 
 	org := &apigee.Organization{}
-	res, err := p.ApigeeClient.Do(req, org)
-	if err != nil {
+	if _, err := p.ApigeeClient.Do(req, org); err != nil {
 		return err
-	}
-	if res != nil {
-		defer res.Body.Close()
 	}
 	p.runtimeType = org.RuntimeType
 
@@ -364,16 +361,14 @@ func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rs
 		return
 	}
 
-	res, err := p.ApigeeClient.Do(req, nil)
-	if res != nil {
-		defer res.Body.Close()
-	}
+	buf := new(bytes.Buffer)
+	_, err = p.ApigeeClient.Do(req, buf)
 	if err != nil {
 		return
 	}
 
 	// read the response into a map
-	m, err := server.ReadProperties(res.Body)
+	m, err := server.ReadProperties(buf)
 	if err != nil {
 		return
 	}

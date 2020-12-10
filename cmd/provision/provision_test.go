@@ -15,7 +15,12 @@
 package provision
 
 import (
+	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,6 +35,9 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-cli/testutil"
+	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/spf13/cobra"
 )
 
@@ -93,7 +101,7 @@ func TestVerifyRemoteServiceProxyTLS(t *testing.T) {
 	}
 }
 
-func testCmd(rootArgs *shared.RootArgs, printf shared.FormatFn, url string) *cobra.Command {
+func testCmd(rootArgs *shared.RootArgs, printf shared.FormatFn, f func(r *shared.RootArgs)) *cobra.Command {
 	c := Cmd(rootArgs, printf)
 
 	defaultPersistentPreRun := c.PersistentPreRunE
@@ -101,7 +109,7 @@ func testCmd(rootArgs *shared.RootArgs, printf shared.FormatFn, url string) *cob
 		if err := defaultPersistentPreRun(cmd, args); err != nil {
 			return err
 		}
-		setTestUrls(rootArgs, url)
+		f(rootArgs)
 		return nil
 	}
 
@@ -114,6 +122,53 @@ func setTestUrls(rootArgs *shared.RootArgs, url string) {
 	rootArgs.InternalProxyURL = url
 	rootArgs.ClientOpts.MgmtURL = url
 	rootArgs.ApigeeClient, _ = apigee.NewEdgeClient(rootArgs.ClientOpts)
+}
+
+// return a fake remote-service propertyset
+func fakePropertyset() ([]byte, error) {
+	certKeyLength := 2048
+	keyID := time.Now().Format(time.RFC3339)
+	privateKey, err := rsa.GenerateKey(rand.Reader, certKeyLength)
+	if err != nil {
+		return nil, err
+	}
+
+	jwkKey, err := jwk.New(&privateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := jwkKey.Set(jwk.KeyIDKey, keyID); err != nil {
+		return nil, err
+	}
+	if err := jwkKey.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
+		return nil, err
+	}
+
+	jwks := &jwk.Set{
+		Keys: []jwk.Key{jwkKey},
+	}
+
+	privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
+
+	// create CRD for policy secret
+	jwksBytes, err := json.Marshal(jwks)
+	if err != nil {
+		return nil, err
+	}
+
+	props := map[string]string{
+		server.SecretPropsKIDKey: keyID,
+		"crt":                    string(jwksBytes),
+		"key":                    strings.ReplaceAll(string(privateKeyBytes), "\n", `\n`),
+	}
+
+	buf := new(bytes.Buffer)
+	if err := server.WriteProperties(buf, props); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func serveMux(t *testing.T) *http.ServeMux {
@@ -310,8 +365,16 @@ func serveMux(t *testing.T) *http.ServeMux {
 		default:
 			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
 		case http.MethodGet:
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("{}"))
+			if strings.Contains(r.URL.Path, "resourcefiles") && !strings.Contains(r.URL.Path, "notfoundng") {
+				w.Header().Set("Content-Type", "text/plain")
+				b, err := fakePropertyset()
+				if err != nil {
+					t.Fatalf("error generating fake remote-service propertyset: %v", err)
+				}
+				_, _ = w.Write(b)
+			} else {
+				_, _ = w.Write([]byte("{}"))
+			}
 		case http.MethodPut:
 			if strings.Contains(r.URL.Path, "notfoundng") {
 				w.WriteHeader(http.StatusBadRequest)
@@ -384,7 +447,7 @@ func TestProvisionLegacySaaS(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "hi", "-e", "test", "-u", "me", "-p", "password", "--legacy"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -408,7 +471,7 @@ data:
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "saas", "-e", "test", "-u", "me", "-p", "password", "-f", "--legacy"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -418,7 +481,7 @@ data:
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "saas", "-e", "test", "-u", "me", "-p", "password", "-f", "--legacy", "--rotate", "1"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "--rotate only valid for hybrid, use 'token rotate-cert' for others")
@@ -434,7 +497,7 @@ func TestProvisionOPDK(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "opdk", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -454,7 +517,7 @@ func TestProvisionHybrid(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -477,7 +540,7 @@ data:
 	// force replacing existing proxies
 	flags = []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "-f", "-v"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -486,7 +549,7 @@ data:
 	// error on missing token
 	flags = []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "", "-f", "-v"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "--token is required for hybrid")
@@ -499,7 +562,7 @@ func TestProvisionNGSaaS(t *testing.T) {
 	duration = 200 * time.Millisecond
 	interval = 100 * time.Millisecond
 
-	print := testutil.Printer("TestProvisionHybrid")
+	print := testutil.Printer("TestProvisionNGSaaS")
 
 	credDir, err := ioutil.TempDir("", "analytics-secret")
 	if err != nil {
@@ -515,7 +578,7 @@ func TestProvisionNGSaaS(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1", "--analytics-sa", credFile}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Errorf("want no error: %v", err)
@@ -543,7 +606,7 @@ data:
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "ng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Errorf("want no error: %v", err)
@@ -553,7 +616,7 @@ data:
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "badng", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "404")
@@ -562,7 +625,7 @@ data:
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "ng", "-e", "notfoundng", "-r", ts.URL, "-n", "ns", "-t", "token", "--analytics-sa", credFile}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "400")
@@ -578,7 +641,7 @@ func TestKVMCreation(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "nokvm", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "retrieving or creating kvm")
@@ -586,7 +649,7 @@ func TestKVMCreation(t *testing.T) {
 	// unexpected status code on creating kvm
 	flags = []string{"provision", "-o", "badkvm", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "creating kvm remote-service, status code: 200")
@@ -594,7 +657,7 @@ func TestKVMCreation(t *testing.T) {
 	// kvm already exist
 	flags = []string{"provision", "-o", "conflictkvm", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -625,7 +688,7 @@ func TestCacheCreation(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "nocache", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "deploying internal proxy")
@@ -633,7 +696,7 @@ func TestCacheCreation(t *testing.T) {
 	// unexpected status code on creating caches
 	flags = []string{"provision", "-o", "badcache", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err = rootCmd.Execute()
 	testutil.ErrorContains(t, err, "creating cache remote-service, status code: 200")
@@ -641,7 +704,7 @@ func TestCacheCreation(t *testing.T) {
 	// caches already exist
 	flags = []string{"provision", "-o", "conflictcache", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -658,7 +721,7 @@ func TestCredentialsCreation(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "nocred", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err := rootCmd.Execute()
 	testutil.ErrorContains(t, err, "generating credential")
@@ -676,7 +739,7 @@ func TestInternalProxyVerification(t *testing.T) {
 	rootArgs := &shared.RootArgs{}
 	flags := []string{"provision", "-o", "badinternal", "-e", "test", "-u", "me", "-p", "password", "-r", ts.URL, "-n", "ns", "-m", ts.URL, "--opdk"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -685,7 +748,7 @@ func TestInternalProxyVerification(t *testing.T) {
 	// error on failing in verifying for legacy saas
 	flags = []string{"provision", "-o", "badinternal", "-e", "test", "-u", "me", "-p", "password", "--legacy"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
-	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, ts.URL))
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("want no error: %v", err)
@@ -693,25 +756,46 @@ func TestInternalProxyVerification(t *testing.T) {
 }
 
 func TestVerifyRemoteServiceProxyError(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
+	runtimeTS := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "edgemicro") {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("{}"))
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
+	defer runtimeTS.Close()
+
+	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
-	p := &provision{
-		RootArgs: &shared.RootArgs{
-			RuntimeBase:        ts.URL,
-			Token:              "-",
-			InsecureSkipVerify: false,
-			IsLegacySaaS:       true,
-			Org:                "hi",
-			Env:                "test",
-		},
+	duration = 200 * time.Millisecond
+	interval = 100 * time.Millisecond
+
+	print := testutil.Printer("TestInternalProxyVerification")
+
+	apigee.SetOAuthURL(ts.URL + "/oauth/token")
+
+	// error on failing in verifying for opdk
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"provision", "-o", "opdk", "-e", "test", "-u", "me", "-p", "password", "-r", runtimeTS.URL, "-m", ts.URL, "--opdk", "-v"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	if err := rootCmd.Execute(); err == nil {
+		t.Fatalf("want error on verifying remote-service proxies, got nil")
 	}
-	if err := p.Resolve(false, false); err != nil {
-		t.Fatal(err)
-	}
-	if err := p.verifyRemoteServiceProxy(http.DefaultClient, shared.Printf); err == nil {
-		t.Errorf("got nil error, want remote-service proxy verification failure")
+
+	// error on failing in verifying for hybrid
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"provision", "-o", "gcp", "-e", "test", "-r", ts.URL, "-n", "ns", "-t", "token", "--rotate", "1", "-v"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) {
+		setTestUrls(r, ts.URL)
+		r.RemoteServiceProxyURL = runtimeTS.URL
+	}))
+
+	if err := rootCmd.Execute(); err == nil {
+		t.Fatalf("want error on verifying remote-service proxies, got nil")
 	}
 }

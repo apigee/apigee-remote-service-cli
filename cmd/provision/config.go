@@ -210,9 +210,9 @@ func (p *provision) createAnalyticsSecretData() error {
 }
 
 // createSecretPropertyset creates an environment-scoped propertyset to store the secrets
-func (p *provision) createSecretPropertyset(jwk []byte, privateKey []byte, props []byte, verbosef shared.FormatFn) error {
+func (p *provision) createSecretPropertyset(jwks []byte, privateKey []byte, props []byte, verbosef shared.FormatFn) error {
 	m := map[string]string{
-		"crt": string(jwk),
+		"crt": string(jwks),
 		"key": strings.ReplaceAll(string(privateKey), "\n", `\n`),
 	}
 	propsBuf := new(bytes.Buffer)
