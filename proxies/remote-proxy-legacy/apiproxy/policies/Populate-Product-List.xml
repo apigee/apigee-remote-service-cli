@@ -11,5 +11,5 @@
     <ExpirySettings>
         <TimeoutInSec>120</TimeoutInSec>
     </ExpirySettings>
-    <Source>response.content</Source>
+    <Source>prodcache</Source>
 </PopulateCache>

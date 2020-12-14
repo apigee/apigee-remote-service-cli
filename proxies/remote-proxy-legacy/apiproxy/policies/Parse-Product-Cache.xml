@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Javascript async="false" continueOnError="false" enabled="true" timeLimit="200" name="Parse-Product-Cache">
+    <DisplayName>Parse-Product-Cache</DisplayName>
+    <Properties/>
+    <ResourceURL>jsc://parse-product-cache.js</ResourceURL>
+</Javascript>

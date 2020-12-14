@@ -5,6 +5,6 @@
         <KeyFragment ref="request.uri"/>
     </CacheKey>
     <Scope>Exclusive</Scope>
-    <AssignTo>productlist</AssignTo>
+    <AssignTo>prodcache</AssignTo>
     <CacheResource>remote-service</CacheResource>
 </LookupCache>

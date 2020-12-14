@@ -76,7 +76,14 @@
                     <Name>Authenticate-Call</Name>
                 </Step>
                 <Step>
+                    <Name>Extract-Request-ETag</Name>
+                </Step>
+                <Step>
                     <Name>Lookup-Products</Name>
+                </Step>
+                <Step>
+                    <Name>Parse-Product-Cache</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = true</Condition>
                 </Step>
             </Request>
             <Response>
@@ -85,12 +92,20 @@
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
                 </Step>
                 <Step>
+                    <Name>Set-Product-Cache</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
                     <Name>Populate-Product-List</Name>
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
                 </Step>
                 <Step>
+                    <Name>Send-Not-Modified</Name>
+                    <Condition>(lookupcache.Lookup-Products.cachehit = true) and (etag = cachedETag)</Condition>
+                </Step>
+                <Step>
                     <Name>Send-Product-List</Name>
-                    <Condition>lookupcache.Lookup-Products.cachehit = true</Condition>
+                    <Condition>(lookupcache.Lookup-Products.cachehit = true) and (etag != cachedETag)</Condition>
                 </Step>
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/products") and (request.verb = "GET")</Condition>

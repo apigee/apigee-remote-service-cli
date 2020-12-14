@@ -1,4 +1,4 @@
-<APIProxy revision="46" name="remote-service">
+<APIProxy revision="1" name="remote-service">
     <DisplayName>remote-service</DisplayName>
     <Description>remote-service</Description>
     <CreatedAt>1607043157449</CreatedAt>
@@ -13,10 +13,12 @@
         <Policy>Eval-Quota-Result</Policy>
         <Policy>Extract-API-Key</Policy>
         <Policy>Extract-OAuth-Params</Policy>
+        <Policy>Extract-Request-ETag</Policy>
         <Policy>Generate-Access-Token</Policy>
         <Policy>Generate-VerifyKey-Token</Policy>
         <Policy>Get-Runtime-Version</Policy>
         <Policy>Lookup-Products</Policy>
+        <Policy>Parse-Product-Cache</Policy>
         <Policy>Populate-Product-List</Policy>
         <Policy>Products-Callout-Legacy</Policy>
         <Policy>Products-Callout</Policy>
@@ -24,8 +26,10 @@
         <Policy>Raise-Fault-Missing-Secret</Policy>
         <Policy>Raise-Fault-Unknown-Request</Policy>
         <Policy>Send-JWKs-Message</Policy>
+        <Policy>Send-Not-Modified</Policy>
         <Policy>Send-Product-List</Policy>
         <Policy>Send-Version</Policy>
+        <Policy>Set-Product-Cache</Policy>
         <Policy>Set-JWKS</Policy>
         <Policy>Set-JWT-Variables</Policy>
         <Policy>Set-Quota-Response</Policy>
@@ -42,6 +46,8 @@
         <Resource>java://envoy-javacallout-1.0.2.jar</Resource>
         <Resource>java://envoy-javacallout-legacy.jar</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
+        <Resource>jsc://parse-product-cache.js</Resource>
+        <Resource>jsc://set-product-cache.js</Resource>
         <Resource>jsc://set-jwks-variable.js</Resource>
         <Resource>jsc://set-jwt-variables.js</Resource>
         <Resource>jsc://set-quota-variables.js</Resource>
