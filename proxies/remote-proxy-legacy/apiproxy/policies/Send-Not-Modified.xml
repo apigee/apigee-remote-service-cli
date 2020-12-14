@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<AssignMessage async="false" continueOnError="false" enabled="true" name="Send-Product-List">
-    <DisplayName>Send Product List</DisplayName>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="Send-Not-Modified">
+    <DisplayName>Send Not Modified</DisplayName>
     <Properties/>
     <Set>
         <Headers>
             <Header name="Cache-Control">no-store</Header>
             <Header name="Pragma">no-cache</Header>
-            <Header name="ETag">{cachedETag}</Header>
         </Headers>
-        <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">@productlist#</Payload>
+        <StatusCode>304</StatusCode>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <AssignTo createNew="true" transport="http" type="response"/>
