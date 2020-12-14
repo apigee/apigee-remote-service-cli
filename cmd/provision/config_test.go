@@ -67,7 +67,7 @@ func TestConfig(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = p.createAnalyticsSecretData()
+	err = p.createAnalyticsSecretData(cfg, print.Printf)
 	if err != nil {
 		t.Error(err)
 	}
