@@ -26,8 +26,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestConfig(t *testing.T) {
-	print := testutil.Printer("TestConfig")
+func TestConfigWithAnalyticsSecretFile(t *testing.T) {
+	print := testutil.Printer("TestConfigWithAnalyticsSecretFile")
 
 	r := &shared.RootArgs{
 		Namespace:             "apigee",
@@ -61,6 +61,83 @@ func TestConfig(t *testing.T) {
 	cfg.Tenant.PrivateKey = privateKey
 	cfg.Tenant.PrivateKeyID = keyID
 	cfg.Tenant.JWKS = jwks
+
+	err = p.createPolicySecretData(cfg, print.Printf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = p.createAnalyticsSecretData(cfg, print.Printf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = p.printConfig(cfg, print.Printf, nil, print.Printf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(print.Prints) != 3 {
+		t.Errorf("want 3 prints, got %d", len(print.Prints))
+	}
+
+	// test if the generated config has all three CRDs
+	cfgBytes := []byte(print.Prints[2])
+	configMap := &server.ConfigMapCRD{}
+	secret := &server.SecretCRD{}
+	serviceAccount := &server.ConfigMapCRD{}
+	decoder := yaml.NewDecoder(bytes.NewReader(cfgBytes))
+	if err := decoder.Decode(configMap); err != nil {
+		t.Errorf("decoding ConfigMap error: %v", err)
+	} else if configMap.Kind != "ConfigMap" {
+		t.Errorf("ConfigMap has the wrong Kind: %q", configMap.Kind)
+	}
+
+	if err := decoder.Decode(secret); err != nil {
+		t.Errorf("decoding policy Secret error: %v", err)
+	} else if secret.Kind != "Secret" {
+		t.Errorf("policy Secret has the wrong Kind: %q", secret.Kind)
+	}
+
+	if err := decoder.Decode(secret); err != nil {
+		t.Errorf("decoding analytics Secret error: %v", err)
+	} else if secret.Kind != "Secret" {
+		t.Errorf("analytics Secret has the wrong Kind: %q", secret.Kind)
+	}
+
+	if err := decoder.Decode(serviceAccount); err != nil {
+		t.Errorf("decoding ServiceAccount error: %v", err)
+	} else if serviceAccount.Kind != "ServiceAccount" {
+		t.Errorf("ServiceAccount has the wrong Kind: %q", serviceAccount.Kind)
+	}
+}
+
+func TestConfigWithAnalyticsSecretInConfig(t *testing.T) {
+	print := testutil.Printer("TestConfigWithAnalyticsSecretInConfig")
+
+	r := &shared.RootArgs{
+		Namespace:             "apigee",
+		Org:                   "hi",
+		Env:                   "test",
+		IsGCPManaged:          true,
+		InternalProxyURL:      "https://mock.com/internal",
+		RemoteServiceProxyURL: "https://mock.com/remote-service",
+	}
+
+	p := &provision{
+		RootArgs: r,
+	}
+
+	cfg := p.createConfig(nil)
+
+	keyID, privateKey, jwks, err := p.CreateNewKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Tenant.PrivateKey = privateKey
+	cfg.Tenant.PrivateKeyID = keyID
+	cfg.Tenant.JWKS = jwks
+	cfg.Analytics.CredentialsJSON = fakeServiceAccount()
 
 	err = p.createPolicySecretData(cfg, print.Printf)
 	if err != nil {
