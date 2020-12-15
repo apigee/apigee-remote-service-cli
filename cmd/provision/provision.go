@@ -290,19 +290,16 @@ func (p *provision) run(printf shared.FormatFn) error {
 		verifyErrors = p.verifyWithRetry(config, verbosef)
 
 		// creates the policy secrets if is GCP managed
-		err := p.createPolicySecretData(config, verbosef)
-		if err != nil {
+		if err := p.createPolicySecretData(config, verbosef); err != nil {
 			return errors.Wrapf(err, "creating policy secret data")
 		}
 
-		// creates the analytics secret if service account is specified
-		if p.analyticsServiceAccount != "" {
-			err := p.createAnalyticsSecretData()
-			if err != nil {
-				return errors.Wrapf(err, "creating analytics secret data")
-			}
-		} else {
-			shared.Errorf("\nWARNING: No analytics service account given via --analytics-sa.")
+		// create the analytics secrets if is GCP managed
+		if err := p.createAnalyticsSecretData(config, verbosef); err != nil {
+			return errors.Wrapf(err, "creating analytics secret data")
+		}
+		if len(p.analyticsSecretData) == 0 {
+			shared.Errorf("\nWARNING: No analytics service account given via --analytics-sa or config.yaml.")
 			shared.Errorf("\nIMPORTANT: Please make sure the application default credentials where the adapter is run are correctly configured.")
 		}
 	} else {

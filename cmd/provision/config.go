@@ -194,11 +194,25 @@ func (p *provision) createPolicySecretData(config *server.Config, verbosef share
 	return err
 }
 
-func (p *provision) createAnalyticsSecretData() error {
-	// load analytics service account credentials
-	cred, err := ioutil.ReadFile(p.analyticsServiceAccount)
-	if err != nil {
-		return err
+// createAnalyticsSecretData creates the analyticsSecretData to be encoded into the config file
+func (p *provision) createAnalyticsSecretData(config *server.Config, verbosef shared.FormatFn) error {
+	var cred []byte
+	// creates the analytics secret if service account is specified
+	if p.analyticsServiceAccount != "" {
+		var err error
+		// load analytics service account credentials
+		cred, err = ioutil.ReadFile(p.analyticsServiceAccount)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(config.Analytics.CredentialsJSON) > 0 {
+		cred = config.Analytics.CredentialsJSON
+	}
+
+	if len(cred) == 0 {
+		return nil
 	}
 
 	// encode service account credentials into secret
