@@ -4,7 +4,7 @@ try {
 
   // set variables for response
   context.setVariable("productlist", prodcache.productlist);
-  context.setVariable("cachedETag", prodcache.etag);
+  context.setVariable("response.header.etag", prodcache.etag);
 } catch (e) {
   throw 'Error in parse-product-cache javascript execution';
 }
