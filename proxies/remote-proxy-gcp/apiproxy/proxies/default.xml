@@ -109,7 +109,7 @@
                 </Step>
                 <Step>
                     <Name>Send-Not-Modified</Name>
-                    <Condition>(lookupcache.Lookup-Products.cachehit = true) and (etag = cachedETag)</Condition>
+                    <Condition>(etag != null) and ((etag = response.header.etag) or (etag = cachedETag))</Condition>
                 </Step>
                 <Step>
                     <Name>Send-Product-List</Name>
