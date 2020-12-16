@@ -31,9 +31,9 @@
         <Policy>Products-to-JSON</Policy>
         <Policy>Raise-Fault-Invalid-API-Key</Policy>
         <Policy>Raise-Fault-Missing-JWKS</Policy>
+        <Policy>Raise-Fault-Not-Modified</Policy>
         <Policy>Raise-Fault-Unknown-Request</Policy>
         <Policy>Send-JWKs-Message</Policy>
-        <Policy>Send-Not-Modified</Policy>
         <Policy>Send-Product-List</Policy>
         <Policy>Send-Version</Policy>
         <Policy>Set-Product-Cache</Policy>
