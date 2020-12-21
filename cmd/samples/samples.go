@@ -34,10 +34,10 @@ import (
 
 var (
 	supportedTemplates = map[string]string{
-		"native":     "envoy-1.16", // deprecated
-		"envoy-1.14": "envoy-1.16",
-		"envoy-1.15": "envoy-1.16",
-		"envoy-1.16": "envoy-1.16",
+		"native":     "envoy-1.17", // deprecated
+		"envoy-1.14": "envoy-1.14",
+		"envoy-1.15": "envoy-1.17",
+		"envoy-1.16": "envoy-1.17",
 		"envoy-1.17": "envoy-1.17",
 		"istio-1.5":  "istio-1.6",
 		"istio-1.6":  "istio-1.6",
