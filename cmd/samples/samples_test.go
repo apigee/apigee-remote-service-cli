@@ -91,6 +91,7 @@ func TestTemplatesListing(t *testing.T) {
 		"  envoy-1.14",
 		"  envoy-1.15",
 		"  envoy-1.16",
+		"  envoy-1.17",
 		"  istio-1.5",
 		"  istio-1.6",
 		"  istio-1.7",
