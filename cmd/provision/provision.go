@@ -530,7 +530,7 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		res, err = client.Do(req)
 		if res != nil {
 			defer res.Body.Close()
-			if res.StatusCode != http.StatusUnauthorized { // 401 is ok, we didn't use a valid api key
+			if res.StatusCode != http.StatusUnauthorized && res.StatusCode != http.StatusInternalServerError { // 401 or 500 is ok, either the secret is not there or we didn't use a valid api key
 				verifyErrors = multierr.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", verifyAPIKeyURL, res.StatusCode))
 			}
 		}
