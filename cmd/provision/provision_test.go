@@ -250,6 +250,34 @@ func serveMux(t *testing.T) *http.ServeMux {
 			}
 		}
 	})
+	m.HandleFunc("/v1/organizations/saas/environments/dev/apis/remote-service/deployments", func(w http.ResponseWriter, r *http.Request) {
+		res := apigee.EnvironmentDeployment{
+			Name: "remote-service",
+			Revision: []apigee.RevisionDeployment{
+				{
+					Number: 3,
+					State:  "undeployed",
+				},
+				{
+					Number: 2,
+					State:  "undeployed",
+				},
+				{
+					Number: 1,
+					State:  "undeployed",
+				},
+			},
+		}
+		switch r.Method {
+		default:
+			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
+		case http.MethodGet:
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				t.Fatalf("want no error %v", err)
+			}
+		}
+	})
 	m.HandleFunc("/v1/organizations/saas/apis/remote-service", func(w http.ResponseWriter, r *http.Request) {
 		res := apigee.Proxy{
 			Name:      "remote-service",
@@ -470,6 +498,16 @@ data:
 	// force replacing existing proxies
 	rootArgs = &shared.RootArgs{}
 	flags = []string{"provision", "-o", "saas", "-e", "test", "-u", "me", "-p", "password", "-f", "--legacy"}
+	rootCmd = cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("want no error: %v", err)
+	}
+
+	// deploying existing but undeployed proxies
+	rootArgs = &shared.RootArgs{}
+	flags = []string{"provision", "-o", "saas", "-e", "dev", "-u", "me", "-p", "password", "--legacy"}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
