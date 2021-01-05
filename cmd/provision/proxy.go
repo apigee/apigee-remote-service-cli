@@ -97,37 +97,50 @@ func (p *provision) checkAndDeployProxy(name, file string, printf shared.FormatF
 
 func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRev *apigee.Revision, file string, printf shared.FormatFn) error {
 	var newRev apigee.Revision = 1
+	var latestRev apigee.Revision = 0
 	if proxy != nil && len(proxy.Revisions) > 0 {
 		sort.Sort(apigee.RevisionSlice(proxy.Revisions))
-		newRev = proxy.Revisions[len(proxy.Revisions)-1] + 1
-		printf("proxy %s exists. highest revision is: %d", name, newRev-1)
-	}
-
-	// create a new client to avoid dumping the proxy binary to stdout during Import
-	noDebugClient := p.ApigeeClient
-	if p.Verbose {
-		opts := *p.ClientOpts
-		opts.Debug = false
-		var err error
-		noDebugClient, err = apigee.NewEdgeClient(&opts)
-		if err != nil {
-			return err
+		latestRev = proxy.Revisions[len(proxy.Revisions)-1]
+		if p.forceProxyInstall {
+			// Always increment newRev if forceProxyInstall is true
+			// regardless of deployment status of the latestRev in the specified environment.
+			newRev = latestRev + 1
+		} else {
+			// This is the case where proxy exists in the organization
+			// but is not deployed to the specified environment.
+			// If oldRev != nil, the whole function will not be invoked without forceProxyInstall being true.
+			newRev = latestRev
 		}
+		printf("proxy %s exists. highest revision is: %d", name, latestRev)
 	}
 
-	printf("creating new proxy %s revision: %d...", name, newRev)
-	_, res, err := noDebugClient.Proxies.Import(name, file)
-	if res != nil {
-		defer res.Body.Close()
-	}
-	if err != nil {
-		return errors.Wrapf(err, "importing proxy %s", name)
+	if newRev > latestRev { // only import if newRev is larger than the latest revision, 0 if not present, in the organization
+		// create a new client to avoid dumping the proxy binary to stdout during Import
+		noDebugClient := p.ApigeeClient
+		if p.Verbose {
+			opts := *p.ClientOpts
+			opts.Debug = false
+			var err error
+			noDebugClient, err = apigee.NewEdgeClient(&opts)
+			if err != nil {
+				return err
+			}
+		}
+
+		printf("creating new proxy %s revision: %d...", name, newRev)
+		_, res, err := noDebugClient.Proxies.Import(name, file)
+		if res != nil {
+			defer res.Body.Close()
+		}
+		if err != nil {
+			return errors.Wrapf(err, "importing proxy %s", name)
+		}
 	}
 
 	if oldRev != nil && !p.IsGCPManaged { // it's not necessary to undeploy first with GCP
 		printf("undeploying proxy %s revision %d on env %s...",
 			name, oldRev, p.Env)
-		_, res, err = p.ApigeeClient.Proxies.Undeploy(name, p.Env, *oldRev)
+		_, res, err := p.ApigeeClient.Proxies.Undeploy(name, p.Env, *oldRev)
 		if res != nil {
 			defer res.Body.Close()
 		}
@@ -140,7 +153,7 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 		cache := apigee.Cache{
 			Name: cacheName,
 		}
-		res, err = p.ApigeeClient.CacheService.Create(cache)
+		res, err := p.ApigeeClient.CacheService.Create(cache)
 		if err != nil && (res == nil || res.StatusCode != http.StatusConflict) { // http.StatusConflict == already exists
 			return err
 		}
@@ -155,7 +168,7 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 	}
 
 	printf("deploying proxy %s revision %d to env %s...", name, newRev, p.Env)
-	_, res, err = p.ApigeeClient.Proxies.Deploy(name, p.Env, newRev)
+	_, res, err := p.ApigeeClient.Proxies.Deploy(name, p.Env, newRev)
 	if res != nil {
 		defer res.Body.Close()
 	}
