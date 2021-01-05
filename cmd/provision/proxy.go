@@ -114,7 +114,7 @@ func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRe
 		printf("proxy %s exists. highest revision is: %d", name, latestRev)
 	}
 
-	if newRev > latestRev { // only import if newRev is larger than the latest revision, 0 if not present, in the organitzation
+	if newRev > latestRev { // only import if newRev is larger than the latest revision, 0 if not present, in the organization
 		// create a new client to avoid dumping the proxy binary to stdout during Import
 		noDebugClient := p.ApigeeClient
 		if p.Verbose {
