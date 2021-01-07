@@ -34,13 +34,9 @@ import (
 
 var (
 	supportedTemplates = map[string]string{
-		"native":     "envoy-1.17", // deprecated
-		"envoy-1.14": "envoy-1.14",
-		"envoy-1.15": "envoy-1.17",
-		"envoy-1.16": "envoy-1.17",
-		"envoy-1.17": "envoy-1.17",
-		"istio-1.5":  "istio-1.6",
-		"istio-1.6":  "istio-1.6",
+		"envoy-1.15": "envoy-1.16",
+		"envoy-1.16": "envoy-1.16",
+		"envoy-1.17": "envoy-1.16",
 		"istio-1.7":  "istio-1.7",
 		"istio-1.8":  "istio-1.7",
 	}
@@ -101,12 +97,11 @@ func cmdListTemplateOptions(printf shared.FormatFn) *cobra.Command {
 		Use:   "templates",
 		Short: "list available options for --template flag in \"samples create\" command",
 		Long: `List available options for --template flag in "samples create" command.
-Values outside those that are listed here will not be accepted.
-Note the "native" options has been deprecated.`,
+Values outside those that are listed here will not be accepted.`,
 		Args: cobra.NoArgs,
 
 		Run: func(cmd *cobra.Command, _ []string) {
-			printf("Supported templates (native is deprecated):")
+			printf("Supported templates:")
 			keys := []string{}
 			for k := range supportedTemplates {
 				keys = append(keys, k)
@@ -157,7 +152,7 @@ files related to deployment of their target services.`,
 	}
 
 	c.Flags().StringVarP(&s.ConfigPath, "config", "c", "", "path to Apigee Remote Service config file")
-	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.6", "template name (run \"samples templates\" to see available options)")
+	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.7", "template name (run \"samples templates\" to see available options)")
 	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
