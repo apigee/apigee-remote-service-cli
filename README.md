@@ -10,7 +10,10 @@ proxy into Apigee Runtime and provides certain runtime management functions on t
 
 ## Getting Started
 
-Documentation is available [here](https://docs.apigee.com/api-platform/envoy-adapter/concepts).
+There is specific documentation for your Apigee platform:
+
+* [Apigee Edge on Google Cloud or Hybrid](https://cloud.google.com/apigee/docs/api-platform/envoy-adapter/latest/concepts)
+* [Classic Apigee Edge](https://docs.apigee.com/api-platform/envoy-adapter)
 
 ## Support
 
