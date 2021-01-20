@@ -31,19 +31,15 @@ import (
 
 func TestFlagValidation(t *testing.T) {
 	testSamples := [][]string{
-		{"--template", "native"},
-		{"--template", "native", "--tag", "tag"},
-		{"--template", "istio-1.6"},
-		{"--template", "istio-1.6", "--host", "localhost"},
-		{"--template", "istio-1.6", "--adapter-host", "targethost"},
-		{"--template", "istio-1.6", "--tls", "tls-dir"},
+		{"--template", "envoy-1.16", "--tag", "tag"},
+		{"--template", "istio-1.7", "--host", "localhost"},
+		{"--template", "istio-1.7", "--adapter-host", "targethost"},
+		{"--template", "istio-1.7", "--tls", "tls-dir"},
 		{"--template", "istio-0.9"},
 	}
 
 	wantedErrors := []string{
-		"",
 		"flag --tag should only be used for the istio template",
-		"",
 		"flags --adapter-host, --host or --tls should only be used for envoy templates",
 		"flags --adapter-host, --host or --tls should only be used for envoy templates",
 		"flags --adapter-host, --host or --tls should only be used for envoy templates",
@@ -87,15 +83,12 @@ func TestTemplatesListing(t *testing.T) {
 	}
 
 	want := []string{
-		"Supported templates (native is deprecated):",
-		"  envoy-1.14",
+		"Supported templates:",
 		"  envoy-1.15",
 		"  envoy-1.16",
-		"  istio-1.5",
-		"  istio-1.6",
+		"  envoy-1.17",
 		"  istio-1.7",
 		"  istio-1.8",
-		"  native",
 	}
 
 	print.CheckPrefix(t, want)
@@ -227,7 +220,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"Generating istio-1.6 configuration files...",
+		"Generating istio-1.7 configuration files...",
 		"  generating apigee-envoy-adapter.yaml...",
 		"  generating envoyfilter-sidecar.yaml...",
 		"  generating httpbin.yaml...",
@@ -270,7 +263,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"Generating istio-1.6 configuration files...",
+		"Generating istio-1.7 configuration files...",
 		"  generating apigee-envoy-adapter.yaml...",
 		"  generating envoyfilter-sidecar.yaml...",
 		"  generating request-authentication.yaml...",
@@ -367,7 +360,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 	// existing directory with overwrite
 	rootArgs := &shared.RootArgs{}
 
-	flags := []string{"samples", "create", "-t", "native", "--out", tmpDir, "-c", tmpFile.Name(), "-f"}
+	flags := []string{"samples", "create", "-t", "envoy-1.16", "--out", tmpDir, "-c", tmpFile.Name(), "-f"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -377,7 +370,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 
 	want := []string{
 		"Overwriting the existing directory!",
-		"Generating native configuration files...",
+		"Generating envoy-1.16 configuration files...",
 		"  generating envoy-config.yaml...",
 		"Config files successfully generated.",
 	}

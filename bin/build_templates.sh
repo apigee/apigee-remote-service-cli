@@ -39,7 +39,6 @@ fi
 
 
 cp -r "${TEMPLATES_SOURCE_DIR}/envoy-1.16" $TEMPLATES_DIR
-cp -r "${TEMPLATES_SOURCE_DIR}/istio-1.6"  $TEMPLATES_DIR
 cp -r "${TEMPLATES_SOURCE_DIR}/istio-1.7"  $TEMPLATES_DIR
 
 # create resource
