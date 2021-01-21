@@ -17,24 +17,19 @@ package bindings
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/apigee/apigee-remote-service-cli/apigee"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/apigee/apigee-remote-service-golib/product"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"go.uber.org/multierr"
 )
 
 const (
-	productsURLFormat     = "/apiproducts?expand=true"   // relative resource path to get API Products
-	productURLFormat      = "/apiproducts/%s"            // relative resource path to get a specific API Product
-	productAttrPathFormat = "/apiproducts/%s/attributes" // relative resource path to API Product attributes
-	appURLFormat          = "/apps?expand=true"          // relative resource path to get Apps
+	productsURLFormat = "/apiproducts?expand=true" // relative resource path to get API Products
+	productURLFormat  = "/apiproducts/%s"          // relative resource path to get a specific API Product
 )
 
 type bindings struct {
@@ -71,9 +66,6 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		"", "Apigee management base URL")
 
 	c.AddCommand(cmdBindingsList(cfg, printf))
-	c.AddCommand(cmdBindingsAdd(cfg, printf))
-	c.AddCommand(cmdBindingsRemove(cfg, printf))
-	c.AddCommand(cmdBindingsVerify(cfg, printf))
 
 	return c
 }
@@ -90,99 +82,6 @@ func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 				return b.cmdListAll(printf)
 			}
 			return b.cmdList(args[0], printf)
-		},
-	}
-
-	return c
-}
-
-func cmdBindingsAdd(b *bindings, printf shared.FormatFn) *cobra.Command {
-	c := &cobra.Command{
-		Deprecated: "please transition to APIs or UI.",
-		Use:        "add [target name] [product name]",
-		Short:      "Add Remote Target binding to Apigee Product",
-		Long:       "Add Remote Target binding to Apigee Product",
-		Args:       cobra.ExactArgs(2),
-
-		RunE: func(cmd *cobra.Command, args []string) error {
-			targetName := args[0]
-			productName := args[1]
-			p, err := b.getProduct(productName)
-			if err != nil {
-				return fmt.Errorf("%v", err)
-			}
-			if p == nil {
-				cmd.SilenceUsage = true
-				return fmt.Errorf("invalid product name: %s", productName)
-			}
-
-			err = b.bindTarget(p, targetName, printf)
-			if err != nil {
-				return fmt.Errorf("%v", err)
-			}
-			return nil
-		},
-	}
-
-	return c
-}
-
-func cmdBindingsRemove(b *bindings, printf shared.FormatFn) *cobra.Command {
-	c := &cobra.Command{
-		Deprecated: "please transition to APIs or UI.",
-		Use:        "remove [target name] [product name]",
-		Short:      "Remove target binding from Apigee Product",
-		Long:       "Remove target binding from Apigee Product",
-		Args:       cobra.ExactArgs(2),
-
-		RunE: func(cmd *cobra.Command, args []string) error {
-			targetName := args[0]
-			productName := args[1]
-			p, err := b.getProduct(productName)
-			if err != nil {
-				return err
-			}
-			if p == nil {
-				printf("invalid product name: %s", productName)
-				return nil
-			}
-
-			return b.unbindTarget(p, targetName, printf)
-		},
-	}
-
-	return c
-}
-
-func cmdBindingsVerify(b *bindings, printf shared.FormatFn) *cobra.Command {
-	c := &cobra.Command{
-		Deprecated: "remote-service product bindings are no longer required as of v1.4.0.",
-		Use:        "verify [product name (optional)]",
-		Short:      "Verify the bound Apigee products and the associated Apps also have remote-service product associated",
-		Long:       "Verify the bound Apigee product (check all bound products if unspecified) and the associated Apps also have remote-service product associated",
-		Args:       cobra.MaximumNArgs(1),
-
-		RunE: func(cmd *cobra.Command, args []string) error {
-			apps, err := b.getProductNameToAppMap()
-			if err != nil {
-				return err
-			}
-			if len(args) == 0 {
-				err = b.verifyAll(apps, printf)
-				if err != nil {
-					os.Exit(1)
-				}
-				return nil
-			}
-			p, err := b.getProduct(args[0])
-			if err != nil {
-				return err
-			}
-			err = b.verify(p, apps, printf)
-			if err != nil {
-				os.Exit(1)
-			}
-			return nil
 		},
 	}
 
@@ -229,44 +128,6 @@ func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	defer resp.Body.Close()
 
 	return res.APIProducts, nil
-}
-
-// getProductNameToAppMap returns a map of []App with the key being product names
-func (b *bindings) getProductNameToAppMap() (map[string][]App, error) {
-	req, err := b.ApigeeClient.NewRequestNoEnv(http.MethodGet, appURLFormat, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
-	}
-
-	var res apigee.AppResponse
-	resp, err := b.ApigeeClient.Do(req, &res)
-	if err != nil {
-		return nil, errors.Wrap(err, "retrieving products")
-	}
-	defer resp.Body.Close()
-
-	appMap := make(map[string][]App)
-	for _, app := range res.Apps {
-		f := false
-		for _, c := range app.Credentials {
-			for _, p := range c.APIProducts {
-				if p.Name == "remote-service" {
-					f = true
-				}
-			}
-		}
-		a := App{
-			name:             app.Name,
-			hasRemoteService: f,
-		}
-		for _, c := range app.Credentials {
-			for _, p := range c.APIProducts {
-				appMap[p.Name] = append(appMap[p.Name], a)
-			}
-		}
-	}
-
-	return appMap, nil
 }
 
 func (b *bindings) cmdListAll(printf shared.FormatFn) error {
@@ -322,133 +183,11 @@ func printProducts(products []product.APIProduct, printf shared.FormatFn) error 
 	return nil
 }
 
-// verify checks all API products and verify if their associated apps are also associated with remote-service product
-// and returns error if the verification fails. it returns nil if no API product exists
-func (b *bindings) verifyAll(appMap map[string][]App, printf shared.FormatFn) error {
-	products, err := b.getProducts()
-	if err != nil {
-		return err
-	}
-	var verifyErrors error
-	for _, p := range products {
-		if p.Name == "remote-service" { // no need to verify this reserved product
-			continue
-		}
-		err = b.verify(&p, appMap, printf)
-		if err != nil {
-			verifyErrors = multierr.Append(verifyErrors, err)
-		}
-	}
-	return verifyErrors
-}
-
-// verify checks if all apps associated with the specific API product are also associated with remote-service product
-// and returns error if the verification fails. it returns nil if the given product is nil
-func (b *bindings) verify(p *product.APIProduct, appMap map[string][]App, printf shared.FormatFn) error {
-	if p == nil {
-		return nil
-	}
-	if len(p.GetBoundTargets()) == 0 {
-		printf("Product %s is unbound to any target, no need to verify.", p.Name)
-		return nil
-	}
-	apps, ok := appMap[p.Name]
-	if !ok {
-		printf("No app is found associated with product %s.", p.Name)
-		return nil
-	}
-	printf("Verifying apps associated with product %s:", p.Name)
-	for _, app := range apps {
-		if !app.hasRemoteService {
-			errStr := fmt.Sprintf("  app %s associated with product %s is not associated with remote-service product", app.name, p.Name)
-			printf(errStr)
-			return fmt.Errorf(errStr)
-		}
-		printf("  app %s associated with product %s is verified", app.name, p.Name)
-	}
-	return nil
-}
-
-func (b *bindings) bindTarget(p *product.APIProduct, target string, printf shared.FormatFn) error {
-	boundTargets := p.GetBoundTargets()
-	if _, ok := indexOf(boundTargets, target); ok {
-		printf("target %s is already bound to %s", target, p.Name)
-		return nil
-	}
-	if err := b.updateTargetBindings(p, append(boundTargets, target)); err != nil {
-		return errors.Wrapf(err, "binding target %s to %s", target, p.Name)
-	}
-	printf("product %s is now bound to: %s", p.Name, target)
-	return nil
-}
-
-func (b *bindings) unbindTarget(p *product.APIProduct, target string, printf shared.FormatFn) error {
-	boundTargets := p.GetBoundTargets()
-	i, ok := indexOf(boundTargets, target)
-	if !ok {
-		printf("target %s is not bound to %s", target, p.Name)
-		return nil
-	}
-	boundTargets = append(boundTargets[:i], boundTargets[i+1:]...)
-	if err := b.updateTargetBindings(p, boundTargets); err != nil {
-		return errors.Wrapf(err, "removing target %s from %s", target, p.Name)
-	}
-	printf("product %s is no longer bound to: %s", p.Name, target)
-	return nil
-}
-
-func (b *bindings) updateTargetBindings(p *product.APIProduct, bindings []string) error {
-	bindingsString := strings.Join(bindings, ",")
-	var attributes []product.Attribute
-	for _, a := range p.Attributes {
-		if a.Name != product.TargetsAttr {
-			attributes = append(attributes, a)
-		}
-	}
-	attributes = append(attributes, product.Attribute{
-		Name:  product.TargetsAttr,
-		Value: bindingsString,
-	})
-	newAttrs := attrUpdate{
-		Attributes: attributes,
-	}
-	path := fmt.Sprintf(productAttrPathFormat, p.Name)
-	req, err := b.ApigeeClient.NewRequestNoEnv(http.MethodPost, path, newAttrs)
-	if err != nil {
-		return err
-	}
-	var attrResult attrUpdate
-	_, err = b.ApigeeClient.Do(req, &attrResult)
-	return err
-}
-
-func indexOf(array []string, val string) (index int, exists bool) {
-	index = -1
-	for i, v := range array {
-		if val == v {
-			index = i
-			exists = true
-			break
-		}
-	}
-	return
-}
-
-type attrUpdate struct {
-	Attributes []product.Attribute `json:"attribute,omitempty"`
-}
-
 type byName []product.APIProduct
 
 func (a byName) Len() int           { return len(a) }
 func (a byName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byName) Less(i, j int) bool { return a[i].Name < a[j].Name }
-
-// App represents an Apigee App
-type App struct {
-	name             string
-	hasRemoteService bool
-}
 
 const productsTemplate = `
 {{- define "product"}}
