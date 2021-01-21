@@ -3,6 +3,7 @@
     <DisplayName>Products Callout Legacy</DisplayName>
     <Properties>
         <Property name="products.filter.attributes">apigee-remote-service-targets</Property>
+        <Property name="products.filter.env.enable">false</Property>
     </Properties>
     <ClassName>io.apigee.microgateway.javacallout.Callout</ClassName>
     <ResourceURL>java://envoy-javacallout-legacy.jar</ResourceURL>
