@@ -31,7 +31,8 @@ spec:
       value:
         name: envoy.filters.http.ext_authz
         typed_config:
-          "@type": type.googleapis.com/envoy.config.filter.http.ext_authz.v2.ExtAuthz
+          "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+          transport_api_version: V3
           grpc_service:
             google_grpc:
               target_uri: apigee-remote-service-envoy.apigee:5000
@@ -55,7 +56,7 @@ spec:
       value:
         name: envoy.filters.http.rbac
         typed_config:
-          "@type": type.googleapis.com/envoy.config.filter.http.rbac.v2.RBAC
+          "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
           rules:
             action: ALLOW
             policies:
@@ -80,8 +81,9 @@ spec:
           access_log:
           - name: envoy.access_loggers.http_grpc
             typed_config:
-              "@type": type.googleapis.com/envoy.config.accesslog.v2.HttpGrpcAccessLogConfig
+              "@type": type.googleapis.com/envoy.extensions.access_loggers.grpc.v3.HttpGrpcAccessLogConfig
               common_config:
+                transport_api_version: V3
                 log_name: apigee-remote-service
                 grpc_service:
                   google_grpc:
