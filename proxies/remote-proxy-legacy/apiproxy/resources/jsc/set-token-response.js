@@ -13,16 +13,8 @@
 // limitations under the License.
 
 //prepare response object
- 
-var jws = {};
 
-//if refresh token exists, add it to response
-if (context.getVariable('grant_type') === "password") {
-    jws.refresh_token = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token");
-    jws.refresh_token_expires_in = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token_expires_in");
-    jws.refresh_token_issued_at = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token_issued_at") ;
-    jws.refresh_token_status = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token_status");
-}
+var jws = {};
 
 if (context.getVariable('grant_type') === 'client_credentials' || context.getVariable('grant_type') === 'password') {
     jws.access_token = context.getVariable('jwtmessage');
@@ -32,7 +24,7 @@ if (context.getVariable('grant_type') === 'client_credentials' || context.getVar
     //if refresh token exists, add it to response
     if (context.getVariable('grant_type') === "password") {
         jws.refresh_token            = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token");
-        jws.refresh_token_expires_in = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token_expires_in");
+        jws.refresh_token_expires_in = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token_expires_in");      
         jws.refresh_token_issued_at  = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token_issued_at") ;
         jws.refresh_token_status     = context.getVariable("oauthv2accesstoken.AccessTokenRequest.refresh_token_status");
     }

@@ -60,7 +60,7 @@
             </Request>
             <Response>
                 <Step>
-                    <Name>Set-Response</Name>
+                    <Name>Set-VerifyKey-Response</Name>
                 </Step>
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/verifyApiKey") and (request.verb = "POST")</Condition>
@@ -159,7 +159,7 @@
             </Request>
             <Response>
                 <Step>
-                    <Name>Set-Response</Name>
+                    <Name>Set-Token-Response</Name>
                 </Step>
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/token") and (request.verb = "POST")</Condition>
