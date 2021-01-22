@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Javascript timeLimit="20000" async="false" continueOnError="false" enabled="true" name="Set-VerifyKey-Response">
+    <DisplayName>Set VerifyKey Response</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <ResourceURL>jsc://set-verifykey-response.js</ResourceURL>
+</Javascript>
