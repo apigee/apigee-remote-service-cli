@@ -98,3 +98,4 @@ spec:
               - x-apigee-application
               - x-apigee-clientid
               - x-apigee-developeremail
+              - x-apigee-environment
