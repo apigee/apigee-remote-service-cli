@@ -278,7 +278,6 @@ func (p *provision) serviceAccountCRD() *ServiceAccountCRD {
 			"namespace": p.Namespace,
 			"labels": map[string]string{
 				"org": p.Org,
-				"env": p.Env,
 			},
 		},
 	}
