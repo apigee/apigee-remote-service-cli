@@ -46,6 +46,13 @@ const (
 	internalProxyURLFormatOPDK  = "%s/edgemicro" // runtimeBase
 	remoteServicePath           = "/remote-service"
 	remoteServiceProxyURLFormat = "%s" + remoteServicePath // runtimeBase
+
+	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
+	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
+	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
+
+	certsURLFormat = "%s/certs" // RemoteTokenProxyURL
+	tokenURLFormat = "%s/token" // RemoteTokenProxyURL
 )
 
 // BuildInfoType holds version information
@@ -305,4 +312,28 @@ func (r *RootArgs) PrintMissingFlags(missingFlagNames []string) error {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
+}
+
+func (r *RootArgs) GetProductsURL() string {
+	return fmt.Sprintf(productsURLFormat, r.RemoteServiceProxyURL)
+}
+
+func (r *RootArgs) GetVerifyAPIKeyURL() string {
+	return fmt.Sprintf(verifyAPIKeyURLFormat, r.RemoteServiceProxyURL)
+}
+
+func (r *RootArgs) GetQuotasURL() string {
+	return fmt.Sprintf(quotasURLFormat, r.RemoteServiceProxyURL)
+}
+
+func (r *RootArgs) GetRemoteTokenProxyURL() string {
+	return r.RemoteServiceProxyURL
+}
+
+func (r *RootArgs) GetCertsURL() string {
+	return fmt.Sprintf(certsURLFormat, r.GetRemoteTokenProxyURL())
+}
+
+func (r *RootArgs) GetTokenURL() string {
+	return fmt.Sprintf(tokenURLFormat, r.GetRemoteTokenProxyURL())
 }

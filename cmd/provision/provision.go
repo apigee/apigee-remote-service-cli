@@ -44,12 +44,6 @@ const (
 	authProxyName = "remote-service"
 
 	remoteServiceProxyZip = "remote-service-gcp.zip"
-
-	certsURLFormat        = "%s/certs"        // RemoteServiceProxyURL
-	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
-	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
-	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
-	tokenURLFormat        = "%s/token"        // RemoteServiceProxyURL
 )
 
 // default durations for the proxy verification retry
@@ -492,10 +486,10 @@ func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) erro
 	return verifyErrors
 }
 
-// verify GET RemoteServiceProxyURL/certs
-// verify GET RemoteServiceProxyURL/products
-// verify POST RemoteServiceProxyURL/verifyApiKey
-// verify POST RemoteServiceProxyURL/quotas
+// verify GET /certs
+// verify GET /products
+// verify POST /verifyApiKey
+// verify POST /quotas
 func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.FormatFn) error {
 
 	verifyGET := func(targetURL string) error {
@@ -515,15 +509,13 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 
 	var res *http.Response
 	var verifyErrors error
-	certsURL := fmt.Sprintf(certsURLFormat, p.RemoteServiceProxyURL)
-	err := verifyGET(certsURL)
+	err := verifyGET(p.GetCertsURL())
 	verifyErrors = multierr.Append(verifyErrors, err)
 
-	productsURL := fmt.Sprintf(productsURLFormat, p.RemoteServiceProxyURL)
-	err = verifyGET(productsURL)
+	err = verifyGET(p.GetProductsURL())
 	verifyErrors = multierr.Append(verifyErrors, err)
 
-	verifyAPIKeyURL := fmt.Sprintf(verifyAPIKeyURLFormat, p.RemoteServiceProxyURL)
+	verifyAPIKeyURL := p.GetVerifyAPIKeyURL()
 	req, err := http.NewRequest(http.MethodPost, verifyAPIKeyURL, strings.NewReader(`{ "apiKey": "x" }`))
 	if err == nil {
 		req.Header.Add("Content-Type", "application/json")
@@ -539,7 +531,7 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
 
-	quotasURL := fmt.Sprintf(quotasURLFormat, p.RemoteServiceProxyURL)
+	quotasURL := p.GetQuotasURL()
 	req, err = http.NewRequest(http.MethodPost, quotasURL, strings.NewReader("{}"))
 	if err == nil {
 		req.Header.Add("Content-Type", "application/json")

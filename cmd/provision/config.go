@@ -52,7 +52,7 @@ func (p *provision) createConfig(cred *keySecret) *server.Config {
 			AllowUnverifiedSSLCert: p.InsecureSkipVerify,
 		},
 		Auth: server.AuthConfig{
-			JWTProviderKey: fmt.Sprintf(tokenURLFormat, p.RemoteServiceProxyURL),
+			JWTProviderKey: p.GetTokenURL(),
 		},
 	}
 

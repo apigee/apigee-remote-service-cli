@@ -39,9 +39,9 @@ static_resources:
                   remote_jwks:
                     http_uri:
                     {{- if .RuntimeTLS}}
-                      uri: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-service/certs
+                      uri: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-token/certs
                     {{- else}}
-                      uri: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-service/certs
+                      uri: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-token/certs
                     {{- end}}
                       cluster: apigee-auth-service
                       timeout: 5s

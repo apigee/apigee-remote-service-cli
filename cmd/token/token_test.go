@@ -47,7 +47,7 @@ func remoteServiceHandler(t *testing.T) http.Handler {
 	_, key := generateJWK(t)
 
 	m := http.NewServeMux()
-	m.HandleFunc("/remote-service/certs", func(w http.ResponseWriter, r *http.Request) {
+	m.HandleFunc("/remote-token/certs", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"keys": []interface{}{
@@ -81,7 +81,7 @@ func badHandler(t *testing.T) http.Handler {
 	_, key := generateJWK(t)
 
 	m := http.NewServeMux()
-	m.HandleFunc("/remote-service/certs", func(w http.ResponseWriter, r *http.Request) {
+	m.HandleFunc("/remote-token/certs", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"keys": []interface{}{
@@ -145,7 +145,7 @@ func TestTokenCreate(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "creating token: Post \"dummy/remote-service/token\": unsupported protocol scheme")
+	testutil.ErrorContains(t, err, "creating token: Post \"dummy/remote-token/token\": unsupported protocol scheme")
 
 	// missing runtime
 	flags = []string{"token", "create", "--id", "/id/", "--secret", "/secret/"}
@@ -195,7 +195,7 @@ func TestTokenInspect(t *testing.T) {
 	"aud": [
 		"remote-service-client"
 	],
-	"iss": "https://org-env.apigee.net/remote-service/token",
+	"iss": "https://org-env.apigee.net/remote-token/token",
 	"jti": "/id/",
 	"access_token": "/token/",
 	"api_product_list": [
@@ -384,7 +384,7 @@ func generateJWT(privateKey *rsa.PrivateKey) (string, error) {
 	if err := token.Set(jwt.JwtIDKey, "/id/"); err != nil {
 		return "", err
 	}
-	if err := token.Set(jwt.IssuerKey, "https://org-env.apigee.net/remote-service/token"); err != nil {
+	if err := token.Set(jwt.IssuerKey, "https://org-env.apigee.net/remote-token/token"); err != nil {
 		return "", err
 	}
 	if err := token.Set("access_token", "/token/"); err != nil {

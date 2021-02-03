@@ -15,9 +15,9 @@ spec:
   jwtRules:
   - issuer: {{.JWTProviderKey}}
   {{- if .RuntimeTLS}}
-    jwksUri: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-service/certs
+    jwksUri: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-token/certs
   {{- else}}
-    jwksUri: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-service/certs
+    jwksUri: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-token/certs
   {{- end}}
 # ---
 # apiVersion: security.istio.io/v1beta1
