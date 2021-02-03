@@ -261,13 +261,22 @@ func (r *RootArgs) loadConfig() error {
 	}
 
 	r.RuntimeBase = strings.Split(r.ServerConfig.Tenant.RemoteServiceAPI, remoteServicePath)[0]
-	r.Org = r.ServerConfig.Tenant.OrgName
-	r.Env = r.ServerConfig.Tenant.EnvName
-	r.InsecureSkipVerify = r.ServerConfig.Tenant.AllowUnverifiedSSLCert
-	r.Namespace = r.ServerConfig.Global.Namespace
 
-	if r.ServerConfig.IsGCPManaged() {
-		r.ManagementBase = GCPExperienceBase
+	if r.Org == "" {
+		r.Org = r.ServerConfig.Tenant.OrgName
+	}
+	if r.Env == "" {
+		r.Env = r.ServerConfig.Tenant.EnvName
+	}
+	if !r.InsecureSkipVerify {
+		r.InsecureSkipVerify = r.ServerConfig.Tenant.AllowUnverifiedSSLCert
+	}
+	if r.Namespace == "" {
+		r.Namespace = r.ServerConfig.Global.Namespace
+	}
+
+	if r.ServerConfig.IsGCPManaged() && !r.IsLegacySaaS && !r.IsOPDK {
+		r.ManagementBase = GCPExperienceBase // always override since this is the only right one
 		r.IsGCPManaged = true
 
 		if r.ServerConfig.Tenant.PrivateKey == nil || r.ServerConfig.Tenant.PrivateKeyID == "" {
@@ -275,13 +284,15 @@ func (r *RootArgs) loadConfig() error {
 		}
 	}
 
-	if r.ServerConfig.IsApigeeManaged() {
-		r.ManagementBase = LegacySaaSManagementBase
+	if r.ServerConfig.IsApigeeManaged() && !r.IsOPDK {
+		r.ManagementBase = LegacySaaSManagementBase // always override since this is the only right one
 		r.IsLegacySaaS = true
 	}
 
-	if r.ServerConfig.IsOPDK() {
-		r.ManagementBase = r.RuntimeBase
+	if r.ServerConfig.IsOPDK() && !r.IsLegacySaaS {
+		if r.ManagementBase == "" { // only override management base if not given already
+			r.ManagementBase = r.RuntimeBase
+		}
 		r.IsOPDK = true
 	}
 
