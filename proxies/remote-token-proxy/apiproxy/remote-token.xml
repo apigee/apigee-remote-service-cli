@@ -1,0 +1,33 @@
+<APIProxy revision="2" name="remote-token">
+    <DisplayName>remote-service</DisplayName>
+    <Description>remote-service</Description>
+    <CreatedAt>1612370880213</CreatedAt>
+    <LastModifiedAt>1612370880213</LastModifiedAt>
+    <BasePaths>/remote-token</BasePaths>
+    <Policies>
+        <Policy>Access-App-Info</Policy>
+        <Policy>AccessTokenRequest</Policy>
+        <Policy>Create-New-Response</Policy>
+        <Policy>Create-OAuth-Request</Policy>
+        <Policy>Extract-App-Name</Policy>
+        <Policy>Extract-OAuth-Params</Policy>
+        <Policy>Generate-Access-Token</Policy>
+        <Policy>Products-to-JSON</Policy>
+        <Policy>Raise-Fault-Missing-Secret</Policy>
+        <Policy>Raise-Fault-Unknown-Request</Policy>
+        <Policy>Send-JWKs-Message</Policy>
+        <Policy>Set-JWKS</Policy>
+        <Policy>Set-JWT-Variables</Policy>
+        <Policy>Set-Token-Response</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <Resources>
+        <Resource>jsc://set-jwks-variable.js</Resource>
+        <Resource>jsc://set-jwt-variables.js</Resource>
+        <Resource>jsc://set-token-response.js</Resource>
+    </Resources>
+    <TargetServers></TargetServers>
+    <TargetEndpoints></TargetEndpoints>
+</APIProxy>

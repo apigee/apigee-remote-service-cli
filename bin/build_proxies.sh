@@ -16,7 +16,7 @@
 
 #
 # If you change any proxies:
-# 1. update the returned version(s) in the Send-Version.xml of the affected proxies
+# 1. ensure the returned version in the Send-Version.xml of the affected proxies is {{version}}"
 # 2. run this script to generate proxies.go 
 # 3. run `go mod tidy` to remove the go-bindata dep from your mod and sum files
 # 4. check in your changes
@@ -37,6 +37,7 @@ PROXIES_SOURCE_DIR="${ROOTDIR}/proxies"
 LEGACY_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-legacy"
 INTERNAL_PROXY_SRC="${PROXIES_SOURCE_DIR}/internal-proxy"
 GCP_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-gcp"
+TOKEN_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-token-proxy"
 
 if [ ! -d "${PROXIES_ZIP_DIR}" ]; then
   mkdir -p "${PROXIES_ZIP_DIR}"
@@ -61,6 +62,13 @@ ZIP=${PROXIES_ZIP_DIR}/internal.zip
 echo "building ${ZIP}"
 rm -f "${ZIP}"
 cd "${INTERNAL_PROXY_SRC}"
+zip -qr "${ZIP}" apiproxy
+
+# token proxy
+ZIP=${PROXIES_ZIP_DIR}/remote-token.zip
+echo "building ${ZIP}"
+rm -f "${ZIP}"
+cd "${TOKEN_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
 # create resource
