@@ -341,6 +341,7 @@ func TestInspectTokenErrors(t *testing.T) {
 			token: token{
 				RootArgs: &shared.RootArgs{
 					RemoteServiceProxyURL: fmt.Sprintf("%s/remote-service", ts.URL),
+					RemoteTokenProxyURL:   fmt.Sprintf("%s/remote-token", ts.URL),
 				},
 			},
 			in:     strings.NewReader(tk),
@@ -373,6 +374,7 @@ func testCmd(rootArgs *shared.RootArgs, printf shared.FormatFn, url string) *cob
 
 func setTestUrls(rootArgs *shared.RootArgs, url string) {
 	rootArgs.RemoteServiceProxyURL = fmt.Sprintf("%s/remote-service", url)
+	rootArgs.RemoteTokenProxyURL = fmt.Sprintf("%s/remote-token", url)
 }
 
 func generateJWT(privateKey *rsa.PrivateKey) (string, error) {

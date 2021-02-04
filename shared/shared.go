@@ -46,6 +46,8 @@ const (
 	internalProxyURLFormatOPDK  = "%s/edgemicro" // runtimeBase
 	remoteServicePath           = "/remote-service"
 	remoteServiceProxyURLFormat = "%s" + remoteServicePath // runtimeBase
+	remoteTokenPath             = "/remote-token"
+	remoteTokenProxyURLFormat   = "%s" + remoteTokenPath // runtimeBase
 
 	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
 	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
@@ -89,6 +91,7 @@ type RootArgs struct {
 	// the following is derived in Resolve()
 	InternalProxyURL      string
 	RemoteServiceProxyURL string
+	RemoteTokenProxyURL   string
 	ApigeeClient          *apigee.EdgeClient
 	ClientOpts            *apigee.EdgeClientOptions
 }
@@ -168,6 +171,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 
 	r.RemoteServiceProxyURL = fmt.Sprintf(remoteServiceProxyURLFormat, r.RuntimeBase)
+	r.RemoteTokenProxyURL = fmt.Sprintf(remoteTokenProxyURLFormat, r.RuntimeBase)
 
 	if r.IsGCPManaged && !skipAuth && r.Token == "" {
 		return fmt.Errorf("--token is required for hybrid")
@@ -326,14 +330,10 @@ func (r *RootArgs) GetQuotasURL() string {
 	return fmt.Sprintf(quotasURLFormat, r.RemoteServiceProxyURL)
 }
 
-func (r *RootArgs) GetRemoteTokenProxyURL() string {
-	return r.RemoteServiceProxyURL
-}
-
 func (r *RootArgs) GetCertsURL() string {
-	return fmt.Sprintf(certsURLFormat, r.GetRemoteTokenProxyURL())
+	return fmt.Sprintf(certsURLFormat, r.RemoteTokenProxyURL)
 }
 
 func (r *RootArgs) GetTokenURL() string {
-	return fmt.Sprintf(tokenURLFormat, r.GetRemoteTokenProxyURL())
+	return fmt.Sprintf(tokenURLFormat, r.RemoteTokenProxyURL)
 }
