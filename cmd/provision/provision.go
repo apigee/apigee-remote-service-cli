@@ -38,12 +38,14 @@ import (
 )
 
 const (
-	kvmName       = "remote-service"
-	cacheName     = "remote-service"
-	encryptKVM    = true
-	authProxyName = "remote-service"
+	kvmName        = "remote-service"
+	cacheName      = "remote-service"
+	encryptKVM     = true
+	authProxyName  = "remote-service"
+	tokenProxyName = "remote-token"
 
 	remoteServiceProxyZip = "remote-service-gcp.zip"
+	remoteTokenProxyZip   = "remote-token.zip"
 )
 
 // default durations for the proxy verification retry
@@ -233,8 +235,17 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return err
 	}
 
-	if err := p.checkAndDeployProxy(authProxyName, customizedProxy, verbosef); err != nil {
-		return errors.Wrapf(err, "deploying proxy %s", authProxyName)
+	if err := p.checkAndDeployProxy(authProxyName, customizedProxy, p.forceProxyInstall, verbosef); err != nil {
+		return errors.Wrapf(err, "deploying runtime proxy %s", authProxyName)
+	}
+
+	// Deploy token proxy
+	tokenProxy, err := getCustomizedProxy(tempDir, remoteTokenProxyZip, nil)
+	if err != nil {
+		return err
+	}
+	if err := p.checkAndDeployProxy(tokenProxyName, tokenProxy, false, verbosef); err != nil {
+		return errors.Wrapf(err, "deploying token proxy %s", tokenProxyName)
 	}
 
 	if !p.IsGCPManaged {

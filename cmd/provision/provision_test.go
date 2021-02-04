@@ -118,6 +118,7 @@ func testCmd(rootArgs *shared.RootArgs, printf shared.FormatFn, f func(r *shared
 
 func setTestUrls(rootArgs *shared.RootArgs, url string) {
 	rootArgs.RemoteServiceProxyURL = fmt.Sprintf("%s/remote-service", url)
+	rootArgs.RemoteTokenProxyURL = fmt.Sprintf("%s/remote-token", url)
 	rootArgs.ManagementBase = url
 	rootArgs.InternalProxyURL = url
 	rootArgs.ClientOpts.MgmtURL = url
@@ -344,13 +345,17 @@ func serveMux(t *testing.T) *http.ServeMux {
 			w.WriteHeader(http.StatusOK)
 		}
 	})
-	// catch-all handler for remote service proxy verification
+	// catch-all handler for remote-service proxy verification
 	m.HandleFunc("/remote-service/", func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "verifyApiKey") {
 			w.WriteHeader(http.StatusUnauthorized)
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
+	})
+	// catch-all handler for remote-token proxy verification
+	m.HandleFunc("/remote-token/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 	})
 	m.HandleFunc("/v1/organizations/gcp", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -831,6 +836,7 @@ func TestVerifyRemoteServiceProxyError(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) {
 		setTestUrls(r, ts.URL)
 		r.RemoteServiceProxyURL = runtimeTS.URL
+		r.RemoteTokenProxyURL = runtimeTS.URL
 	}))
 
 	if err := rootCmd.Execute(); err == nil {

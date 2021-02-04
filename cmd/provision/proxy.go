@@ -64,7 +64,7 @@ func getCustomizedProxy(tempDir, name string, modFunc proxyModFunc) (string, err
 	return customizedZip, nil
 }
 
-func (p *provision) checkAndDeployProxy(name, file string, printf shared.FormatFn) error {
+func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, printf shared.FormatFn) error {
 	printf("checking if proxy %s deployment exists...", name)
 	var oldRev *apigee.Revision
 	var err error
@@ -77,7 +77,7 @@ func (p *provision) checkAndDeployProxy(name, file string, printf shared.FormatF
 		return err
 	}
 	if oldRev != nil {
-		if p.forceProxyInstall {
+		if forceInstall {
 			printf("replacing proxy %s revision %s in %s", name, oldRev, p.Env)
 		} else {
 			printf("proxy %s revision %s already deployed to %s", name, oldRev, p.Env)
@@ -92,23 +92,20 @@ func (p *provision) checkAndDeployProxy(name, file string, printf shared.FormatF
 		return err
 	}
 
-	return p.importAndDeployProxy(name, proxy, oldRev, file, printf)
-}
-
-func (p *provision) importAndDeployProxy(name string, proxy *apigee.Proxy, oldRev *apigee.Revision, file string, printf shared.FormatFn) error {
+	// importAndDeployProxy proxy
 	var newRev apigee.Revision = 1
 	var latestRev apigee.Revision = 0
 	if proxy != nil && len(proxy.Revisions) > 0 {
 		sort.Sort(apigee.RevisionSlice(proxy.Revisions))
 		latestRev = proxy.Revisions[len(proxy.Revisions)-1]
-		if p.forceProxyInstall {
-			// Always increment newRev if forceProxyInstall is true
+		if forceInstall {
+			// Always increment newRev if forceInstall is true
 			// regardless of deployment status of the latestRev in the specified environment.
 			newRev = latestRev + 1
 		} else {
 			// This is the case where proxy exists in the organization
 			// but is not deployed to the specified environment.
-			// If oldRev != nil, the whole function will not be invoked without forceProxyInstall being true.
+			// If oldRev != nil, the whole function will not be invoked without forceInstall being true.
 			newRev = latestRev
 		}
 		printf("proxy %s exists. highest revision is: %d", name, latestRev)
