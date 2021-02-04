@@ -190,6 +190,195 @@ analytics:
 	}
 }
 
+func TestResolveWithFlagOverride(t *testing.T) {
+	var tf *os.File
+	var err error
+	var configCRD *server.ConfigMapCRD
+	var secretCRD *server.SecretCRD
+	var configMapYAML string
+	var r *RootArgs
+	var config string
+
+	config = `
+global:
+  namespace: ns
+tenant:
+  remote_service_api: https://org-test.apigee.net/remote-service
+  org_name: org
+  env_name: env
+  allow_unverified_ssl_cert: false`
+	configCRD = makeConfigCRD(config)
+	secretCRD, err = makeSecretCRD()
+	if err != nil {
+		t.Fatal(err)
+	}
+	configMapYAML, err = makeYAML(configCRD, secretCRD)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tf, err = ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	if _, err := tf.WriteString(configMapYAML); err != nil {
+		t.Fatal(err)
+	}
+	if err := tf.Close(); err != nil {
+		t.Fatal(err)
+	}
+	r = &RootArgs{
+		Org:                "my-org",
+		Env:                "my-env",
+		Namespace:          "my-ns",
+		InsecureSkipVerify: true,
+		Token:              "token",
+		ConfigPath:         tf.Name(),
+	}
+
+	if err := r.Resolve(false, true); err != nil {
+		t.Errorf("want no error got %v", err)
+	}
+	if r.Org != "my-org" {
+		t.Errorf("want 'my-org', got '%s'", r.Org)
+	}
+	if r.Env != "my-env" {
+		t.Errorf("want 'my-env', got '%s'", r.Env)
+	}
+	if r.Namespace != "my-ns" {
+		t.Errorf("want 'my-ns', got '%s'", r.Namespace)
+	}
+	if !r.InsecureSkipVerify {
+		t.Error("want InsecureSkipVerify to be true, got false")
+	}
+
+	config = `
+global:
+  namespace: ns
+tenant:
+  remote_service_api: https://org-test.apigee.net/remote-service
+  internal_api: https://istioservices.apigee.net/edgemicro
+  org_name: org
+  env_name: env`
+	configCRD = makeConfigCRD(config)
+	secretCRD, err = makeSecretCRD()
+	if err != nil {
+		t.Fatal(err)
+	}
+	configMapYAML, err = makeYAML(configCRD, secretCRD)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tf, err = ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	if _, err := tf.WriteString(configMapYAML); err != nil {
+		t.Fatal(err)
+	}
+	if err := tf.Close(); err != nil {
+		t.Fatal(err)
+	}
+	r = &RootArgs{
+		IsOPDK:     true,
+		ConfigPath: tf.Name(),
+		Token:      "token",
+	}
+
+	if err := r.Resolve(false, true); err != nil {
+		t.Errorf("want no error got %v", err)
+	}
+	if !r.IsOPDK {
+		t.Error("want IsOPDK to be true, got false")
+	}
+
+	config = `
+  global:
+    namespace: ns
+  tenant:
+    remote_service_api: https://org-test.apigee.net/remote-service
+    internal_api: https://opdk.apigee.net/edgemicro
+    org_name: org
+    env_name: env`
+	configCRD = makeConfigCRD(config)
+	secretCRD, err = makeSecretCRD()
+	if err != nil {
+		t.Fatal(err)
+	}
+	configMapYAML, err = makeYAML(configCRD, secretCRD)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tf, err = ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	if _, err := tf.WriteString(configMapYAML); err != nil {
+		t.Fatal(err)
+	}
+	if err := tf.Close(); err != nil {
+		t.Fatal(err)
+	}
+	r = &RootArgs{
+		IsLegacySaaS: true,
+		ConfigPath:   tf.Name(),
+		Token:        "token",
+	}
+
+	if err := r.Resolve(false, true); err != nil {
+		t.Errorf("want no error got %v", err)
+	}
+	if !r.IsLegacySaaS {
+		t.Error("want IsLegacySaaS to be true, got false")
+	}
+
+	config = `
+  global:
+    namespace: ns
+  tenant:
+    remote_service_api: https://org-test.apigee.net/remote-service
+    org_name: org
+    env_name: env`
+	configCRD = makeConfigCRD(config)
+	secretCRD, err = makeSecretCRD()
+	if err != nil {
+		t.Fatal(err)
+	}
+	configMapYAML, err = makeYAML(configCRD, secretCRD)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tf, err = ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tf.Name())
+	if _, err := tf.WriteString(configMapYAML); err != nil {
+		t.Fatal(err)
+	}
+	if err := tf.Close(); err != nil {
+		t.Fatal(err)
+	}
+	r = &RootArgs{
+		IsLegacySaaS: true,
+		ConfigPath:   tf.Name(),
+		Token:        "token",
+	}
+
+	if err := r.Resolve(false, true); err != nil {
+		t.Errorf("want no error got %v", err)
+	}
+	if r.IsGCPManaged {
+		t.Error("want IsGCPManaged to be false, got true")
+	}
+}
+
 func TestResolveMissingSecret(t *testing.T) {
 	const config = `
 tenant:
