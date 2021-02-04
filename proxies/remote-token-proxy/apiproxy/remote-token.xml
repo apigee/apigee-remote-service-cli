@@ -1,6 +1,6 @@
 <APIProxy revision="2" name="remote-token">
-    <DisplayName>remote-service</DisplayName>
-    <Description>remote-service</Description>
+    <DisplayName>remote-token</DisplayName>
+    <Description>Apigee Adapter for Envoy OAuth Sample</Description>
     <CreatedAt>1612370880213</CreatedAt>
     <LastModifiedAt>1612370880213</LastModifiedAt>
     <BasePaths>/remote-token</BasePaths>

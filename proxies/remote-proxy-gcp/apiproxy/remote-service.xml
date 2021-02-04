@@ -1,6 +1,6 @@
 <APIProxy revision="62" name="remote-service">
     <DisplayName>remote-service</DisplayName>
-    <Description>remote-service</Description>
+    <Description>Apigee Adapter for Envoy Runtime API</Description>
     <CreatedAt>1612307612685</CreatedAt>
     <LastModifiedAt>1612307612685</LastModifiedAt>
     <BasePaths>/remote-service</BasePaths>
