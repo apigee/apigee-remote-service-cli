@@ -3,7 +3,7 @@
     <Basepaths>/remote-service</Basepaths>
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
     <CreatedAt>1585868518843</CreatedAt>
-    <Description>remote-service</Description>
+    <Description>Apigee Adapter for Envoy Runtime API</Description>
     <DisplayName>remote-service</DisplayName>
     <LastModifiedAt>1607118258525</LastModifiedAt>
     <Policies>

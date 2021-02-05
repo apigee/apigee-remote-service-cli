@@ -46,6 +46,15 @@ const (
 	internalProxyURLFormatOPDK  = "%s/edgemicro" // runtimeBase
 	remoteServicePath           = "/remote-service"
 	remoteServiceProxyURLFormat = "%s" + remoteServicePath // runtimeBase
+	remoteTokenPath             = "/remote-token"
+	remoteTokenProxyURLFormat   = "%s" + remoteTokenPath // runtimeBase
+
+	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
+	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
+	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
+
+	certsURLFormat = "%s/certs" // RemoteTokenProxyURL
+	tokenURLFormat = "%s/token" // RemoteTokenProxyURL
 )
 
 // BuildInfoType holds version information
@@ -82,6 +91,7 @@ type RootArgs struct {
 	// the following is derived in Resolve()
 	InternalProxyURL      string
 	RemoteServiceProxyURL string
+	RemoteTokenProxyURL   string
 	ApigeeClient          *apigee.EdgeClient
 	ClientOpts            *apigee.EdgeClientOptions
 }
@@ -161,6 +171,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 
 	r.RemoteServiceProxyURL = fmt.Sprintf(remoteServiceProxyURLFormat, r.RuntimeBase)
+	r.RemoteTokenProxyURL = fmt.Sprintf(remoteTokenProxyURLFormat, r.RuntimeBase)
 
 	if r.IsGCPManaged && !skipAuth && r.Token == "" {
 		return fmt.Errorf("--token is required for hybrid")
@@ -305,4 +316,24 @@ func (r *RootArgs) PrintMissingFlags(missingFlagNames []string) error {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
+}
+
+func (r *RootArgs) GetProductsURL() string {
+	return fmt.Sprintf(productsURLFormat, r.RemoteServiceProxyURL)
+}
+
+func (r *RootArgs) GetVerifyAPIKeyURL() string {
+	return fmt.Sprintf(verifyAPIKeyURLFormat, r.RemoteServiceProxyURL)
+}
+
+func (r *RootArgs) GetQuotasURL() string {
+	return fmt.Sprintf(quotasURLFormat, r.RemoteServiceProxyURL)
+}
+
+func (r *RootArgs) GetCertsURL() string {
+	return fmt.Sprintf(certsURLFormat, r.RemoteTokenProxyURL)
+}
+
+func (r *RootArgs) GetTokenURL() string {
+	return fmt.Sprintf(tokenURLFormat, r.RemoteTokenProxyURL)
 }

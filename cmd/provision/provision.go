@@ -38,18 +38,14 @@ import (
 )
 
 const (
-	kvmName       = "remote-service"
-	cacheName     = "remote-service"
-	encryptKVM    = true
-	authProxyName = "remote-service"
+	kvmName        = "remote-service"
+	cacheName      = "remote-service"
+	encryptKVM     = true
+	authProxyName  = "remote-service"
+	tokenProxyName = "remote-token"
 
 	remoteServiceProxyZip = "remote-service-gcp.zip"
-
-	certsURLFormat        = "%s/certs"        // RemoteServiceProxyURL
-	productsURLFormat     = "%s/products"     // RemoteServiceProxyURL
-	verifyAPIKeyURLFormat = "%s/verifyApiKey" // RemoteServiceProxyURL
-	quotasURLFormat       = "%s/quotas"       // RemoteServiceProxyURL
-	tokenURLFormat        = "%s/token"        // RemoteServiceProxyURL
+	remoteTokenProxyZip   = "remote-token.zip"
 )
 
 // default durations for the proxy verification retry
@@ -239,8 +235,17 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return err
 	}
 
-	if err := p.checkAndDeployProxy(authProxyName, customizedProxy, verbosef); err != nil {
-		return errors.Wrapf(err, "deploying proxy %s", authProxyName)
+	if err := p.checkAndDeployProxy(authProxyName, customizedProxy, p.forceProxyInstall, verbosef); err != nil {
+		return errors.Wrapf(err, "deploying runtime proxy %s", authProxyName)
+	}
+
+	// Deploy token proxy
+	tokenProxy, err := getCustomizedProxy(tempDir, remoteTokenProxyZip, nil)
+	if err != nil {
+		return err
+	}
+	if err := p.checkAndDeployProxy(tokenProxyName, tokenProxy, false, verbosef); err != nil {
+		return errors.Wrapf(err, "deploying token proxy %s", tokenProxyName)
 	}
 
 	if !p.IsGCPManaged {
@@ -492,10 +497,10 @@ func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) erro
 	return verifyErrors
 }
 
-// verify GET RemoteServiceProxyURL/certs
-// verify GET RemoteServiceProxyURL/products
-// verify POST RemoteServiceProxyURL/verifyApiKey
-// verify POST RemoteServiceProxyURL/quotas
+// verify GET /certs
+// verify GET /products
+// verify POST /verifyApiKey
+// verify POST /quotas
 func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.FormatFn) error {
 
 	verifyGET := func(targetURL string) error {
@@ -515,15 +520,13 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 
 	var res *http.Response
 	var verifyErrors error
-	certsURL := fmt.Sprintf(certsURLFormat, p.RemoteServiceProxyURL)
-	err := verifyGET(certsURL)
+	err := verifyGET(p.GetCertsURL())
 	verifyErrors = multierr.Append(verifyErrors, err)
 
-	productsURL := fmt.Sprintf(productsURLFormat, p.RemoteServiceProxyURL)
-	err = verifyGET(productsURL)
+	err = verifyGET(p.GetProductsURL())
 	verifyErrors = multierr.Append(verifyErrors, err)
 
-	verifyAPIKeyURL := fmt.Sprintf(verifyAPIKeyURLFormat, p.RemoteServiceProxyURL)
+	verifyAPIKeyURL := p.GetVerifyAPIKeyURL()
 	req, err := http.NewRequest(http.MethodPost, verifyAPIKeyURL, strings.NewReader(`{ "apiKey": "x" }`))
 	if err == nil {
 		req.Header.Add("Content-Type", "application/json")
@@ -539,7 +542,7 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		verifyErrors = multierr.Append(verifyErrors, err)
 	}
 
-	quotasURL := fmt.Sprintf(quotasURLFormat, p.RemoteServiceProxyURL)
+	quotasURL := p.GetQuotasURL()
 	req, err = http.NewRequest(http.MethodPost, quotasURL, strings.NewReader("{}"))
 	if err == nil {
 		req.Header.Add("Content-Type", "application/json")

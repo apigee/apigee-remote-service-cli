@@ -565,6 +565,49 @@ func TestPrintMissingFlags(t *testing.T) {
 	}
 }
 
+func TestURLCreators(t *testing.T) {
+	r := RootArgs{
+		RuntimeBase: "runtime",
+	}
+	if err := r.Resolve(true, true); err != nil {
+		t.Errorf("unexpected err: %v", err)
+	}
+
+	remoteServiceBase := "runtime" + remoteServicePath
+
+	want := remoteServiceBase + "/products"
+	got := r.GetProductsURL()
+	if want != got {
+		t.Errorf("want: %s, got: %s", want, got)
+	}
+
+	want = remoteServiceBase + "/verifyApiKey"
+	got = r.GetVerifyAPIKeyURL()
+	if want != got {
+		t.Errorf("want: %s, got: %s", want, got)
+	}
+
+	want = remoteServiceBase + "/quotas"
+	got = r.GetQuotasURL()
+	if want != got {
+		t.Errorf("want: %s, got: %s", want, got)
+	}
+
+	remoteTokenBase := "runtime" + remoteTokenPath
+
+	want = remoteTokenBase + "/certs"
+	got = r.GetCertsURL()
+	if want != got {
+		t.Errorf("want: %s, got: %s", want, got)
+	}
+
+	want = remoteTokenBase + "/token"
+	got = r.GetTokenURL()
+	if want != got {
+		t.Errorf("want: %s, got: %s", want, got)
+	}
+}
+
 func makeConfigCRD(config string) *server.ConfigMapCRD {
 	data := map[string]string{"config.yaml": config}
 	return &server.ConfigMapCRD{

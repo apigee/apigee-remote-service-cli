@@ -72,6 +72,7 @@ func TestJWKSRotation(t *testing.T) {
 
 	r := &RootArgs{
 		RemoteServiceProxyURL: ts.URL,
+		RemoteTokenProxyURL:   ts.URL,
 	}
 	truncate := 4
 	_, _, jwksBytes, err := r.CreateJWKS(truncate, print.Printf)
@@ -93,6 +94,7 @@ func TestFetchingOldJWKSError(t *testing.T) {
 
 	r := &RootArgs{
 		RemoteServiceProxyURL: "not a url",
+		RemoteTokenProxyURL:   "not a url",
 	}
 	truncate := 2
 	_, err := r.RotateJWKS(&jwk.Set{}, truncate)

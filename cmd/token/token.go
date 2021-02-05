@@ -35,8 +35,6 @@ import (
 )
 
 const (
-	tokenURLFormat         = "%s/token"  // RemoteServiceProxyURL
-	certsURLFormat         = "%s/certs"  // RemoteServiceProxyURL
 	rotateURLFormat        = "%s/rotate" // RemoteServiceProxyURL
 	clientCredentialsGrant = "client_credentials"
 )
@@ -209,7 +207,7 @@ func (t *token) createToken(printf shared.FormatFn) (string, error) {
 		return "", errors.Wrap(err, "creating request body")
 	}
 
-	tokenURL := fmt.Sprintf(tokenURLFormat, t.RemoteServiceProxyURL)
+	tokenURL := t.GetTokenURL()
 	req, err := http.NewRequest(http.MethodPost, tokenURL, body)
 	if err != nil {
 		return "", errors.Wrap(err, "creating request")
@@ -272,7 +270,7 @@ func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 	// verify JWT
 	printf("\nverifying...")
 
-	url := fmt.Sprintf(certsURLFormat, t.RemoteServiceProxyURL)
+	url := t.GetCertsURL()
 	jwkSet, err := jwk.FetchHTTP(url)
 	if err != nil {
 		return errors.Wrap(err, "fetching certs")

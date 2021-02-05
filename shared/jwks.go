@@ -20,7 +20,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"sort"
 	"time"
 
@@ -30,9 +29,8 @@ import (
 )
 
 const (
-	certsURLFormat = "%s/certs" // RemoteServiceProxyURL
-	certKeyLength  = 2048
-	pemType        = "RSA PRIVATE KEY"
+	certKeyLength = 2048
+	pemType       = "RSA PRIVATE KEY"
 )
 
 // CreateNewKey returns keyID, private key, jwks, error
@@ -68,7 +66,7 @@ func (r *RootArgs) RotateJWKS(jwks *jwk.Set, truncate int) (*jwk.Set, error) {
 	if truncate > 1 { // if 1, just skip getting old
 		var oldJWKS *jwk.Set
 		var err error
-		certsURL := fmt.Sprintf(certsURLFormat, r.RemoteServiceProxyURL)
+		certsURL := r.GetCertsURL()
 		if oldJWKS, err = jwk.FetchHTTP(certsURL); err != nil {
 			return nil, errors.Wrapf(err, "retrieving JWKs from: %s", certsURL)
 		}

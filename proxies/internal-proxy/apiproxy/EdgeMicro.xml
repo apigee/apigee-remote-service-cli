@@ -3,7 +3,7 @@
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
     <CreatedAt>1437159946043</CreatedAt>
     <CreatedBy>adminui@apigee.com</CreatedBy>
-    <Description></Description>
+    <Description>Apigee Adapter for Envoy Internal Runtime API</Description>
     <DisplayName>EdgeMicro</DisplayName>
     <LastModifiedAt>1437163826987</LastModifiedAt>
     <LastModifiedBy>adminui@apigee.com</LastModifiedBy>

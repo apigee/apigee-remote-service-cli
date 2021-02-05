@@ -107,7 +107,7 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 		return err
 	}
 
-	return p.checkAndDeployProxy(internalProxyName, customizedZip, verbosef)
+	return p.checkAndDeployProxy(internalProxyName, customizedZip, p.forceProxyInstall, verbosef)
 }
 
 //check if the KVM exists, if it doesn't, create a new one and sets certs for JWT
