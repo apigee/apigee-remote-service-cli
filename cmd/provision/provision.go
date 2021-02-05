@@ -45,7 +45,7 @@ const (
 	tokenProxyName = "remote-token"
 
 	remoteServiceProxyZip = "remote-service-gcp.zip"
-	remoteTokenProxyZip   = "remote-token.zip"
+	remoteTokenProxyZip   = "remote-token-gcp.zip"
 )
 
 // default durations for the proxy verification retry
@@ -224,12 +224,12 @@ func (p *provision) run(printf shared.FormatFn) error {
 		}
 	}
 
-	// input remote-service proxy
+	// deploy remote-service proxy
 	var customizedProxy string
 	if p.IsGCPManaged {
 		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, replaceVersion)
 	} else {
-		customizedProxy, err = getCustomizedProxy(tempDir, legacyAuthProxyZip, replaceVHAndAuthTarget)
+		customizedProxy, err = getCustomizedProxy(tempDir, legacyServiceProxyZip, replaceVHAndAuthTarget)
 	}
 	if err != nil {
 		return err
@@ -239,12 +239,16 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return errors.Wrapf(err, "deploying runtime proxy %s", authProxyName)
 	}
 
-	// Deploy token proxy
-	tokenProxy, err := getCustomizedProxy(tempDir, remoteTokenProxyZip, nil)
+	// Deploy remote-token proxy
+	if p.IsGCPManaged {
+		customizedProxy, err = getCustomizedProxy(tempDir, remoteTokenProxyZip, nil)
+	} else {
+		customizedProxy, err = getCustomizedProxy(tempDir, legacyTokenProxyZip, replaceVH)
+	}
 	if err != nil {
 		return err
 	}
-	if err := p.checkAndDeployProxy(tokenProxyName, tokenProxy, false, verbosef); err != nil {
+	if err := p.checkAndDeployProxy(tokenProxyName, customizedProxy, false, verbosef); err != nil {
 		return errors.Wrapf(err, "deploying token proxy %s", tokenProxyName)
 	}
 

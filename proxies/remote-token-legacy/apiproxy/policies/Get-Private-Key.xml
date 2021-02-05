@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<KeyValueMapOperations encrypted="false" mapIdentifier="remote-service" async="false" continueOnError="false" enabled="true" name="Get-Private-Key">
+    <DisplayName>Get Private Key</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <ExclusiveCache>false</ExclusiveCache>
+    <ExpiryTimeInSecs>86400</ExpiryTimeInSecs>
+    <InitialEntries/>
+    <Get assignTo="private.private_key" index="1">
+        <Key>
+            <Parameter>private_key</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="private.kid" index="1">
+        <Key>
+            <Parameter>kid</Parameter>
+        </Key>
+    </Get>
+    <Scope>environment</Scope>
+</KeyValueMapOperations>

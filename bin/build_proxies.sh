@@ -34,10 +34,11 @@ TEMP_DIR=$(mktemp -d)
 PROXIES_ZIP_DIR="${TEMP_DIR}/proxies"
 PROXIES_SOURCE_DIR="${ROOTDIR}/proxies"
 
-LEGACY_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-legacy"
+LEGACY_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-service-legacy"
+LEGACY_TOKEN_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-token-legacy"
 INTERNAL_PROXY_SRC="${PROXIES_SOURCE_DIR}/internal-proxy"
-GCP_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-proxy-gcp"
-TOKEN_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-token-proxy"
+GCP_REMOTE_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-service-gcp"
+GCP_TOKEN_PROXY_SRC="${PROXIES_SOURCE_DIR}/remote-token-gcp"
 
 if [ ! -d "${PROXIES_ZIP_DIR}" ]; then
   mkdir -p "${PROXIES_ZIP_DIR}"
@@ -50,6 +51,13 @@ rm -f "${ZIP}"
 cd "${LEGACY_REMOTE_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
+# legacy saas token proxy
+ZIP=${PROXIES_ZIP_DIR}/remote-token-legacy.zip
+echo "building ${ZIP}"
+rm -f "${ZIP}"
+cd "${LEGACY_TOKEN_PROXY_SRC}"
+zip -qr "${ZIP}" apiproxy
+
 # gcp remote proxy
 ZIP=${PROXIES_ZIP_DIR}/remote-service-gcp.zip
 echo "building ${ZIP}"
@@ -57,18 +65,18 @@ rm -f "${ZIP}"
 cd "${GCP_REMOTE_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
+# gcp token proxy
+ZIP=${PROXIES_ZIP_DIR}/remote-token-gcp.zip
+echo "building ${ZIP}"
+rm -f "${ZIP}"
+cd "${GCP_TOKEN_PROXY_SRC}"
+zip -qr "${ZIP}" apiproxy
+
 # internal proxy
 ZIP=${PROXIES_ZIP_DIR}/internal.zip
 echo "building ${ZIP}"
 rm -f "${ZIP}"
 cd "${INTERNAL_PROXY_SRC}"
-zip -qr "${ZIP}" apiproxy
-
-# token proxy
-ZIP=${PROXIES_ZIP_DIR}/remote-token.zip
-echo "building ${ZIP}"
-rm -f "${ZIP}"
-cd "${TOKEN_PROXY_SRC}"
 zip -qr "${ZIP}" apiproxy
 
 # create resource

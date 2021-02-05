@@ -110,78 +110,6 @@
             </Response>
             <Condition>(proxy.pathsuffix MatchesPath "/products") and (request.verb = "GET")</Condition>
         </Flow>
-        <Flow name="Obtain Access Token">
-            <Description/>
-            <Request>
-                <Step>
-                    <Name>Extract-OAuth-Params</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Unknown-Request</Name>
-                    <Condition>client_id is null OR client_secret is null OR grant_type is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Create-OAuth-Request</Name>
-                </Step>
-                <Step>
-                    <Name>Access-App-Info</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Invalid-API-Key</Name>
-                    <Condition>AccessEntity.Access-App-Info is null</Condition>
-                </Step>
-                <Step>
-                    <Name>Extract-App-Name</Name>
-                </Step>
-                <Step>
-                    <Name>Products-to-JSON</Name>
-                </Step>
-                <Step>
-                    <Name>AccessTokenRequest</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Unknown-Request</Name>
-                    <Condition>oauthV2.AccessTokenRequest.failed is true</Condition>
-                </Step>
-                <Step>
-                    <Name>Set-JWT-Variables</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Unknown-Request</Name>
-                    <Condition>isValidApiKey != "true"</Condition>
-                </Step>
-                <Step>
-                    <Name>Get-Private-Key</Name>
-                </Step>
-                <Step>
-                    <Name>Generate-Access-Token</Name>
-                </Step>
-            </Request>
-            <Response>
-                <Step>
-                    <Name>Set-Token-Response</Name>
-                </Step>
-            </Response>
-            <Condition>(proxy.pathsuffix MatchesPath "/token") and (request.verb = "POST")</Condition>
-        </Flow>
-        <Flow name="Get JWK Public Keys">
-            <Description>This flow returns public keys as JWK</Description>
-            <Request>
-                <Step>
-                    <Name>Get-JWKS</Name>
-                </Step>
-                <Step>
-                    <Name>Raise-Fault-Missing-JWKS</Name>
-                    <Condition>private.jwks is null</Condition>
-                </Step>
-            </Request>
-            <Response>
-                <Step>
-                    <Name>Send-JWKs-Message</Name>
-                </Step>
-            </Response>
-            <Condition>(proxy.pathsuffix MatchesPath "/certs") and (request.verb = "GET")</Condition>
-        </Flow>
         <Flow name="Get Version">
             <Description>Get the version of the API Proxy</Description>
             <Request/>
@@ -252,18 +180,11 @@
             <Response/>
         </Flow>
     </Flows>
-    <PostFlow name="PostFlow">
-        <Request/>
-        <Response/>
-    </PostFlow>
-    <PreFlow name="PreFlow">
-        <Request/>
-        <Response/>
-    </PreFlow>
     <HTTPProxyConnection>
         <BasePath>/remote-service</BasePath>
         <Properties/>
         <VirtualHost>default</VirtualHost>
+        <VirtualHost>secure</VirtualHost>
     </HTTPProxyConnection>
     <RouteRule name="noroute"/>
 </ProxyEndpoint>

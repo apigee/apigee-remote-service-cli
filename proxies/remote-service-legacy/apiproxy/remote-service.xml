@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="1" name="remote-service">
+<APIProxy revision="46" name="remote-service">
     <Basepaths>/remote-service</Basepaths>
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
-    <CreatedAt>1585868518843</CreatedAt>
+    <CreatedAt>1612549923887</CreatedAt>
     <Description>Apigee Adapter for Envoy Runtime API</Description>
     <DisplayName>remote-service</DisplayName>
-    <LastModifiedAt>1607118258525</LastModifiedAt>
+    <LastModifiedAt>1612549923887</LastModifiedAt>
+    <ManifestVersion>SHA-512:f6cd8b4f1abd50da2545b0fb2c4468aede920299ece3b8195164f7d576f6027bde4e38a65d22d04f4c47cc71e168309ef705640ea3cf7fffe28837651bc93bda</ManifestVersion>
     <Policies>
         <Policy>Access-App-Info</Policy>
         <Policy>Access-Developer-Info</Policy>
-        <Policy>AccessTokenRequest</Policy>
         <Policy>Authenticate-Call</Policy>
         <Policy>AuthenticationError</Policy>
-        <Policy>Create-OAuth-Request</Policy>
         <Policy>DistributedQuota</Policy>
         <Policy>Eval-Quota-Result</Policy>
         <Policy>Extract-API-Key</Policy>
         <Policy>Extract-App-Name</Policy>
-        <Policy>Extract-OAuth-Params</Policy>
         <Policy>Extract-Request-ETag</Policy>
         <Policy>Extract-Rotate-Variables</Policy>
-        <Policy>Generate-Access-Token</Policy>
         <Policy>Generate-VerifyKey-Token</Policy>
-        <Policy>Get-JWKS</Policy>
         <Policy>Get-Private-Key</Policy>
         <Policy>JavaCallout</Policy>
         <Policy>Lookup-Products</Policy>
@@ -32,15 +28,13 @@
         <Policy>Raise-Fault-Invalid-API-Key</Policy>
         <Policy>Raise-Fault-Missing-JWKS</Policy>
         <Policy>Raise-Fault-Not-Modified</Policy>
-        <Policy>Raise-Fault-Unknown-Request</Policy>
-        <Policy>Send-JWKs-Message</Policy>
         <Policy>Send-Product-List</Policy>
         <Policy>Send-Version</Policy>
-        <Policy>Set-Product-Cache</Policy>
         <Policy>Set-JWT-Variables</Policy>
+        <Policy>Set-Product-Cache</Policy>
         <Policy>Set-Quota-Response</Policy>
         <Policy>Set-Quota-Variables</Policy>
-        <Policy>Set-Response</Policy>
+        <Policy>Set-VerifyKey-Response</Policy>
         <Policy>Update-Keys</Policy>
     </Policies>
     <ProxyEndpoints>
@@ -50,10 +44,10 @@
         <Resource>java://products-javacallout-2.0.0.jar</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
         <Resource>jsc://parse-product-cache.js</Resource>
-        <Resource>jsc://set-product-cache.js</Resource>
         <Resource>jsc://set-jwt-variables.js</Resource>
+        <Resource>jsc://set-product-cache.js</Resource>
         <Resource>jsc://set-quota-variables.js</Resource>
-        <Resource>jsc://set-response.js</Resource>
+        <Resource>jsc://set-verifykey-response.js</Resource>
     </Resources>
     <Spec></Spec>
     <TargetServers/>

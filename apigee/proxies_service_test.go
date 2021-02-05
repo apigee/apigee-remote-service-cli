@@ -167,19 +167,19 @@ func TestImportProxy(t *testing.T) {
 		client: client,
 	}
 
-	_, _, err = ps.Import("", "../proxies/remote-proxy-gcp/")
+	_, _, err = ps.Import("", "../proxies/remote-service-gcp/")
 	if err != nil {
 		t.Errorf("want no error got %v", err)
 	}
 
-	_, _, err = ps.Import("", "../proxies/remote-proxy-gcp/apiproxy")
+	_, _, err = ps.Import("", "../proxies/remote-service-gcp/apiproxy")
 	testutil.ErrorContains(t, err, "while creating temp dir, error:")
 
-	_, _, err = ps.Import("", "../proxies/remote-proxy-gcp/apiproxy/remote-service.xml")
+	_, _, err = ps.Import("", "../proxies/remote-service-gcp/apiproxy/remote-service.xml")
 	testutil.ErrorContains(t, err, "source must be a zipfile")
 
 	ps.client.IsGCPManaged = true
-	_, _, err = ps.Import("", "../proxies/remote-proxy-gcp/")
+	_, _, err = ps.Import("", "../proxies/remote-service-gcp/")
 	if err != nil {
 		t.Errorf("want no error got %v", err)
 	}

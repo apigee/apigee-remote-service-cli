@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="45" name="remote-token">
+    <Basepaths>/remote-token</Basepaths>
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1612548800519</CreatedAt>
+    <Description>Apigee Adapter for Envoy OAuth Sample</Description>
+    <DisplayName>remote-token</DisplayName>
+    <LastModifiedAt>1612548800519</LastModifiedAt>
+    <ManifestVersion>SHA-512:4b0b53e255fdc776cef634285cc9694134b1a7bd9f68faa761a765c58f37dbb9d62e286783a0ab6879056dbdca70844ec67d1731def520c4fcfe83c3f9d5e6e9</ManifestVersion>
+    <Policies>
+        <Policy>Access-App-Info</Policy>
+        <Policy>AccessTokenRequest</Policy>
+        <Policy>AuthenticationError</Policy>
+        <Policy>Create-OAuth-Request</Policy>
+        <Policy>Extract-App-Name</Policy>
+        <Policy>Extract-OAuth-Params</Policy>
+        <Policy>Generate-Access-Token</Policy>
+        <Policy>Get-JWKS</Policy>
+        <Policy>Get-Private-Key</Policy>
+        <Policy>Products-to-JSON</Policy>
+        <Policy>Raise-Fault-Invalid-API-Key</Policy>
+        <Policy>Raise-Fault-Missing-JWKS</Policy>
+        <Policy>Raise-Fault-Unknown-Request</Policy>
+        <Policy>Send-JWKs-Message</Policy>
+        <Policy>Set-JWT-Variables</Policy>
+        <Policy>Set-Token-Response</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <Resources>
+        <Resource>jsc://set-jwt-variables.js</Resource>
+        <Resource>jsc://set-token-response.js</Resource>
+    </Resources>
+    <Spec></Spec>
+    <TargetServers/>
+    <TargetEndpoints/>
+</APIProxy>
