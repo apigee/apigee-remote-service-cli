@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Manifest name="manifest">
+    <Policies>
+        <VersionInfo resourceName="Access-App-Info" version="SHA-512:f0bc29c894babd19240b82ffd9a8243c60c6f030643d3afe5967f6b143ab1f73876396622e9754bac86cd2e42b442f91092fb9268c67c2c2b7c686ea575bc42c"/>
+        <VersionInfo resourceName="AccessTokenRequest" version="SHA-512:5cafbbf9cc32c9dd8b52b78698e0101b3cca4909f7279190d3d95698bcf2a326b697003822fea36bf65670525af3521d44c05d0ec71660e56434e402d43cfc56"/>
+        <VersionInfo resourceName="AuthenticationError" version="SHA-512:9baea620ec25c18e7f2e1beee969265d403d5d32e3389c794486aec8a11f8330d81d4df9a2184a0b61462950107ec611cbcd391fcd6e917cb985b0d7b2e6e156"/>
+        <VersionInfo resourceName="Create-OAuth-Request" version="SHA-512:44970fe5002a5322c44b6071edd941f99dbabf80b07390ce370adb8c1a6af4b193a94133efb7bf1f9ee9de7876ca8890a7a50872dccba4bf5cabbaef407eb50a"/>
+        <VersionInfo resourceName="Extract-App-Name" version="SHA-512:30171eedaad59c28e7de89013a6ca17a2c3dadd28181f17f61a1e649296aabf0e7dee24a3bad9e5fc11c3fac8e8d0bd0d985b73bbd2d50f09fc9410df892af88"/>
+        <VersionInfo resourceName="Extract-OAuth-Params" version="SHA-512:1526aae995d23500e0b0b44bdaaeef3042dcfec1f1c2c35db331b3164c1b8be8d6c45fe70bad6822bb22988667d5300f9828825ae519befbfa81fade6bdb16a5"/>
+        <VersionInfo resourceName="Generate-Access-Token" version="SHA-512:28d2ecb4b34f57e9037c5e7683b38599ecf6f39720023b3cd06424d86d0aa990294bd64d8c4639c863277e0ba31b397b28bbfdf97dd603af4ef8291ca87b28f9"/>
+        <VersionInfo resourceName="Get-JWKS" version="SHA-512:39ac6b6b055ed5edf5c55346574a26fc5d9fdf4718a0d8ce586614c6c30062ac43423947faffa19d7b0224d11f7f54cdd3062d53d3acbdb165b810955b9d64ab"/>
+        <VersionInfo resourceName="Get-Private-Key" version="SHA-512:03fe74a5aa71c216700968404faedffc5bb57de3c43ff52e04098d6bc68b2f14754c9b5446817d940a8dd8c816c9b4a7827b7939765f95025811b9477d72c94c"/>
+        <VersionInfo resourceName="Products-to-JSON" version="SHA-512:0cd590deb81af11d8d82eed90daf8af73d0be2cd872389a2e7bfac5bd06a46d3da70b614b6228c682c2388ad84d8e813d5ed8705077b6fb7a39ccdc8df1a5ec0"/>
+        <VersionInfo resourceName="Raise-Fault-Invalid-API-Key" version="SHA-512:b518f56b740fc7a9ea668c8e82ee7469e78f3544e32f23ad9d8443240c75d25628577c99ed4576faaf6ee615689d0dee57a607d589f8ff2dd99f7213173c7515"/>
+        <VersionInfo resourceName="Raise-Fault-Missing-JWKS" version="SHA-512:e3516443bf12ab423879f282d7cb055ff84bfd730ab5487e22baaa8172951546a71f2276bad1462144063c3f1a815dfd03123d289b558ac41ede6b779fc5fe52"/>
+        <VersionInfo resourceName="Raise-Fault-Unknown-Request" version="SHA-512:a5b6abc83217e19c7e77c2c9a4946be0860d985e4aad2b0356d06d84029d7a1bf2493808b3bd55418576feac984a59e844cb85cdb5b9773a899065a18c95f189"/>
+        <VersionInfo resourceName="Send-JWKs-Message" version="SHA-512:be66150e9948341f53664b033d1b79a96099937ae04cc59e04c659562d2b85d56c5fa5a541e157f63378181ef69fa8b63fc1919f7b0edb49f9324ea4830c0b96"/>
+        <VersionInfo resourceName="Set-JWT-Variables" version="SHA-512:90d33279f3717b985a81ea7dca877fd6694319372a2eee207053b280fdeaea462ba662dd7c6dc3df4429ff7d280237a05feeb58189770289c1d37ac693f39cef"/>
+        <VersionInfo resourceName="Set-Token-Response" version="SHA-512:39e8d7961e9e96056c161293676b7b73f2c8ae4b78d0e216de3109928db51093ce9dfb8f1ff635423d954c31c3fc21b762e6d06d0027b8014e487eee052bd45a"/>
+    </Policies>
+    <ProxyEndpoints>
+        <VersionInfo resourceName="default" version="SHA-512:82ddac6d57afd69d7a42447425d91db065bdb88a0d5903d4467a4d26996733190650b1b66da339933bca0e21e16a91cb8b154e38c3423ad7b614fe89a34ad9fe"/>
+    </ProxyEndpoints>
+    <Resources>
+        <VersionInfo resourceName="jsc://set-jwt-variables.js" version="SHA-512:9e28241cc23452b4508691bec9a04265eef8a5104a8833185fe5cc69415423e5986e81cbba92b3c7af0244e8d1cd59a8c065169c512e5b54a4242e5d868989ac"/>
+        <VersionInfo resourceName="jsc://set-token-response.js" version="SHA-512:cd1e360d1af58db3415d7bd2dc2550faedfbb36c71cd74389c704af3c435c204cbdca40731c08e13672432a8411a597cf3763f5147085376fdfef57b73925694"/>
+    </Resources>
+    <SharedFlows/>
+    <TargetEndpoints/>
+</Manifest>

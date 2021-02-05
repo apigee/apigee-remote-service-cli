@@ -40,7 +40,8 @@ const (
 	legacyCredentialURLFormat = "%s/credential/organization/%s/environment/%s"  // InternalProxyURL, org, env
 	analyticsURLFormat        = "%s/analytics/organization/%s/environment/%s"   // InternalProxyURL, org, env
 	legacyAnalyticURLFormat   = "%s/axpublisher/organization/%s/environment/%s" // InternalProxyURL, org, env
-	legacyAuthProxyZip        = "remote-service-legacy.zip"
+	legacyServiceProxyZip     = "remote-service-legacy.zip"
+	legacyTokenProxyZip       = "remote-token-legacy.zip"
 
 	// virtualHost is only necessary for legacy
 	virtualHostDeleteText     = "<VirtualHost>secure</VirtualHost>"
