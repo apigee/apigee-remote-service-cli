@@ -129,7 +129,7 @@ func TestGetValueKVM(t *testing.T) {
 	kvm := &KVM{
 		Name: "kvm",
 		Entries: []Entry{
-			Entry{
+			{
 				Name:  "k1",
 				Value: "v1",
 			},
