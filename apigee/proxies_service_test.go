@@ -36,14 +36,14 @@ func proxyTestServer(t *testing.T) *httptest.Server {
 
 	dep := EnvironmentDeployment{
 		Revision: []RevisionDeployment{
-			RevisionDeployment{
+			{
 				Number: 3,
 				State:  "deployed",
 			},
-			RevisionDeployment{
+			{
 				Number: 2,
 			},
-			RevisionDeployment{
+			{
 				Number: 1,
 			},
 		},
@@ -51,13 +51,13 @@ func proxyTestServer(t *testing.T) *httptest.Server {
 
 	gcpDep := GCPDeployments{
 		Deployments: []GCPDeployment{
-			GCPDeployment{
+			{
 				Revision: "3",
 			},
-			GCPDeployment{
+			{
 				Revision: "2",
 			},
-			GCPDeployment{
+			{
 				Revision: "1s",
 			},
 		},
