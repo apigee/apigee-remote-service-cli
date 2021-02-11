@@ -302,7 +302,7 @@ func TestCreateIncompatibleSample(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
-	testutil.ErrorContains(t, err, "checking config file's compatiblity with sample config: specified Istio/Envoy version requires append_metadata_headers to be true in the given config")
+	testutil.ErrorContains(t, err, "checking config file's compatibility with sample config: specified Istio/Envoy version requires append_metadata_headers to be true in the given config")
 }
 
 func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
