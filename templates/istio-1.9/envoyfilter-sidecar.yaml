@@ -1,0 +1,97 @@
+# Installs an Istio EnvoyFilter in the default namespace.
+# It applies to all services in the namespace. If you wish, you
+# may tailor by specifying `workloadSelector` for specific targets.
+# Uses `apigee-remote-service-envoy.apigee:5000` as target.
+
+# This is for Istio 1.7+.
+
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: apigee-remote-{{.TargetService.Name}}
+  namespace: default
+spec:
+  workloadSelector:
+    labels:
+      managed-by: apigee
+  configPatches:
+
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: envoy.http_connection_manager
+            subFilter:
+              name: envoy.router
+    
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.ext_authz
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+          transport_api_version: V3
+          grpc_service:
+            google_grpc:
+              target_uri: apigee-remote-service-envoy.apigee:5000
+              stat_prefix: apigee-remote-service
+            timeout: 1s
+          metadata_context_namespaces:
+            - envoy.filters.http.jwt_authn
+
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: envoy.http_connection_manager
+            subFilter:
+              name: envoy.filters.http.ext_authz
+  
+    patch:
+      operation: INSERT_AFTER
+      value:
+        name: envoy.filters.http.rbac
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
+          rules:
+            action: ALLOW
+            policies:
+              apigee-connector:
+                principals:
+                - any: true
+                permissions:
+                - metadata: 
+                    filter: envoy.filters.http.ext_authz
+                    path:
+                    - key: x-apigee-authorized
+                    value:
+                      string_match:
+                        exact: "true"
+
+  - applyTo: NETWORK_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.http_connection_manager"
+    patch:
+      operation: MERGE
+      value:
+        typed_config:
+          "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
+          access_log:
+          - name: envoy.access_loggers.http_grpc
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.access_loggers.grpc.v3.HttpGrpcAccessLogConfig
+              common_config:
+                transport_api_version: V3
+                log_name: apigee-remote-service
+                grpc_service:
+                  google_grpc:
+                    target_uri: apigee-remote-service-envoy.apigee:5000
+                    stat_prefix: apigee-remote-service

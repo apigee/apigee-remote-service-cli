@@ -89,6 +89,7 @@ func TestTemplatesListing(t *testing.T) {
 		"  envoy-1.17",
 		"  istio-1.7",
 		"  istio-1.8",
+		"  istio-1.9",
 	}
 
 	print.CheckPrefix(t, want)
@@ -211,7 +212,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name()}
+	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name(), "-t", "istio-1.9"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -220,7 +221,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"Generating istio-1.7 configuration files...",
+		"Generating istio-1.9 configuration files...",
 		"  generating apigee-envoy-adapter.yaml...",
 		"  generating envoyfilter-sidecar.yaml...",
 		"  generating httpbin.yaml...",
@@ -254,7 +255,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name(), "-n", "target"}
+	flags := []string{"samples", "create", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name(), "-n", "target", "-t", "istio-1.9"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -263,7 +264,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	}
 
 	want := []string{
-		"Generating istio-1.7 configuration files...",
+		"Generating istio-1.9 configuration files...",
 		"  generating apigee-envoy-adapter.yaml...",
 		"  generating envoyfilter-sidecar.yaml...",
 		"  generating request-authentication.yaml...",
@@ -272,6 +273,36 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	}
 
 	print.CheckPrefix(t, want)
+}
+
+func TestCreateIncompatibleSample(t *testing.T) {
+	print := testutil.Printer("TestCreateIncompatibleSample")
+
+	tmpDir, err := ioutil.TempDir("", "samples")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	config := generateConfig(t, true, false)
+
+	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if _, err := tmpFile.Write(config); err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// existing directory with no overwrite
+	rootArgs := &shared.RootArgs{}
+	flags := []string{"samples", "create", "--out", tmpDir, "-c", tmpFile.Name(), "-t", "istio-1.7"}
+	rootCmd := cmd.GetRootCmd(flags, print.Printf)
+	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
+
+	err = rootCmd.Execute()
+	testutil.ErrorContains(t, err, "checking config file's compatiblity with sample config: specified Istio/Envoy version requires append_metadata_headers to be true in the given config")
 }
 
 func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
@@ -296,7 +327,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--template", "istio-1.7", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name()}
+	flags := []string{"samples", "create", "--template", "istio-1.9", "--out", path.Join(tmpDir, "istio-samples"), "-c", tmpFile.Name()}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
@@ -329,7 +360,7 @@ func TestExistingDirectoryError(t *testing.T) {
 
 	// existing directory with no overwrite
 	rootArgs := &shared.RootArgs{}
-	flags := []string{"samples", "create", "--out", tmpDir, "-c", tmpFile.Name()}
+	flags := []string{"samples", "create", "--out", tmpDir, "-c", tmpFile.Name(), "-t", "istio-1.9"}
 	rootCmd := cmd.GetRootCmd(flags, print.Printf)
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 

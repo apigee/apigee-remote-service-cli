@@ -80,13 +80,7 @@ static_resources:
                     principals:
                     - any: true
                     permissions:
-                    - metadata: 
-                        filter: envoy.filters.http.ext_authz
-                        path:
-                        - key: x-apigee-authorized
-                        value:
-                          string_match:
-                            exact: "true"
+                    - header: { "name": "X-Apigee-Authorized" }
 
           - name: envoy.filters.http.router
             typed_config:
@@ -104,6 +98,16 @@ static_resources:
                   envoy_grpc:
                     cluster_name: apigee-remote-service-envoy
                 log_name: apigee-remote-service-envoy
+              additional_request_headers_to_log:
+              - :authority # default target header
+              # context headers
+              - x-apigee-accesstoken
+              - x-apigee-api
+              - x-apigee-apiproducts
+              - x-apigee-application
+              - x-apigee-clientid
+              - x-apigee-developeremail
+              - x-apigee-environment
 
   clusters:
 
