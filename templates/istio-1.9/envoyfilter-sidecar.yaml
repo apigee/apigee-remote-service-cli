@@ -3,7 +3,7 @@
 # may tailor by specifying `workloadSelector` for specific targets.
 # Uses `apigee-remote-service-envoy.apigee:5000` as target.
 
-# This is for Istio 1.7+.
+# This is for Istio 1.9+.
 
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter

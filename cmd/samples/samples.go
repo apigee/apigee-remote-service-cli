@@ -142,7 +142,7 @@ files related to deployment of their target services.`,
 			}
 			err = s.checkVersionCompatibility()
 			if err != nil {
-				return errors.Wrap(err, "checking config file's compatiblity with sample config")
+				return errors.Wrap(err, "checking config file's compatibility with sample config")
 			}
 			err = s.createSampleConfigs(printf)
 			if err != nil {

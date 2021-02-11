@@ -1,3 +1,5 @@
+# This is for Envoy 1.15.
+
 admin:
   access_log_path: /tmp/envoy_admin.log
   address:
