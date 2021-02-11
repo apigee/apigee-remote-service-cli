@@ -53,6 +53,8 @@ func (p *provision) createConfig(cred *keySecret) *server.Config {
 		},
 		Auth: server.AuthConfig{
 			JWTProviderKey: p.GetTokenURL(),
+			// TODO: turn this off when the support of Envoy 1.15.x stops
+			AppendMetadataHeaders: true,
 		},
 	}
 

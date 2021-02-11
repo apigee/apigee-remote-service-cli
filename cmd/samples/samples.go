@@ -34,11 +34,12 @@ import (
 
 var (
 	supportedTemplates = map[string]string{
-		"envoy-1.15": "envoy-1.16",
+		"envoy-1.15": "envoy-1.15",
 		"envoy-1.16": "envoy-1.16",
 		"envoy-1.17": "envoy-1.16",
 		"istio-1.7":  "istio-1.7",
 		"istio-1.8":  "istio-1.7",
+		"istio-1.9":  "istio-1.9",
 	}
 )
 
@@ -138,6 +139,10 @@ files related to deployment of their target services.`,
 			err = s.loadConfig()
 			if err != nil {
 				return errors.Wrap(err, "loading config yaml file")
+			}
+			err = s.checkVersionCompatibility()
+			if err != nil {
+				return errors.Wrap(err, "checking config file's compatibility with sample config")
 			}
 			err = s.createSampleConfigs(printf)
 			if err != nil {
@@ -239,6 +244,13 @@ func (s *samples) parseConfig() error {
 		s.TLS.Crt = path.Join(s.TLS.Dir, "tls.crt")
 	}
 
+	return nil
+}
+
+func (s *samples) checkVersionCompatibility() error {
+	if (s.templateDir == "istio-1.7" || s.templateDir == "envoy-1.15") && !s.ServerConfig.Auth.AppendMetadataHeaders {
+		return fmt.Errorf("specified Istio/Envoy version requires append_metadata_headers to be true in the given config")
+	}
 	return nil
 }
 

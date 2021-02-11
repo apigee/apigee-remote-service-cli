@@ -37,9 +37,10 @@ if [ ! -d "${TEMPLATES_DIR}" ]; then
   mkdir -p "${TEMPLATES_DIR}"
 fi
 
-
+cp -r "${TEMPLATES_SOURCE_DIR}/envoy-1.15" $TEMPLATES_DIR
 cp -r "${TEMPLATES_SOURCE_DIR}/envoy-1.16" $TEMPLATES_DIR
 cp -r "${TEMPLATES_SOURCE_DIR}/istio-1.7"  $TEMPLATES_DIR
+cp -r "${TEMPLATES_SOURCE_DIR}/istio-1.9"  $TEMPLATES_DIR
 
 # create resource
 RESOURCE_FILE="${ROOTDIR}/templates/templates.go"

@@ -1,0 +1,35 @@
+# Note: An AuthorizationPolicy sample is shown below and commented out.
+# By not having an AuthorizationPolicy, either API Keys or JWTs can be
+# used by clients. If you enable the AuthorizationPolicy, JWT tokens will
+# be required and API Keys will not work by themselves.
+
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: apigee
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      managed-by: apigee
+  jwtRules:
+  - issuer: {{.JWTProviderKey}}
+  {{- if .RuntimeTLS}}
+    jwksUri: https://{{.RuntimeHost}}{{if ne .RuntimePort "443"}}:{{.RuntimePort}}{{end}}/remote-token/certs
+  {{- else}}
+    jwksUri: http://{{.RuntimeHost}}{{if ne .RuntimePort "80"}}:{{.RuntimePort}}{{end}}/remote-token/certs
+  {{- end}}
+# ---
+# apiVersion: security.istio.io/v1beta1
+# kind: AuthorizationPolicy
+# metadata:
+#   name: apigee
+#   namespace: default
+# spec:
+#   selector:
+#   matchLabels:
+#     managed-by: apigee
+#   rules:
+#   - from:
+#     - source:
+#         requestPrincipals: ["*"]

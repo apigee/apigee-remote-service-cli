@@ -3,7 +3,7 @@
 # may tailor by specifying `workloadSelector` for specific targets.
 # Uses `apigee-remote-service-envoy.apigee:5000` as target.
 
-# This is for Istio 1.7 and 1.8.
+# This is for Istio 1.9+.
 
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
@@ -64,7 +64,13 @@ spec:
                 principals:
                 - any: true
                 permissions:
-                - header: { "name": "X-Apigee-Authorized" }
+                - metadata: 
+                    filter: envoy.filters.http.ext_authz
+                    path:
+                    - key: x-apigee-authorized
+                    value:
+                      string_match:
+                        exact: "true"
 
   - applyTo: NETWORK_FILTER
     match:
@@ -89,13 +95,3 @@ spec:
                   google_grpc:
                     target_uri: apigee-remote-service-envoy.apigee:5000
                     stat_prefix: apigee-remote-service
-              additional_request_headers_to_log:
-              - :authority # default target header
-              # context headers
-              - x-apigee-accesstoken
-              - x-apigee-api
-              - x-apigee-apiproducts
-              - x-apigee-application
-              - x-apigee-clientid
-              - x-apigee-developeremail
-              - x-apigee-environment
