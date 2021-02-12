@@ -41,31 +41,6 @@ spec:
           metadata_context_namespaces:
             - envoy.filters.http.jwt_authn
 
-  - applyTo: HTTP_FILTER
-    match:
-      context: SIDECAR_INBOUND
-      listener:
-        filterChain:
-          filter:
-            name: envoy.http_connection_manager
-            subFilter:
-              name: envoy.filters.http.ext_authz
-  
-    patch:
-      operation: INSERT_AFTER
-      value:
-        name: envoy.filters.http.rbac
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
-          rules:
-            action: ALLOW
-            policies:
-              apigee-connector:
-                principals:
-                - any: true
-                permissions:
-                - header: { "name": "X-Apigee-Authorized" }
-
   - applyTo: NETWORK_FILTER
     match:
       context: SIDECAR_INBOUND
