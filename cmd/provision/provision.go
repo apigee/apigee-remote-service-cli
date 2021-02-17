@@ -20,7 +20,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -137,7 +136,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 		verbosef = shared.Errorf
 	}
 
-	tempDir, err := ioutil.TempDir("", "apigee")
+	tempDir, err := os.MkdirTemp("", "apigee")
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}
@@ -145,7 +144,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	replaceVH := func(proxyDir string) error {
 		proxiesFile := filepath.Join(proxyDir, "proxies", "default.xml")
-		bytes, err := ioutil.ReadFile(proxiesFile)
+		bytes, err := os.ReadFile(proxiesFile)
 		if err != nil {
 			return errors.Wrapf(err, "reading file %s", proxiesFile)
 		}
@@ -159,19 +158,19 @@ func (p *provision) run(printf shared.FormatFn) error {
 		bytes = []byte(strings.ReplaceAll(string(bytes), virtualHostDeleteText, ""))
 		// replace the "default" virtualhost
 		bytes = []byte(strings.Replace(string(bytes), virtualHostReplaceText, newVH, 1))
-		if err := ioutil.WriteFile(proxiesFile, bytes, 0); err != nil {
+		if err := os.WriteFile(proxiesFile, bytes, 0); err != nil {
 			return errors.Wrapf(err, "writing file %s", proxiesFile)
 		}
 		return nil
 	}
 
 	replaceInFile := func(file, old, new string) error {
-		bytes, err := ioutil.ReadFile(file)
+		bytes, err := os.ReadFile(file)
 		if err != nil {
 			return errors.Wrapf(err, "reading file %s", file)
 		}
 		bytes = []byte(strings.Replace(string(bytes), old, new, 1))
-		if err := ioutil.WriteFile(file, bytes, 0); err != nil {
+		if err := os.WriteFile(file, bytes, 0); err != nil {
 			return errors.Wrapf(err, "writing file %s", file)
 		}
 		return nil

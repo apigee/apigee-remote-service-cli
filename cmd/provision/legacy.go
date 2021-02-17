@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	rnd "math/rand"
 	"net/http"
 	"net/url"
@@ -58,7 +57,7 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 
 		// change server locations
 		calloutFile := filepath.Join(proxyDir, "policies", "Callout.xml")
-		bytes, err := ioutil.ReadFile(calloutFile)
+		bytes, err := os.ReadFile(calloutFile)
 		if err != nil {
 			return errors.Wrapf(err, "reading file %s", calloutFile)
 		}

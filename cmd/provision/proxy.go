@@ -18,7 +18,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -43,7 +42,7 @@ func getCustomizedProxy(tempDir, name string, modFunc proxyModFunc) (string, err
 		return zipFile, nil
 	}
 
-	extractDir, err := ioutil.TempDir(tempDir, "proxy")
+	extractDir, err := os.MkdirTemp(tempDir, "proxy")
 	if err != nil {
 		return "", errors.Wrap(err, "creating temp dir")
 	}
@@ -239,7 +238,7 @@ func zipDir(source, file string) error {
 
 	var addFiles func(w *zip.Writer, fileBase, zipBase string) error
 	addFiles = func(w *zip.Writer, fileBase, zipBase string) error {
-		files, err := ioutil.ReadDir(fileBase)
+		files, err := os.ReadDir(fileBase)
 		if err != nil {
 			return err
 		}
@@ -257,7 +256,7 @@ func zipDir(source, file string) error {
 
 			zipFQName = strings.ReplaceAll(zipFQName, `\`, `/`)
 
-			bytes, err := ioutil.ReadFile(fqName)
+			bytes, err := os.ReadFile(fqName)
 			if err != nil {
 				return err
 			}

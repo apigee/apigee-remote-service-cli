@@ -17,7 +17,7 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/apigee/apigee-remote-service-cli/shared"
@@ -71,7 +71,7 @@ func version(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 				if resp == nil {
 					return errors.Wrap(err, "error getting proxy version")
 				}
-				body, _ := ioutil.ReadAll(resp.Body)
+				body, _ := io.ReadAll(resp.Body)
 				return errors.Wrapf(err, "getting proxy version. response code: %d, body: %s", resp.StatusCode, string(body))
 			}
 			printf("remote-service proxy version: %v", version.Version)

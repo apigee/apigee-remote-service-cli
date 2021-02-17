@@ -17,7 +17,6 @@ package samples
 import (
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -266,7 +265,7 @@ func getTagFromBuildVersion() string {
 }
 
 func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
-	_, err := ioutil.ReadDir(s.outDir)
+	_, err := os.ReadDir(s.outDir)
 	if err != nil {
 		if err := os.Mkdir(s.outDir, 0755); err != nil {
 			return err
@@ -281,7 +280,7 @@ func (s *samples) createSampleConfigs(printf shared.FormatFn) error {
 }
 
 func (s *samples) createConfig(templateDir string, printf shared.FormatFn) error {
-	tempDir, err := ioutil.TempDir("", "apigee")
+	tempDir, err := os.MkdirTemp("", "apigee")
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}
@@ -292,7 +291,7 @@ func (s *samples) createConfig(templateDir string, printf shared.FormatFn) error
 		return errors.Wrap(err, "getting templates")
 	}
 	path := path.Join(tempDir, templateDir)
-	templates, err := ioutil.ReadDir(path)
+	templates, err := os.ReadDir(path)
 	if err != nil {
 		return errors.Wrap(err, "getting templates directory")
 	}
