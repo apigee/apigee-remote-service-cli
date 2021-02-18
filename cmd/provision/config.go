@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -203,7 +203,7 @@ func (p *provision) createAnalyticsSecretData(config *server.Config, verbosef sh
 	if p.analyticsServiceAccount != "" {
 		var err error
 		// load analytics service account credentials
-		cred, err = ioutil.ReadFile(p.analyticsServiceAccount)
+		cred, err = os.ReadFile(p.analyticsServiceAccount)
 		if err != nil {
 			return err
 		}

@@ -16,7 +16,6 @@ package apigee
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -198,7 +197,7 @@ func TestNetrcRetrieval(t *testing.T) {
 	login hi
 	password secret`)
 
-	tmpFile, err := ioutil.TempFile("", ".netrc")
+	tmpFile, err := os.CreateTemp("", ".netrc")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

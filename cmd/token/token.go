@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -253,7 +252,7 @@ func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 		}
 	}
 
-	jwtBytes, err := ioutil.ReadAll(file)
+	jwtBytes, err := io.ReadAll(file)
 	if err != nil {
 		return errors.Wrap(err, "reading jwt token")
 	}

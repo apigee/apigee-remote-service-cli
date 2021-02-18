@@ -21,7 +21,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -89,7 +88,7 @@ analytics:
 		t.Fatal(err)
 	}
 
-	tf, err = ioutil.TempFile("", "")
+	tf, err = os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +130,7 @@ analytics:
 		t.Fatal(err)
 	}
 
-	tf, err = ioutil.TempFile("", "")
+	tf, err = os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +168,7 @@ analytics:
 		t.Fatal(err)
 	}
 
-	tf, err = ioutil.TempFile("", "")
+	tf, err = os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +216,7 @@ tenant:
 		t.Fatal(err)
 	}
 
-	tf, err = ioutil.TempFile("", "")
+	tf, err = os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +270,7 @@ tenant:
 		t.Fatal(err)
 	}
 
-	tf, err = ioutil.TempFile("", "")
+	tf, err = os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,7 +312,7 @@ tenant:
 		t.Fatal(err)
 	}
 
-	tf, err = ioutil.TempFile("", "")
+	tf, err = os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +353,7 @@ tenant:
 		t.Fatal(err)
 	}
 
-	tf, err = ioutil.TempFile("", "")
+	tf, err = os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -393,7 +392,7 @@ analytics:
 		t.Fatal(err)
 	}
 
-	tf, err := ioutil.TempFile("", "")
+	tf, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -525,7 +524,7 @@ func TestPrint(t *testing.T) {
 	Printf("test %s", "Printf")
 
 	w.Close()
-	out, err := ioutil.ReadAll(r)
+	out, err := io.ReadAll(r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -543,7 +542,7 @@ func TestPrint(t *testing.T) {
 	Errorf("test %s", "Errorf")
 
 	w.Close()
-	out, err = ioutil.ReadAll(r)
+	out, err = io.ReadAll(r)
 	if err != nil {
 		t.Fatal(err)
 	}

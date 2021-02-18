@@ -24,7 +24,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -231,7 +230,7 @@ func TestTokenRotateCert(t *testing.T) {
   key: fake-key
   secret: fake-secret`)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -432,7 +431,7 @@ func generateJWK(t *testing.T) (*rsa.PrivateKey, jwk.Key) {
 func TestCreateInternalJWT(t *testing.T) {
 	config := generateConfig(t)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

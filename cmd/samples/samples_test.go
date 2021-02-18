@@ -17,7 +17,6 @@ package samples
 import (
 	"bytes"
 	"encoding/base64"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -47,7 +46,7 @@ func TestFlagValidation(t *testing.T) {
 	}
 
 	config := generateConfig(t, true, true)
-	configFile, err := ioutil.TempFile("", "config.yaml")
+	configFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -135,7 +134,7 @@ func TestSamplesParseConfigs(t *testing.T) {
 func TestCreateEnvoyConfigs(t *testing.T) {
 	print := testutil.Printer("TestCreateEnvoyConfigs")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +142,7 @@ func TestCreateEnvoyConfigs(t *testing.T) {
 
 	config := generateConfig(t, false, false)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -179,7 +178,7 @@ func TestCreateEnvoyConfigs(t *testing.T) {
 func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithHttpbin")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +186,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 
 	config := generateConfig(t, false, false)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -225,7 +224,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithoutHttpbin")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +232,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 
 	config := generateConfig(t, true, false)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -267,7 +266,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 func TestCreateIncompatibleSample(t *testing.T) {
 	print := testutil.Printer("TestCreateIncompatibleSample")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +274,7 @@ func TestCreateIncompatibleSample(t *testing.T) {
 
 	config := generateConfig(t, true, false)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -297,7 +296,7 @@ func TestCreateIncompatibleSample(t *testing.T) {
 func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 	print := testutil.Printer("TestCreateIstioConfigsWithAnalyticsSecret")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +304,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 
 	config := generateConfig(t, true, true)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -330,7 +329,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 func TestExistingDirectoryError(t *testing.T) {
 	print := testutil.Printer("TestExistingDirectoryError")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -338,7 +337,7 @@ func TestExistingDirectoryError(t *testing.T) {
 
 	config := generateConfig(t, true, false)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -360,7 +359,7 @@ func TestExistingDirectoryError(t *testing.T) {
 func TestExistingDirectoryOverwrite(t *testing.T) {
 	print := testutil.Printer("TestExistingDirectoryOverwrite")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +367,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 
 	config := generateConfig(t, false, false)
 
-	tmpFile, err := ioutil.TempFile("", "config.yaml")
+	tmpFile, err := os.CreateTemp("", "config.yaml")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -401,7 +400,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 func TestLoadConfigError(t *testing.T) {
 	print := testutil.Printer("TestLoadConfigError")
 
-	tmpDir, err := ioutil.TempDir("", "samples")
+	tmpDir, err := os.MkdirTemp("", "samples")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -422,7 +421,7 @@ func TestGetTemplatesError(t *testing.T) {
 	if err == nil {
 		t.Fatal("want error got none")
 	}
-	testutil.ErrorContains(t, err, "restoring asset no such template: Asset no such template not found")
+	testutil.ErrorContains(t, err, "fs.WalkDir: copyToTempDir: open templates/no such template: file does not exist")
 }
 
 func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byte {
@@ -498,7 +497,7 @@ func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byt
 // verifyIstioConfig checks part of the envoy-config.yaml
 // it checks if the runtime host if configured in the auth service
 func verifyNativeConfig(t *testing.T, filename string) {
-	yamlFile, err := ioutil.ReadFile(filename)
+	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -528,7 +527,7 @@ func verifyNativeConfig(t *testing.T, filename string) {
 // verifyIstioConfig reads part of the apigee-envoy-adapter.yaml
 // it checks if the secret names are correct when present
 func verifyIstioConfig(t *testing.T, filename string) {
-	yamlFile, err := ioutil.ReadFile(filename)
+	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
