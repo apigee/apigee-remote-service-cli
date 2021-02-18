@@ -20,7 +20,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -44,8 +43,8 @@ const (
 	authProxyName  = "remote-service"
 	tokenProxyName = "remote-token"
 
-	remoteServiceProxyZip = "remote-service-gcp.zip"
-	remoteTokenProxyZip   = "remote-token-gcp.zip"
+	remoteServiceProxy = "remote-service-gcp"
+	remoteTokenProxy   = "remote-token-gcp"
 )
 
 // default durations for the proxy verification retry
@@ -137,7 +136,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 		verbosef = shared.Errorf
 	}
 
-	tempDir, err := ioutil.TempDir("", "apigee")
+	tempDir, err := os.MkdirTemp("", "apigee")
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}
@@ -145,7 +144,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	replaceVH := func(proxyDir string) error {
 		proxiesFile := filepath.Join(proxyDir, "proxies", "default.xml")
-		bytes, err := ioutil.ReadFile(proxiesFile)
+		bytes, err := os.ReadFile(proxiesFile)
 		if err != nil {
 			return errors.Wrapf(err, "reading file %s", proxiesFile)
 		}
@@ -159,19 +158,19 @@ func (p *provision) run(printf shared.FormatFn) error {
 		bytes = []byte(strings.ReplaceAll(string(bytes), virtualHostDeleteText, ""))
 		// replace the "default" virtualhost
 		bytes = []byte(strings.Replace(string(bytes), virtualHostReplaceText, newVH, 1))
-		if err := ioutil.WriteFile(proxiesFile, bytes, 0); err != nil {
+		if err := os.WriteFile(proxiesFile, bytes, 0); err != nil {
 			return errors.Wrapf(err, "writing file %s", proxiesFile)
 		}
 		return nil
 	}
 
 	replaceInFile := func(file, old, new string) error {
-		bytes, err := ioutil.ReadFile(file)
+		bytes, err := os.ReadFile(file)
 		if err != nil {
 			return errors.Wrapf(err, "reading file %s", file)
 		}
 		bytes = []byte(strings.Replace(string(bytes), old, new, 1))
-		if err := ioutil.WriteFile(file, bytes, 0); err != nil {
+		if err := os.WriteFile(file, bytes, 0); err != nil {
 			return errors.Wrapf(err, "writing file %s", file)
 		}
 		return nil
@@ -227,9 +226,9 @@ func (p *provision) run(printf shared.FormatFn) error {
 	// deploy remote-service proxy
 	var customizedProxy string
 	if p.IsGCPManaged {
-		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, replaceVersion)
+		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxy, replaceVersion)
 	} else {
-		customizedProxy, err = getCustomizedProxy(tempDir, legacyServiceProxyZip, replaceVHAndAuthTarget)
+		customizedProxy, err = getCustomizedProxy(tempDir, legacyServiceProxy, replaceVHAndAuthTarget)
 	}
 	if err != nil {
 		return err
@@ -241,9 +240,9 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	// Deploy remote-token proxy
 	if p.IsGCPManaged {
-		customizedProxy, err = getCustomizedProxy(tempDir, remoteTokenProxyZip, nil)
+		customizedProxy, err = getCustomizedProxy(tempDir, remoteTokenProxy, nil)
 	} else {
-		customizedProxy, err = getCustomizedProxy(tempDir, legacyTokenProxyZip, replaceVH)
+		customizedProxy, err = getCustomizedProxy(tempDir, legacyTokenProxy, replaceVH)
 	}
 	if err != nil {
 		return err

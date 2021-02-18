@@ -16,7 +16,6 @@ package provision
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -38,7 +37,7 @@ func TestConfigWithAnalyticsSecretFile(t *testing.T) {
 		RemoteServiceProxyURL: "https://mock.com/remote-service",
 	}
 
-	tmpFile, err := ioutil.TempFile("", "client_secret.json")
+	tmpFile, err := os.CreateTemp("", "client_secret.json")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

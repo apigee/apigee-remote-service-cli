@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -607,12 +606,12 @@ func TestProvisionNGSaaS(t *testing.T) {
 
 	print := testutil.Printer("TestProvisionNGSaaS")
 
-	credDir, err := ioutil.TempDir("", "analytics-secret")
+	credDir, err := os.MkdirTemp("", "analytics-secret")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	credFile := path.Join(credDir, "client_secret.json")
-	if err := ioutil.WriteFile(credFile, []byte(`{"type": "service_account"}`), 0644); err != nil {
+	if err := os.WriteFile(credFile, []byte(`{"type": "service_account"}`), 0644); err != nil {
 		t.Fatalf("%v", err)
 	}
 	defer os.RemoveAll(credDir)

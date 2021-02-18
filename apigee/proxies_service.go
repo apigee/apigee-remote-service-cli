@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -268,10 +267,11 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 		if proxyName == "" {
 			proxyName = filepath.Base(source)
 		}
-		tempDir, e := ioutil.TempDir("", "go-apigee-edge-")
+		tempDir, e := os.MkdirTemp("", "go-apigee-edge-")
 		if e != nil {
 			return nil, nil, fmt.Errorf("while creating temp dir, error: %#v", e)
 		}
+		defer os.RemoveAll(tempDir)
 		zipfileName = filepath.Join(tempDir, "apiproxy.zip")
 		e = zipDirectory(filepath.Join(source, "apiproxy"), zipfileName, smartFilter)
 		if e != nil {
