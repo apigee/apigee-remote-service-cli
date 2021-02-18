@@ -99,7 +99,7 @@ func TestSamplesParseConfigs(t *testing.T) {
 	cfg.Tenant.RemoteServiceAPI = "http://runtime/remote-service"
 	cfg.Tenant.OrgName = "hi"
 	cfg.Tenant.EnvName = "test"
-	cfg.Analytics.FluentdEndpoint = "fluentd"
+	cfg.Analytics.CredentialsJSON = []byte("secret")
 
 	s := &samples{
 		RootArgs: &shared.RootArgs{
@@ -117,17 +117,6 @@ func TestSamplesParseConfigs(t *testing.T) {
 	}
 	if s.RuntimePort != "80" {
 		t.Errorf("want runtime port to be %q got %q", "80", s.RuntimePort)
-	}
-	if n := envScopeEncodedName("hi", "test"); n != s.EncodedName {
-		t.Errorf("want encoded name to be %q got %q", n, s.EncodedName)
-	}
-
-	cfg.Analytics.CredentialsJSON = []byte("secret")
-	if err := s.parseConfig(); err != nil {
-		t.Errorf("want no error, got %v", err)
-	}
-	if s.EncodedName != "" {
-		t.Errorf("want encoded name to be empty, got %q", s.EncodedName)
 	}
 
 	s.TLS.Dir = "dir"
@@ -435,13 +424,6 @@ func TestGetTemplatesError(t *testing.T) {
 	testutil.ErrorContains(t, err, "fs.WalkDir: copyToTempDir: open templates/no such template: file does not exist")
 }
 
-func TestShortName(t *testing.T) {
-	longName := "asdfasdfasdfasdfasdf"
-	if s := shortName(longName); s != longName[:15] {
-		t.Errorf("want %q got %q", longName[:15], s)
-	}
-}
-
 func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byte {
 	var yamlBuffer bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
@@ -454,7 +436,6 @@ func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byt
 	config.Tenant.RemoteServiceAPI = "https://RUNTIME:9001/remote-service"
 	config.Tenant.OrgName = "hi"
 	config.Tenant.EnvName = "test"
-	config.Analytics.FluentdEndpoint = "apigee-udca-hi-test-1q2w3e4r.apigee:20001"
 	if err := yamlEncoder.Encode(config); err != nil {
 		t.Fatal(err)
 	}
