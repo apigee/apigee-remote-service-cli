@@ -16,20 +16,27 @@ package samples
 
 import (
 	"crypto/sha256"
+	"embed"
 	"fmt"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"text/template"
 
+	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/apigee/apigee-remote-service-cli/templates"
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
+
+const embedDir = "templates"
+
+//go:embed "templates"
+var embedded embed.FS
 
 var (
 	supportedTemplates = map[string]string{
@@ -290,7 +297,7 @@ func (s *samples) createConfig(templateDir string, printf shared.FormatFn) error
 	if err != nil {
 		return errors.Wrap(err, "getting templates")
 	}
-	path := path.Join(tempDir, templateDir)
+	path := path.Join(tempDir, embedDir, templateDir)
 	templates, err := os.ReadDir(path)
 	if err != nil {
 		return errors.Wrap(err, "getting templates directory")
@@ -324,12 +331,10 @@ func (s *samples) createConfigYaml(dir string, name string, printf shared.Format
 	return tmpl.Execute(f, s)
 }
 
-// getTemplates unzips the templates to the tempDir/templates and returns the directory
+// getTemplates retrieves the templates by name
 func getTemplates(tempDir string, name string) error {
-	if err := templates.RestoreAssets(tempDir, name); err != nil {
-		return errors.Wrapf(err, "restoring asset %s", name)
-	}
-	return nil
+	embeddedPath := filepath.Join(embedDir, name)
+	return cmd.CopyFromEmbedded(embedded, embeddedPath, tempDir)
 }
 
 // shortName returns a substring with up to the first 15 characters of the input string

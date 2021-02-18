@@ -432,7 +432,7 @@ func TestGetTemplatesError(t *testing.T) {
 	if err == nil {
 		t.Fatal("want error got none")
 	}
-	testutil.ErrorContains(t, err, "restoring asset no such template: Asset no such template not found")
+	testutil.ErrorContains(t, err, "fs.WalkDir: copyToTempDir: open templates/no such template: file does not exist")
 }
 
 func TestShortName(t *testing.T) {

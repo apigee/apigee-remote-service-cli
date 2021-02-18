@@ -17,13 +17,13 @@ package provision
 import (
 	"embed"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
+	"github.com/apigee/apigee-remote-service-cli/cmd"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/pkg/errors"
 )
@@ -36,7 +36,7 @@ var embedded embed.FS
 
 type proxyModFunc func(name string) error
 
-// returns path to proxy
+// returns path to customized proxy
 // caller is responsible for deleting tempDir
 func getCustomizedProxy(tempDir, proxyName string, modFunc proxyModFunc) (string, error) {
 
@@ -47,34 +47,8 @@ func getCustomizedProxy(tempDir, proxyName string, modFunc proxyModFunc) (string
 	}
 	proxyBaseDir := filepath.Join(extractDir, embedDir, proxyName)
 
-	// fs.WalkDirFunc
-	copyToTempDir := func(path string, source fs.DirEntry, err error) error {
-		if err != nil {
-			return errors.Wrap(err, "copyToTempDir")
-		}
-		if !source.IsDir() {
-			bytes, err := embedded.ReadFile(path)
-			if err != nil {
-				return errors.Wrap(err, "ReadFile")
-			}
-			dest := filepath.Join(extractDir, path)
-			if err = os.MkdirAll(filepath.Dir(dest), os.FileMode(0755)); err != nil {
-				return errors.Wrap(err, "MkdirAll")
-			}
-			f, err := os.Create(dest)
-			if err != nil {
-				return errors.Wrap(err, "os.Create")
-			}
-			defer f.Close()
-			_, err = f.Write(bytes)
-			return errors.Wrap(err, "f.Write")
-		}
-		return nil
-	}
-
-	// copy out of embed
-	if err := fs.WalkDir(embedded, embeddedPath, copyToTempDir); err != nil {
-		return "", errors.Wrap(err, "WalkDir")
+	if err := cmd.CopyFromEmbedded(embedded, embeddedPath, extractDir); err != nil {
+		return "", err
 	}
 
 	if modFunc != nil {
