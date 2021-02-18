@@ -39,8 +39,8 @@ const (
 	legacyCredentialURLFormat = "%s/credential/organization/%s/environment/%s"  // InternalProxyURL, org, env
 	analyticsURLFormat        = "%s/analytics/organization/%s/environment/%s"   // InternalProxyURL, org, env
 	legacyAnalyticURLFormat   = "%s/axpublisher/organization/%s/environment/%s" // InternalProxyURL, org, env
-	legacyServiceProxyZip     = "remote-service-legacy.zip"
-	legacyTokenProxyZip       = "remote-token-legacy.zip"
+	legacyServiceProxy        = "remote-service-legacy"
+	legacyTokenProxy          = "remote-token-legacy"
 
 	// virtualHost is only necessary for legacy
 	virtualHostDeleteText     = "<VirtualHost>secure</VirtualHost>"
@@ -48,12 +48,12 @@ const (
 	virtualHostReplacementFmt = "<VirtualHost>%s</VirtualHost>" // each virtualHost
 
 	internalProxyName = "edgemicro-internal"
-	internalProxyZip  = "internal.zip"
+	internalProxy     = "internal-proxy"
 )
 
 func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string) error, tempDir string, verbosef shared.FormatFn) error {
 
-	customizedZip, err := getCustomizedProxy(tempDir, internalProxyZip, func(proxyDir string) error {
+	customizedProxy, err := getCustomizedProxy(tempDir, internalProxy, func(proxyDir string) error {
 
 		// change server locations
 		calloutFile := filepath.Join(proxyDir, "policies", "Callout.xml")
@@ -107,7 +107,7 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 		return err
 	}
 
-	return p.checkAndDeployProxy(internalProxyName, customizedZip, p.forceProxyInstall, verbosef)
+	return p.checkAndDeployProxy(internalProxyName, customizedProxy, p.forceProxyInstall, verbosef)
 }
 
 //check if the KVM exists, if it doesn't, create a new one and sets certs for JWT

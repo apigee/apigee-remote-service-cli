@@ -271,6 +271,7 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 		if e != nil {
 			return nil, nil, fmt.Errorf("while creating temp dir, error: %#v", e)
 		}
+		defer os.RemoveAll(tempDir)
 		zipfileName = filepath.Join(tempDir, "apiproxy.zip")
 		e = zipDirectory(filepath.Join(source, "apiproxy"), zipfileName, smartFilter)
 		if e != nil {

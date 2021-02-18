@@ -15,52 +15,75 @@
 package provision
 
 import (
-	"archive/zip"
+	"embed"
 	"fmt"
-	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/apigee/apigee-remote-service-cli/apigee"
-	"github.com/apigee/apigee-remote-service-cli/proxies"
 	"github.com/apigee/apigee-remote-service-cli/shared"
 	"github.com/pkg/errors"
 )
 
+const embedDir = "proxies"
+const proxyTopDir = "apiproxy"
+
+//go:embed "proxies"
+var embedded embed.FS
+
 type proxyModFunc func(name string) error
 
-// returns filename of zipped proxy
-func getCustomizedProxy(tempDir, name string, modFunc proxyModFunc) (string, error) {
-	if err := proxies.RestoreAsset(tempDir, name); err != nil {
-		return "", errors.Wrapf(err, "restoring asset %s", name)
-	}
-	zipFile := filepath.Join(tempDir, name)
-	if modFunc == nil {
-		return zipFile, nil
-	}
+// returns path to proxy
+// caller is responsible for deleting tempDir
+func getCustomizedProxy(tempDir, proxyName string, modFunc proxyModFunc) (string, error) {
 
+	embeddedPath := filepath.Join(embedDir, proxyName)
 	extractDir, err := os.MkdirTemp(tempDir, "proxy")
 	if err != nil {
 		return "", errors.Wrap(err, "creating temp dir")
 	}
-	if err := unzipFile(zipFile, extractDir); err != nil {
-		return "", errors.Wrapf(err, "extracting %s to %s", zipFile, extractDir)
+	proxyBaseDir := filepath.Join(extractDir, embedDir, proxyName)
+
+	// fs.WalkDirFunc
+	copyToTempDir := func(path string, source fs.DirEntry, err error) error {
+		if err != nil {
+			return errors.Wrap(err, "copyToTempDir")
+		}
+		if !source.IsDir() {
+			bytes, err := embedded.ReadFile(path)
+			if err != nil {
+				return errors.Wrap(err, "ReadFile")
+			}
+			dest := filepath.Join(extractDir, path)
+			if err = os.MkdirAll(filepath.Dir(dest), os.FileMode(0755)); err != nil {
+				return errors.Wrap(err, "MkdirAll")
+			}
+			f, err := os.Create(dest)
+			if err != nil {
+				return errors.Wrap(err, "os.Create")
+			}
+			defer f.Close()
+			_, err = f.Write(bytes)
+			return errors.Wrap(err, "f.Write")
+		}
+		return nil
 	}
 
-	if err := modFunc(filepath.Join(extractDir, "apiproxy")); err != nil {
-		return "", err
+	// copy out of embed
+	if err := fs.WalkDir(embedded, embeddedPath, copyToTempDir); err != nil {
+		return "", errors.Wrap(err, "WalkDir")
 	}
 
-	// write zip
-	customizedZip := filepath.Join(tempDir, "customized.zip")
-	if err := zipDir(extractDir, customizedZip); err != nil {
-		return "", errors.Wrapf(err, "zipping dir %s to file %s", extractDir, customizedZip)
+	if modFunc != nil {
+		if err := modFunc(filepath.Join(proxyBaseDir, proxyTopDir)); err != nil {
+			return "", errors.Wrap(err, "modFunc")
+		}
 	}
 
-	return customizedZip, nil
+	return proxyBaseDir, nil
 }
 
 func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, printf shared.FormatFn) error {
@@ -173,108 +196,4 @@ func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, pr
 	}
 
 	return nil
-}
-
-func unzipFile(src, dest string) error {
-	r, err := zip.OpenReader(src)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	if err := os.MkdirAll(dest, 0755); err != nil {
-		return err
-	}
-
-	extract := func(f *zip.File) error {
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-		defer rc.Close()
-
-		path := filepath.Join(dest, f.Name)
-
-		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(path, f.Mode()); err != nil {
-				return err
-			}
-		} else {
-			if err := os.MkdirAll(filepath.Dir(path), f.Mode()); err != nil {
-				return err
-			}
-			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			_, err = io.Copy(f, rc)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	for _, f := range r.File {
-		err := extract(f)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func zipDir(source, file string) error {
-	zipFile, err := os.Create(file)
-	if err != nil {
-		return err
-	}
-	defer zipFile.Close()
-
-	w := zip.NewWriter(zipFile)
-
-	var addFiles func(w *zip.Writer, fileBase, zipBase string) error
-	addFiles = func(w *zip.Writer, fileBase, zipBase string) error {
-		files, err := os.ReadDir(fileBase)
-		if err != nil {
-			return err
-		}
-
-		for _, file := range files {
-			fqName := filepath.Join(fileBase, file.Name())
-			zipFQName := filepath.Join(zipBase, file.Name())
-
-			if file.IsDir() {
-				if err := addFiles(w, fqName, zipFQName); err != nil {
-					return err
-				}
-				continue
-			}
-
-			zipFQName = strings.ReplaceAll(zipFQName, `\`, `/`)
-
-			bytes, err := os.ReadFile(fqName)
-			if err != nil {
-				return err
-			}
-			f, err := w.Create(zipFQName)
-			if err != nil {
-				return err
-			}
-			if _, err = f.Write(bytes); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	err = addFiles(w, source, "")
-	if err != nil {
-		return err
-	}
-
-	return w.Close()
 }

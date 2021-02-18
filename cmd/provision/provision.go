@@ -43,8 +43,8 @@ const (
 	authProxyName  = "remote-service"
 	tokenProxyName = "remote-token"
 
-	remoteServiceProxyZip = "remote-service-gcp.zip"
-	remoteTokenProxyZip   = "remote-token-gcp.zip"
+	remoteServiceProxy = "remote-service-gcp"
+	remoteTokenProxy   = "remote-token-gcp"
 )
 
 // default durations for the proxy verification retry
@@ -226,9 +226,9 @@ func (p *provision) run(printf shared.FormatFn) error {
 	// deploy remote-service proxy
 	var customizedProxy string
 	if p.IsGCPManaged {
-		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyZip, replaceVersion)
+		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxy, replaceVersion)
 	} else {
-		customizedProxy, err = getCustomizedProxy(tempDir, legacyServiceProxyZip, replaceVHAndAuthTarget)
+		customizedProxy, err = getCustomizedProxy(tempDir, legacyServiceProxy, replaceVHAndAuthTarget)
 	}
 	if err != nil {
 		return err
@@ -240,9 +240,9 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	// Deploy remote-token proxy
 	if p.IsGCPManaged {
-		customizedProxy, err = getCustomizedProxy(tempDir, remoteTokenProxyZip, nil)
+		customizedProxy, err = getCustomizedProxy(tempDir, remoteTokenProxy, nil)
 	} else {
-		customizedProxy, err = getCustomizedProxy(tempDir, legacyTokenProxyZip, replaceVH)
+		customizedProxy, err = getCustomizedProxy(tempDir, legacyTokenProxy, replaceVH)
 	}
 	if err != nil {
 		return err
