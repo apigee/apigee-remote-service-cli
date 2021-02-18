@@ -61,15 +61,9 @@ spec:
           name: apigee-remote-service-envoy
           readOnly: true
 {{- if .IsGCPManaged}}
-  {{- if .AnalyticsSecret}}
         - mountPath: /analytics-secret
           name: analytics-secret
           readOnly: true
-  {{- else if .EncodedName}}
-        - mountPath: /opt/apigee/tls
-          name: tls-volume
-          readOnly: true
-  {{- end}}
         - mountPath: /policy-secret
           name: policy-secret
           readOnly: true
@@ -79,17 +73,10 @@ spec:
         configMap:
           name: apigee-remote-service-envoy
 {{- if .IsGCPManaged}}
-  {{- if .AnalyticsSecret}}
       - name: analytics-secret
         secret:
           defaultMode: 420
           secretName: {{.Org}}-{{.Env}}-analytics-secret
-  {{- else if .EncodedName}}
-      - name: tls-volume
-        secret:
-          defaultMode: 420
-          secretName: apigee-udca-{{.EncodedName}}-tls
-  {{- end}}
       - name: policy-secret
         secret:
           defaultMode: 420

@@ -15,7 +15,6 @@
 package samples
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -56,7 +55,6 @@ type samples struct {
 	AdapterHost     string
 	TargetService   targetService
 	TLS             tls
-	EncodedName     string
 	ImageTag        string
 	AnalyticsSecret bool // existence of sa credentials for analytics uploading
 }
@@ -226,16 +224,8 @@ func (s *samples) parseConfig() error {
 	// handle configs for analytics-related credential
 	if s.ServerConfig.IsGCPManaged() {
 		s.IsGCPManaged = true
-		if s.ServerConfig.Analytics.FluentdEndpoint != "" {
-			s.EncodedName = envScopeEncodedName(s.Org, s.Env)
-		}
-		// SA credentials supersede the fluentd enpoint
 		if s.ServerConfig.Analytics.CredentialsJSON != nil {
 			s.AnalyticsSecret = true
-			if s.EncodedName != "" {
-				fmt.Fprintf(os.Stderr, "The fluentd endpoint is superseded with the given analytics service account.\n")
-				s.EncodedName = ""
-			}
 		}
 	}
 
@@ -331,26 +321,4 @@ func getTemplates(tempDir string, name string) error {
 		return errors.Wrapf(err, "restoring asset %s", name)
 	}
 	return nil
-}
-
-// shortName returns a substring with up to the first 15 characters of the input string
-func shortName(s string) string {
-	if len(s) < 16 {
-		return s
-	}
-	return s[:15]
-}
-
-// shortSha returns a substring with the first 7 characters of a SHA for the input string
-func shortSha(s string) string {
-	h := sha256.New()
-	_, _ = h.Write([]byte(s))
-	sha := fmt.Sprintf("%x", h.Sum(nil))
-	return sha[:7]
-}
-
-// envScopeEncodedName returns the encoded resource name to avoid the 63 chars limit
-func envScopeEncodedName(org, env string) string {
-	sha := shortSha(fmt.Sprintf("%s:%s", org, env))
-	return fmt.Sprintf("%s-%s-%s", shortName(org), shortName(env), sha)
 }
