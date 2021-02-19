@@ -18,6 +18,7 @@ package apigee
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -131,7 +132,7 @@ type EdgeClientOptions struct {
 	// Specify the Edge organization name.
 	Org string
 
-	//Specify the Edge environment name.
+	// Specify the Edge environment name.
 	Env string
 
 	// Required. Authentication information for the Edge Management server.
@@ -145,6 +146,12 @@ type EdgeClientOptions struct {
 
 	// Optional. Skip cert verification.
 	InsecureSkipVerify bool
+
+	// Root CAs for mTLS connection
+	RootCAs *x509.CertPool
+
+	// TLS Certificates for mTLS connection
+	Certificates []tls.Certificate
 }
 
 // EdgeAuth holds information about how to authenticate to the Edge Management server.
@@ -201,11 +208,21 @@ func retrieveAuthFromNetrc(netrcPath, host string) (*EdgeAuth, error) {
 func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	httpClient := http.DefaultClient
 
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+
 	if o.InsecureSkipVerify {
-		tr := http.DefaultTransport.(*http.Transport).Clone()
-		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-		httpClient = &http.Client{Transport: tr}
+		tr.TLSClientConfig.InsecureSkipVerify = true
 	}
+
+	// config mTLS
+	if o.RootCAs != nil {
+		tr.TLSClientConfig.RootCAs = o.RootCAs
+	}
+	if len(o.Certificates) != 0 {
+		tr.TLSClientConfig.Certificates = o.Certificates
+	}
+
+	httpClient.Transport = tr
 
 	mgmtURL := o.MgmtURL
 	if o.MgmtURL == "" {

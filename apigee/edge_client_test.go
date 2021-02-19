@@ -15,6 +15,8 @@
 package apigee
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -220,4 +222,82 @@ func TestNetrcRetrieval(t *testing.T) {
 		t.Errorf("want username to be hi got %s\n want password to be secret got %s",
 			auth.Username, auth.Password)
 	}
+}
+
+func TestMutualTLSWithCerts(t *testing.T) {
+	ts := newMutualTLSServer()
+	defer ts.Close()
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AddCert(ts.Certificate())
+
+	opts := &EdgeClientOptions{
+		MgmtURL:      ts.URL,
+		Org:          "org",
+		Env:          "env",
+		RootCAs:      caCertPool,
+		Certificates: ts.TLS.Certificates,
+		Auth: &EdgeAuth{
+			SkipAuth: true,
+		},
+	}
+
+	c, err := NewEdgeClient(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := c.NewRequest(http.MethodGet, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = c.Do(req, nil)
+	if err != nil {
+		t.Errorf("want no error got %v", err)
+	}
+}
+
+func TestMutualTLSNoCerts(t *testing.T) {
+	ts := newMutualTLSServer()
+	defer ts.Close()
+
+	opts := &EdgeClientOptions{
+		MgmtURL: ts.URL,
+		Org:     "org",
+		Env:     "env",
+		Auth: &EdgeAuth{
+			SkipAuth: true,
+		},
+		InsecureSkipVerify: true,
+	}
+
+	c, err := NewEdgeClient(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := c.NewRequest(http.MethodGet, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = c.Do(req, nil)
+	testutil.ErrorContains(t, err, "remote error: tls: bad certificate")
+}
+
+func newMutualTLSServer() *httptest.Server {
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte("{}"))
+	}))
+	// require mTLS
+	ts.TLS = &tls.Config{
+		RootCAs:    x509.NewCertPool(),
+		ClientAuth: tls.RequireAnyClientCert,
+	}
+	ts.StartTLS()
+	ts.TLS.RootCAs.AddCert(ts.Certificate())
+
+	return ts
 }

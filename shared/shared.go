@@ -15,7 +15,8 @@
 package shared
 
 import (
-	"errors"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net/url"
@@ -85,6 +86,9 @@ type RootArgs struct {
 	ConfigPath         string
 	InsecureSkipVerify bool
 	Namespace          string
+	TLSCAFile          string
+	TLSCertFile        string
+	TLSKeyFile         string
 
 	ServerConfig *server.Config // config loaded from ConfigPath
 
@@ -116,6 +120,13 @@ func AddCommandWithFlags(c *cobra.Command, rootArgs *RootArgs, cmds ...*cobra.Co
 		subC.PersistentFlags().BoolVarP(&rootArgs.InsecureSkipVerify, "insecure", "",
 			false, "allow insecure server connections when using SSL")
 
+		subC.PersistentFlags().StringVarP(&rootArgs.TLSCAFile, "tls-ca", "",
+			"", "path to the root CA for mTLS connection (only for opdk)")
+		subC.PersistentFlags().StringVarP(&rootArgs.TLSCertFile, "tls-cert", "",
+			"", "path to the certificate for mTLS connection (only for opdk)")
+		subC.PersistentFlags().StringVarP(&rootArgs.TLSKeyFile, "tls-key", "",
+			"", "path to the private key for mTLS connection (only for opdk)")
+
 		c.AddCommand(subC)
 	}
 }
@@ -128,7 +139,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 
 	if r.IsLegacySaaS && r.IsOPDK {
-		return errors.New("--legacy and --opdk options are exclusive")
+		return fmt.Errorf("--legacy and --opdk options are exclusive")
 	}
 	r.IsGCPManaged = !(r.IsLegacySaaS || r.IsOPDK)
 
@@ -158,7 +169,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 
 	if requireRuntime && r.RuntimeBase == "" {
-		return errors.New("--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
+		return fmt.Errorf("--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
 	}
 
 	// calculate internal proxy URL from runtime URL for LegacySaaS or OPDK
@@ -192,6 +203,32 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 		GCPManaged:         r.IsGCPManaged,
 		Debug:              r.Verbose,
 		InsecureSkipVerify: r.InsecureSkipVerify,
+	}
+
+	// config mTLS; only needed for OPDK
+	if r.IsOPDK {
+
+		// add given CA to the RootCAs
+		if r.TLSCAFile != "" {
+			caCert, err := os.ReadFile(r.TLSCAFile)
+			if err != nil {
+				return err
+			}
+			caCertPool := x509.NewCertPool()
+			if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+				return fmt.Errorf("error appending CA to cert pool")
+			}
+			r.ClientOpts.RootCAs = caCertPool
+		}
+
+		// use given certs to configure client-side TLS
+		if r.TLSCertFile != "" && r.TLSKeyFile != "" {
+			cert, err := tls.LoadX509KeyPair(r.TLSCertFile, r.TLSKeyFile)
+			if err != nil {
+				return err
+			}
+			r.ClientOpts.Certificates = []tls.Certificate{cert}
+		}
 	}
 
 	var err error

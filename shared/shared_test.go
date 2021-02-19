@@ -498,6 +498,49 @@ func TestResolveAuth(t *testing.T) {
 	}
 }
 
+func TestResolveWithTLS(t *testing.T) {
+	r := &RootArgs{
+		IsOPDK:      true,
+		Org:         "hi",
+		Env:         "test",
+		RuntimeBase: "runtime",
+		TLSCAFile:   "./testdata/cert.pem",
+		TLSCertFile: "./testdata/cert.pem",
+		TLSKeyFile:  "./testdata/key.pem",
+	}
+
+	if err := r.Resolve(true, true); err != nil {
+		t.Errorf("want no error got %v", err)
+	}
+
+	var want string
+
+	invalidCert, err := os.CreateTemp("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(invalidCert.Name())
+
+	r.TLSCertFile = invalidCert.Name()
+	want = "tls: failed to find any PEM data in certificate input"
+	if err := r.Resolve(true, true); err == nil || err.Error() != want {
+		t.Errorf("want %s... got %v", want, err)
+	}
+
+	r.TLSCAFile = invalidCert.Name()
+	want = "error appending CA to cert pool"
+	if err := r.Resolve(true, true); err == nil || err.Error() != want {
+		t.Errorf("want %s... got %v", want, err)
+	}
+
+	r.TLSCAFile = "invalid-ca-path"
+
+	want = "open invalid-ca-path: no such file or directory"
+	if err := r.Resolve(true, true); err == nil || err.Error() != want {
+		t.Errorf("want %s... got %v", want, err)
+	}
+}
+
 func TestWrite(t *testing.T) {
 	var w io.Writer
 	b := []byte("test")
