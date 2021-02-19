@@ -61,9 +61,11 @@ spec:
           name: apigee-remote-service-envoy
           readOnly: true
 {{- if .IsGCPManaged}}
+  {{- if .AnalyticsSecret}}
         - mountPath: /analytics-secret
           name: analytics-secret
           readOnly: true
+  {{- end}}
         - mountPath: /policy-secret
           name: policy-secret
           readOnly: true
@@ -73,10 +75,12 @@ spec:
         configMap:
           name: apigee-remote-service-envoy
 {{- if .IsGCPManaged}}
+  {{- if .AnalyticsSecret}}
       - name: analytics-secret
         secret:
           defaultMode: 420
           secretName: {{.Org}}-{{.Env}}-analytics-secret
+  {{- end}}
       - name: policy-secret
         secret:
           defaultMode: 420
