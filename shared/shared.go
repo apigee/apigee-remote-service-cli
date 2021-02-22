@@ -121,11 +121,11 @@ func AddCommandWithFlags(c *cobra.Command, rootArgs *RootArgs, cmds ...*cobra.Co
 			false, "allow insecure server connections when using SSL")
 
 		subC.PersistentFlags().StringVarP(&rootArgs.TLSCAFile, "tls-ca", "",
-			"", "path to the root CA for mTLS connection (only for opdk)")
+			"", "path to the root CA for mTLS connection (opdk only)")
 		subC.PersistentFlags().StringVarP(&rootArgs.TLSCertFile, "tls-cert", "",
-			"", "path to the certificate for mTLS connection (only for opdk)")
+			"", "path to the certificate for mTLS connection (opdk only)")
 		subC.PersistentFlags().StringVarP(&rootArgs.TLSKeyFile, "tls-key", "",
-			"", "path to the private key for mTLS connection (only for opdk)")
+			"", "path to the private key for mTLS connection (opdk only)")
 
 		c.AddCommand(subC)
 	}
