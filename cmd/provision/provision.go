@@ -396,7 +396,7 @@ func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rs
 		err = fmt.Errorf("key not found in remote-service propertyset")
 		return
 	}
-	privateKey, err = server.LoadPrivateKey([]byte(strings.ReplaceAll(pkStr, `\n`, "\n")), "")
+	privateKey, err = server.LoadPrivateKey([]byte(strings.ReplaceAll(pkStr, `\n`, "\n")))
 	if err != nil {
 		return
 	}
