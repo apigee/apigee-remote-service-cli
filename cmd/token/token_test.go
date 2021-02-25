@@ -486,7 +486,6 @@ func generateConfig(t *testing.T) []byte {
 	config.Tenant.RemoteServiceAPI = "https://RUNTIME/remote-service"
 	config.Tenant.OrgName = "hi"
 	config.Tenant.EnvName = "test"
-	config.Analytics.FluentdEndpoint = "apigee-udca-hi-test-1q2w3e4r.apigee:20001"
 	if err := yamlEncoder.Encode(config); err != nil {
 		t.Fatal(err)
 	}
