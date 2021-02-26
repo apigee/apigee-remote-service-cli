@@ -515,6 +515,8 @@ func TestResolveWithTLS(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	os.RemoveAll(tempDir)
+
 	keyFile := path.Join(tempDir, "key.pem")
 	certFile := path.Join(tempDir, "cert.pem")
 
