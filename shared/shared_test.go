@@ -16,14 +16,20 @@ package shared
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
+	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/apigee/apigee-remote-service-envoy/server"
 	"github.com/apigee/apigee-remote-service-envoy/testutil"
@@ -499,14 +505,37 @@ func TestResolveAuth(t *testing.T) {
 }
 
 func TestResolveWithTLS(t *testing.T) {
+	pemKey, pemCert, err := generateCert()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tempDir, err := os.MkdirTemp("", "tls")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer os.RemoveAll(tempDir)
+
+	keyFile := path.Join(tempDir, "key.pem")
+	certFile := path.Join(tempDir, "cert.pem")
+
+	if err := os.WriteFile(keyFile, pemKey, os.FileMode(0755)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(certFile, pemCert, os.FileMode(0755)); err != nil {
+		t.Fatal(err)
+	}
+
 	r := &RootArgs{
 		IsOPDK:      true,
 		Org:         "hi",
 		Env:         "test",
 		RuntimeBase: "runtime",
-		TLSCAFile:   "./testdata/cert.pem",
-		TLSCertFile: "./testdata/cert.pem",
-		TLSKeyFile:  "./testdata/key.pem",
+		TLSCAFile:   certFile,
+		TLSCertFile: certFile,
+		TLSKeyFile:  keyFile,
 	}
 
 	if err := r.Resolve(true, true); err != nil {
@@ -705,4 +734,47 @@ func makeYAML(crds ...interface{}) (string, error) {
 		}
 	}
 	return yamlBuffer.String(), nil
+}
+
+func generateCert() ([]byte, []byte, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, certKeyLength)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	publicKey := &privateKey.PublicKey
+
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"Apigee"},
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().Add(time.Hour * 24),
+
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+
+	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey, privateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	keyBuf := &bytes.Buffer{}
+	if err := pem.Encode(keyBuf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privateKeyBytes}); err != nil {
+		return nil, nil, err
+	}
+	certBuf := &bytes.Buffer{}
+	if err := pem.Encode(certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes}); err != nil {
+		return nil, nil, err
+	}
+
+	return keyBuf.Bytes(), certBuf.Bytes(), nil
 }
