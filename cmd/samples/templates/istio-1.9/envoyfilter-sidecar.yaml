@@ -18,6 +18,8 @@ spec:
 
   - applyTo: HTTP_FILTER
     match:
+      proxy:
+        proxyVersion: '^1\.(9|1\d).*'
       context: SIDECAR_INBOUND
       listener:
         filterChain:
@@ -43,6 +45,8 @@ spec:
 
   - applyTo: NETWORK_FILTER
     match:
+      proxy:
+        proxyVersion: '^1\.(9|1\d).*'
       context: SIDECAR_INBOUND
       listener:
         filterChain:
