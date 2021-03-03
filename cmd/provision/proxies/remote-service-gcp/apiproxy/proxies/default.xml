@@ -88,16 +88,12 @@
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
                 </Step>
                 <Step>
-                    <Name>Get-Runtime-Version</Name>
+                    <Name>Products-Callout</Name>
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
                 </Step>
                 <Step>
                     <Name>Products-Callout-Legacy</Name>
-                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version LesserThan "1.4.0")</Condition>
-                </Step>
-                <Step>
-                    <Name>Products-Callout</Name>
-                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version GreaterThanOrEquals "1.4.0")</Condition>
+                    <Condition>javacallout.Products-Callout.failed = true</Condition>
                 </Step>
                 <Step>
                     <Name>Set-Product-Cache</Name>
