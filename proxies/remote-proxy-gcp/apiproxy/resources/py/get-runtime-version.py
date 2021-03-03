@@ -17,6 +17,7 @@ import os
 version = os.environ.get("APIGEE_DPCOLOR", "")
 
 if len(version) > 0:
-    flow.setVariable("runtime_version", ".".join(version[1:4]))
+    dig = [c for c in version if c.isdigit()]
+    flow.setVariable("runtime_version", ".".join(dig[0:3]))
 else:
     flow.setVariable("runtime_version", "unknown")
