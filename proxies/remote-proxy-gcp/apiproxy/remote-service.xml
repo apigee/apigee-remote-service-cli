@@ -20,7 +20,6 @@
         <Policy>Lookup-Products</Policy>
         <Policy>Parse-Product-Cache</Policy>
         <Policy>Populate-Product-List</Policy>
-        <Policy>Products-Callout-Legacy</Policy>
         <Policy>Products-Callout</Policy>
         <Policy>Products-to-JSON</Policy>
         <Policy>Raise-Fault-Missing-Secret</Policy>
