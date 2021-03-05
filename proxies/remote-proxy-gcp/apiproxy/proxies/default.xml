@@ -96,10 +96,6 @@
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
                 </Step>
                 <Step>
-                    <Name>Products-Callout-Legacy</Name>
-                    <Condition>javacallout.Products-Callout.failed = true</Condition>
-                </Step>
-                <Step>
                     <Name>Set-Product-Cache</Name>
                     <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
                 </Step>

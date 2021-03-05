@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<JavaCallout async="false" continueOnError="true" enabled="true" name="Products-Callout">
+<JavaCallout async="false" continueOnError="false" enabled="true" name="Products-Callout">
     <DisplayName>Products Callout</DisplayName>
     <Properties>
         <Property name="products.filter.attributes">apigee-remote-service-targets</Property>
