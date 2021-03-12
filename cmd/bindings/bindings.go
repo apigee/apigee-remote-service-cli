@@ -73,8 +73,8 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "list [product name (optional)]",
-		Short: "List Apigee Products to Remote Target bindings",
-		Long:  "List Apigee Products to Remote Target bindings",
+		Short: "List Apigee Products to Remote Target (API) bindings",
+		Long:  "List Apigee Products to Remote Target (API) bindings",
 		Args:  cobra.MaximumNArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -150,8 +150,8 @@ func printProducts(products []product.APIProduct, printf shared.FormatFn) error 
 	var bound, unbound []product.APIProduct
 	for _, p := range products {
 
-		p.Targets = p.GetBoundTargets()
-		if len(p.Targets) == 0 {
+		p.APIs = p.GetBoundAPIs()
+		if len(p.APIs) == 0 {
 			unbound = append(unbound, p)
 		} else {
 			bound = append(bound, p)
@@ -198,9 +198,9 @@ const productsTemplate = `
  {{- if .QuotaLimit}}
   Quota: {{.QuotaLimit}} requests every {{.QuotaInterval}} {{.QuotaTimeUnit}} 
  {{- end}}
- {{- if .Targets}}
-  Target bindings:
-  {{- range .Targets}}
+ {{- if .APIs}}
+  Target (API) bindings:
+  {{- range .APIs}}
     {{.}}
   {{- end}}
   Paths:

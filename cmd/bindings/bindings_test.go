@@ -93,20 +93,20 @@ func TestBindingListOPDK(t *testing.T) {
 	Bound
 	-----
 	/product0/:
-		Target bindings:
-			/target/
+		Target (API) bindings:
+			/api/
 		Paths:
 	/product2/:
-		Target bindings:
-			/target/
+		Target (API) bindings:
+			/api/
 		Paths:
 	/product4/:
-		Target bindings:
-			/target/
+		Target (API) bindings:
+			/api/
 		Paths:
 	/productOG/:
-		Target bindings:
-			/target/
+		Target (API) bindings:
+			/api/
 		Paths:
 	
 	Unbound
@@ -130,8 +130,8 @@ func TestBindingListOPDK(t *testing.T) {
 	Bound
 	-----
 	/product2/:
-		Target bindings:
-			/target/
+		Target (API) bindings:
+			/api/
 		Paths:
 `
 	print.CheckString(t, want)
@@ -152,7 +152,7 @@ func productTestServer(t *testing.T) *httptest.Server {
 				Attributes: []product.Attribute{
 					{
 						Name:  product.TargetsAttr,
-						Value: "/target/",
+						Value: "/api/",
 					},
 				},
 				QuotaLimit: "null",
@@ -163,7 +163,7 @@ func productTestServer(t *testing.T) *httptest.Server {
 				Attributes: []product.Attribute{
 					{
 						Name:  product.TargetsAttr,
-						Value: "/target/",
+						Value: "/api/",
 					},
 				},
 				QuotaLimit: "null",
@@ -177,7 +177,7 @@ func productTestServer(t *testing.T) *httptest.Server {
 				OperationGroup: &product.OperationGroup{
 					OperationConfigs: []product.OperationConfig{
 						{
-							APISource: "/target/",
+							APISource: "/api/",
 							Operations: []product.Operation{
 								{
 									Resource: "/",
@@ -193,7 +193,7 @@ func productTestServer(t *testing.T) *httptest.Server {
 				Attributes: []product.Attribute{
 					{
 						Name:  product.TargetsAttr,
-						Value: "/target/",
+						Value: "/api/",
 					},
 				},
 				QuotaLimit: "null",
