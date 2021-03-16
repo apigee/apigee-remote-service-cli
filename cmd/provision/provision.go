@@ -270,7 +270,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 	if p.IsGCPManaged && (config.Tenant.PrivateKey == nil || p.rotate > 0) {
 		var keyID string
 		var privateKey *rsa.PrivateKey
-		var jwks *jwk.Set
+		var jwks jwk.Set
 		var err error
 
 		if p.isCloud() { // attempt to fetch secrets from propertysets
@@ -360,7 +360,7 @@ func (p *provision) isCloud() bool {
 
 // policySecretsFromPropertyset retrieves the policy secret from the remote-service propertyset
 // the returned values will be empty or nil if such propertyset does not exist or there is other error fetching it
-func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rsa.PrivateKey, jwks *jwk.Set, err error) {
+func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rsa.PrivateKey, jwks jwk.Set, err error) {
 	req, err := p.ApigeeClient.NewRequest(http.MethodGet, fmt.Sprintf(propertysetGETOrPUTURL, "remote-service"), nil)
 	if err != nil {
 		return
@@ -384,7 +384,7 @@ func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rs
 		err = fmt.Errorf("crt not found in remote-service propertyset")
 		return
 	}
-	jwks = &jwk.Set{}
+	jwks = jwk.NewSet()
 	err = json.Unmarshal([]byte(jwksStr), jwks)
 	if err != nil {
 		return
@@ -415,7 +415,7 @@ func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client,
 
 	// add authorization to transport
 	tr := http.DefaultTransport
-	if config.Tenant.AllowUnverifiedSSLCert {
+	if config.Tenant.TLS.AllowUnverifiedSSLCert {
 		tr = &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{

@@ -45,11 +45,13 @@ const (
 func (p *provision) createConfig(cred *keySecret) *server.Config {
 	config := &server.Config{
 		Tenant: server.TenantConfig{
-			InternalAPI:            p.InternalProxyURL,
-			RemoteServiceAPI:       p.RemoteServiceProxyURL,
-			OrgName:                p.Org,
-			EnvName:                p.Env,
-			AllowUnverifiedSSLCert: p.InsecureSkipVerify,
+			InternalAPI:      p.InternalProxyURL,
+			RemoteServiceAPI: p.RemoteServiceProxyURL,
+			OrgName:          p.Org,
+			EnvName:          p.Env,
+			TLS: server.TLSClientConfig{
+				AllowUnverifiedSSLCert: p.InsecureSkipVerify,
+			},
 		},
 		Auth: server.AuthConfig{
 			JWTProviderKey: p.GetTokenURL(),

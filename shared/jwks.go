@@ -15,6 +15,7 @@
 package shared
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -34,7 +35,7 @@ const (
 )
 
 // CreateNewKey returns keyID, private key, jwks, error
-func (r *RootArgs) CreateNewKey() (keyID string, privateKey *rsa.PrivateKey, jwks *jwk.Set, err error) {
+func (r *RootArgs) CreateNewKey() (keyID string, privateKey *rsa.PrivateKey, jwks jwk.Set, err error) {
 	keyID = time.Now().Format(time.RFC3339)
 	if privateKey, err = rsa.GenerateKey(rand.Reader, certKeyLength); err != nil {
 		return
@@ -51,26 +52,33 @@ func (r *RootArgs) CreateNewKey() (keyID string, privateKey *rsa.PrivateKey, jwk
 		return
 	}
 
-	jwks = &jwk.Set{
-		Keys: []jwk.Key{jwkKey},
-	}
+	jwks = jwk.NewSet()
+	jwks.Add(jwkKey)
 	return
 }
 
 // RotateJWKS returns a jwk.Set including passed keys and keys from existing endpoint,
 // sorted by key ID and truncated per the truncate param.
-func (r *RootArgs) RotateJWKS(jwks *jwk.Set, truncate int) (*jwk.Set, error) {
+func (r *RootArgs) RotateJWKS(set jwk.Set, truncate int) (jwk.Set, error) {
 
-	keys := jwks.Keys
+	ctx := context.Background()
+
+	getKeys := func(set jwk.Set) (keys []jwk.Key) {
+		for it := set.Iterate(ctx); it.Next(ctx); {
+			keys = append(keys, it.Pair().Value.(jwk.Key))
+		}
+		return
+	}
+	keys := getKeys(set)
 
 	if truncate > 1 { // if 1, just skip getting old
-		var oldJWKS *jwk.Set
+		var oldJWKS jwk.Set
 		var err error
 		certsURL := r.GetCertsURL()
-		if oldJWKS, err = jwk.FetchHTTP(certsURL); err != nil {
+		if oldJWKS, err = jwk.Fetch(context.Background(), certsURL); err != nil {
 			return nil, errors.Wrapf(err, "retrieving JWKs from: %s", certsURL)
 		}
-		keys = append(keys, oldJWKS.Keys...)
+		keys = append(keys, getKeys(oldJWKS)...)
 	}
 
 	sort.Sort(sort.Reverse(byKID(keys)))
@@ -78,14 +86,19 @@ func (r *RootArgs) RotateJWKS(jwks *jwk.Set, truncate int) (*jwk.Set, error) {
 		keys = keys[:truncate]
 	}
 
-	return &jwk.Set{Keys: keys}, nil
+	newSet := jwk.NewSet()
+	for _, k := range keys {
+		newSet.Add(k)
+	}
+
+	return newSet, nil
 }
 
 // CreateJWKS returns keyID, private key, jwks, error
 func (r *RootArgs) CreateJWKS(truncate int, verbosef FormatFn) (keyID string, pkBytes, jwksBytes []byte, err error) {
 
 	var privateKey *rsa.PrivateKey
-	var jwks *jwk.Set
+	var jwks jwk.Set
 	if keyID, privateKey, jwks, err = r.CreateNewKey(); err != nil {
 		return
 	}
