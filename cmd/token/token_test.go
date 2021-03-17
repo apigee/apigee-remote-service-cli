@@ -191,17 +191,17 @@ func TestTokenInspect(t *testing.T) {
 	}
 
 	want := []string{`{
-	"aud": [
-		"remote-service-client"
-	],
-	"iss": "https://org-env.apigee.net/remote-token/token",
-	"jti": "/id/",
 	"access_token": "/token/",
 	"api_product_list": [
 		"/product/"
 	],
 	"application_name": "/appname/",
+	"aud": [
+		"remote-service-client"
+	],
 	"client_id": "/clientid/",
+	"iss": "https://org-env.apigee.net/remote-token/token",
+	"jti": "/id/",
 	"scope": "scope1 scope2"
 }`,
 		"\nverifying...",
@@ -511,9 +511,9 @@ func generateConfig(t *testing.T) []byte {
 
 	privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
-	jwksBytes, _ := json.Marshal(&jwk.Set{
-		Keys: []jwk.Key{key},
-	})
+	set := jwk.NewSet()
+	set.Add(key)
+	jwksBytes, _ := json.Marshal(set)
 	props := map[string]string{server.SecretPropsKIDKey: time.Now().Format(time.RFC3339)}
 	propsBuf := new(bytes.Buffer)
 	if err := server.WriteProperties(propsBuf, props); err != nil {

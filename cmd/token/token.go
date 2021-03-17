@@ -16,6 +16,7 @@ package token
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -256,7 +257,7 @@ func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 	if err != nil {
 		return errors.Wrap(err, "reading jwt token")
 	}
-	token, err := jwt.ParseBytes(jwtBytes)
+	token, err := jwt.Parse(jwtBytes)
 	if err != nil {
 		return errors.Wrap(err, "parsing jwt token")
 	}
@@ -270,14 +271,14 @@ func (t *token) inspectToken(in io.Reader, printf shared.FormatFn) error {
 	printf("\nverifying...")
 
 	url := t.GetCertsURL()
-	jwkSet, err := jwk.FetchHTTP(url)
+	jwkSet, err := jwk.Fetch(context.Background(), url)
 	if err != nil {
 		return errors.Wrap(err, "fetching certs")
 	}
-	if _, err = jws.VerifyWithJWKSet(jwtBytes, jwkSet, nil); err != nil {
+	if _, err = jws.VerifySet(jwtBytes, jwkSet); err != nil {
 		return errors.Wrap(err, "verifying cert")
 	}
-	if err := jwt.Verify(token, jwt.WithAcceptableSkew(time.Minute)); err != nil {
+	if err := jwt.Validate(token, jwt.WithAcceptableSkew(time.Minute)); err != nil {
 		printf("invalid token: %s", err)
 		return nil
 	}

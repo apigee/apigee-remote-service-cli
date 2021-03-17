@@ -317,7 +317,7 @@ func (r *RootArgs) loadConfig() error {
 		r.Env = r.ServerConfig.Tenant.EnvName
 	}
 	if !r.InsecureSkipVerify {
-		r.InsecureSkipVerify = r.ServerConfig.Tenant.AllowUnverifiedSSLCert
+		r.InsecureSkipVerify = r.ServerConfig.Tenant.TLS.AllowUnverifiedSSLCert
 	}
 	if r.Namespace == "" {
 		r.Namespace = r.ServerConfig.Global.Namespace

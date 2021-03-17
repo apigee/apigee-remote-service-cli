@@ -39,8 +39,8 @@ func testCertsServer(size int, t *testing.T) *httptest.Server {
 	return ts
 }
 
-func makeJWKS(size int, t *testing.T) *jwk.Set {
-	jwks := &jwk.Set{}
+func makeJWKS(size int, t *testing.T) jwk.Set {
+	jwks := jwk.NewSet()
 	for i := 0; i < size; i += 1 {
 		keyID := time.Now().Format(time.RFC3339)
 		privateKey, err := rsa.GenerateKey(rand.Reader, certKeyLength)
@@ -58,7 +58,7 @@ func makeJWKS(size int, t *testing.T) *jwk.Set {
 		if err = jwkKey.Set(jwk.AlgorithmKey, jwa.RS256); err != nil {
 			t.Fatal(err)
 		}
-		jwks.Keys = append(jwks.Keys, jwkKey)
+		jwks.Add(jwkKey)
 	}
 	return jwks
 }
@@ -79,13 +79,13 @@ func TestJWKSRotation(t *testing.T) {
 	if err != nil {
 		t.Errorf("want no error, got %v", err)
 	}
-	jwks := &jwk.Set{}
+	jwks := jwk.NewSet()
 	err = json.Unmarshal(jwksBytes, jwks)
 	if err != nil {
 		t.Errorf("want no error, got %v", err)
 	}
-	if len(jwks.Keys) != truncate {
-		t.Errorf("want %d keys, got %d", truncate, len(jwks.Keys))
+	if jwks.Len() != truncate {
+		t.Errorf("want %d keys, got %d", truncate, jwks.Len())
 	}
 }
 
@@ -97,7 +97,7 @@ func TestFetchingOldJWKSError(t *testing.T) {
 		RemoteTokenProxyURL:   "not a url",
 	}
 	truncate := 2
-	_, err := r.RotateJWKS(&jwk.Set{}, truncate)
+	_, err := r.RotateJWKS(jwk.NewSet(), truncate)
 	if err == nil {
 		t.Error("want error got none")
 	}

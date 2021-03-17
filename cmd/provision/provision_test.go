@@ -145,9 +145,8 @@ func fakePropertyset() ([]byte, error) {
 		return nil, err
 	}
 
-	jwks := &jwk.Set{
-		Keys: []jwk.Key{jwkKey},
-	}
+	jwks := jwk.NewSet()
+	jwks.Add(jwkKey)
 
 	privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
