@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apigee/apigee-remote-service-cli/testutil"
+	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 )

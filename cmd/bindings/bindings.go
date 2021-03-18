@@ -21,8 +21,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/apigee/apigee-remote-service-golib/product"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-golib/v2/product"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

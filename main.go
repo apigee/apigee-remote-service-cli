@@ -17,12 +17,12 @@ package main
 import (
 	"os"
 
-	"github.com/apigee/apigee-remote-service-cli/cmd"
-	"github.com/apigee/apigee-remote-service-cli/cmd/bindings"
-	"github.com/apigee/apigee-remote-service-cli/cmd/provision"
-	"github.com/apigee/apigee-remote-service-cli/cmd/samples"
-	"github.com/apigee/apigee-remote-service-cli/cmd/token"
-	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd/bindings"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd/provision"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd/samples"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd/token"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 )
 
 // populated via ldflags

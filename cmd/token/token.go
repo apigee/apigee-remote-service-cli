@@ -24,8 +24,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-envoy/v2/server"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"

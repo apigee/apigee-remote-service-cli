@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apigee/apigee-remote-service-cli/testutil"
+	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
 )
 
 func proxyTestServer(t *testing.T) *httptest.Server {
