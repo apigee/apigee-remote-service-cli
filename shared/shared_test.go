@@ -31,8 +31,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apigee/apigee-remote-service-envoy/server"
-	"github.com/apigee/apigee-remote-service-envoy/testutil"
+	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/testutil"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

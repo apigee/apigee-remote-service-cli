@@ -20,10 +20,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/apigee/apigee-remote-service-cli/cmd"
-	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/apigee/apigee-remote-service-cli/testutil"
-	"github.com/apigee/apigee-remote-service-golib/product"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
+	"github.com/apigee/apigee-remote-service-golib/v2/product"
 	"github.com/spf13/cobra"
 )
 

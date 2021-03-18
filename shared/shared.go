@@ -24,9 +24,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/apigee/apigee-remote-service-cli/apigee"
-	"github.com/apigee/apigee-remote-service-cli/testutil"
-	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
+	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
+	"github.com/apigee/apigee-remote-service-envoy/v2/server"
 	"github.com/spf13/cobra"
 )
 

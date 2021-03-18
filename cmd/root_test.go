@@ -20,8 +20,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/apigee/apigee-remote-service-cli/testutil"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
 )
 
 func TestVersion(t *testing.T) {

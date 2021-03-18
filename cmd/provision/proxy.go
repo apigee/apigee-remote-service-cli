@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/apigee/apigee-remote-service-cli/apigee"
-	"github.com/apigee/apigee-remote-service-cli/cmd"
-	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/pkg/errors"
 )
 

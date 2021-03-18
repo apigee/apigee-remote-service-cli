@@ -25,9 +25,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/apigee/apigee-remote-service-cli/cmd"
-	"github.com/apigee/apigee-remote-service-cli/shared"
-	"github.com/apigee/apigee-remote-service-envoy/server"
+	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-envoy/v2/server"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

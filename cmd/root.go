@@ -20,7 +20,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/apigee/apigee-remote-service-cli/shared"
+	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
