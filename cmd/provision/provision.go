@@ -30,10 +30,10 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-golib/v2/errorset"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -452,7 +452,7 @@ func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.Forma
 			if verifyErrors != nil {
 				shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
 				shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
-				for _, err := range multierr.Errors(verifyErrors) {
+				for _, err := range errorset.Errors(verifyErrors) {
 					shared.Errorf("  %s", err)
 				}
 				shared.Errorf("\n")
@@ -473,7 +473,7 @@ func (p *provision) verifyWithoutRetry(config *server.Config, verbosef shared.Fo
 	if verifyErrors != nil {
 		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
 		shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
-		for _, err := range multierr.Errors(verifyErrors) {
+		for _, err := range errorset.Errors(verifyErrors) {
 			shared.Errorf("  %s", err)
 		}
 		shared.Errorf("\n")
@@ -495,7 +495,7 @@ func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) erro
 	}
 
 	verbosef("verifying remote-service proxy...")
-	verifyErrors = multierr.Combine(verifyErrors, p.verifyRemoteServiceProxy(client, verbosef))
+	verifyErrors = errorset.Append(verifyErrors, p.verifyRemoteServiceProxy(client, verbosef))
 
 	return verifyErrors
 }
@@ -524,10 +524,10 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 	var res *http.Response
 	var verifyErrors error
 	err := verifyGET(p.GetCertsURL())
-	verifyErrors = multierr.Append(verifyErrors, err)
+	verifyErrors = errorset.Append(verifyErrors, err)
 
 	err = verifyGET(p.GetProductsURL())
-	verifyErrors = multierr.Append(verifyErrors, err)
+	verifyErrors = errorset.Append(verifyErrors, err)
 
 	verifyAPIKeyURL := p.GetVerifyAPIKeyURL()
 	req, err := http.NewRequest(http.MethodPost, verifyAPIKeyURL, strings.NewReader(`{ "apiKey": "x" }`))
@@ -537,12 +537,12 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		if res != nil {
 			defer res.Body.Close()
 			if res.StatusCode != http.StatusUnauthorized && res.StatusCode != http.StatusInternalServerError { // 401 or 500 is ok, either the secret is not there or we didn't use a valid api key
-				verifyErrors = multierr.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", verifyAPIKeyURL, res.StatusCode))
+				verifyErrors = errorset.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", verifyAPIKeyURL, res.StatusCode))
 			}
 		}
 	}
 	if err != nil {
-		verifyErrors = multierr.Append(verifyErrors, err)
+		verifyErrors = errorset.Append(verifyErrors, err)
 	}
 
 	quotasURL := p.GetQuotasURL()
@@ -553,12 +553,12 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		if res != nil {
 			defer res.Body.Close()
 			if res.StatusCode != http.StatusUnauthorized && res.StatusCode != http.StatusOK {
-				verifyErrors = multierr.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", quotasURL, res.StatusCode))
+				verifyErrors = errorset.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", quotasURL, res.StatusCode))
 			}
 		}
 	}
 	if err != nil {
-		verifyErrors = multierr.Append(verifyErrors, err)
+		verifyErrors = errorset.Append(verifyErrors, err)
 	}
 
 	return verifyErrors
