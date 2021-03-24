@@ -31,8 +31,8 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-golib/v2/errorset"
 	"github.com/pkg/errors"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -237,7 +237,7 @@ func (p *provision) verifyInternalProxy(client *http.Client, printf shared.Forma
 		}
 	}
 	if (res != nil && res.StatusCode > 299) || err != nil {
-		verifyErrors = multierr.Append(verifyErrors, err)
+		verifyErrors = errorset.Append(verifyErrors, err)
 	}
 
 	return verifyErrors
