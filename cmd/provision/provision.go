@@ -106,9 +106,9 @@ to your organization and environment.`,
 	c.Flags().StringVarP(&rootArgs.Token, "token", "t", "",
 		"Apigee OAuth or SAML token (overrides any other given credentials)")
 	c.Flags().StringVarP(&rootArgs.Username, "username", "u", "",
-		"Apigee username (legacy or OPDK only)")
+		"Apigee username (legacy or opdk only)")
 	c.Flags().StringVarP(&rootArgs.Password, "password", "p", "",
-		"Apigee password (legacy or OPDK only)")
+		"Apigee password (legacy or opdk only)")
 	c.Flags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
 		"Apigee multi-factor authorization token (legacy only)")
 
