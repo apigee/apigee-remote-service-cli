@@ -189,8 +189,9 @@ func (p *provision) checkProxyDeploymentStatus(name string) error {
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("unable to verify deployment status of proxy %s", name)
+			return fmt.Errorf("unable to verify deployment status of proxy %s revision %d", name, rev)
 		case <-tick:
+			shared.Errorf("\nchecking deployment status of proxy %s revision %d", name, rev)
 			dep, err := p.ApigeeClient.Proxies.GetGCPRevisionDeployment(name, rev)
 			if err != nil {
 				return err
@@ -199,11 +200,11 @@ func (p *provision) checkProxyDeploymentStatus(name string) error {
 			case "READY":
 				return nil
 			case "PROGRESSING":
-				shared.Errorf("\nWARNING: Checking deployment status of proxy %s", name)
+				shared.Errorf("\nproxy %s revision %d deployment in progress", name, rev)
 			case "ERROR":
-				return fmt.Errorf("failed to deploy proxy %s, deleting the revision", name)
+				return fmt.Errorf("failed to deploy proxy %s revision %d, deleting the revision", name, rev)
 			default:
-				return fmt.Errorf("unknown deployment state for proxy %s", name)
+				return fmt.Errorf("unknown deployment state for proxy %s revision %d", name, rev)
 			}
 		}
 	}
