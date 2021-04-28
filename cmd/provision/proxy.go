@@ -173,7 +173,7 @@ func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, pr
 	return nil
 }
 
-func (p *provision) checkProxyDeploymentStatus(name string) error {
+func (p *provision) checkProxyDeploymentStatus(name string, printf shared.FormatFn) error {
 	proxy, _, err := p.ApigeeClient.Proxies.Get(authProxyName)
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func (p *provision) checkProxyDeploymentStatus(name string) error {
 		case <-timeout:
 			return fmt.Errorf("unable to verify deployment status of proxy %s revision %d", name, rev)
 		case <-tick:
-			shared.Errorf("\nchecking deployment status of proxy %s revision %d", name, rev)
+			printf("\nchecking deployment status of proxy %s revision %d", name, rev)
 			dep, err := p.ApigeeClient.Proxies.GetGCPRevisionDeployment(name, rev)
 			if err != nil {
 				return err
@@ -200,7 +200,7 @@ func (p *provision) checkProxyDeploymentStatus(name string) error {
 			case "READY":
 				return nil
 			case "PROGRESSING":
-				shared.Errorf("\nproxy %s revision %d deployment in progress", name, rev)
+				printf("\nproxy %s revision %d deployment in progress", name, rev)
 			case "ERROR":
 				return fmt.Errorf("failed to deploy proxy %s revision %d, deleting the revision", name, rev)
 			default:

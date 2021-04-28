@@ -239,7 +239,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 		return errors.Wrapf(err, "deploying runtime proxy %s", authProxyName)
 	}
 
-	if !p.isCloud() && p.checkProxyDeploymentStatus(authProxyName) != nil {
+	if !p.isCloud() && p.checkProxyDeploymentStatus(authProxyName, verbosef) != nil {
 		shared.Errorf("\nWARNING: Falling back to the proxy bundle supporting runtime version 1.4.x or less.")
 		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyLegacy, replaceVersion)
 		if err != nil {
