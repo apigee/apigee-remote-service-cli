@@ -64,7 +64,6 @@ type GCPDeployment struct {
 	Revision        string `json:"revision,omitempty"`
 	DeployStartTime string `json:"deployStartTime,omitempty"`
 	BasePath        string `json:"basePath,omitempty"`
-	State           string `json:"state,omitempty"`
 }
 
 // Proxy contains information about an API Proxy within an Edge organization.

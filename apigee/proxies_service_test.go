@@ -63,8 +63,6 @@ func proxyTestServer(t *testing.T) *httptest.Server {
 		},
 	}
 
-	ctr := 0
-
 	m.HandleFunc("/apis/", (func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -114,32 +112,6 @@ func proxyTestServer(t *testing.T) *httptest.Server {
 		case http.MethodGet:
 			w.WriteHeader(http.StatusCreated)
 			_, _ = w.Write([]byte("{}"))
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	}))
-	m.HandleFunc("/apis/proxy-gcp/revisions/1/deployments", (func(w http.ResponseWriter, r *http.Request) {
-		dep := GCPDeployment{
-			Revision: "1",
-		}
-		switch ctr {
-		case 0:
-			dep.State = "PROGRESSING"
-		case 1:
-			dep.State = "READY"
-		case 2:
-			dep.State = "ERROR"
-		case 3:
-			dep.State = "UNKNOWN"
-		}
-		ctr++
-
-		switch r.Method {
-		case http.MethodGet:
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(dep); err != nil {
-				t.Fatalf("want no error %v", err)
-			}
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
