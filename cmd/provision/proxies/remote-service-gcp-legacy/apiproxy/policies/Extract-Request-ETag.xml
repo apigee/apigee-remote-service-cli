@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<ExtractVariables async="false" continueOnError="false" enabled="true" name="Extract-Request-ETag">
-    <DisplayName>Extract Request ETag</DisplayName>
-    <Header name="If-None-Match">
-        <Pattern ignoreCase="false">{etag}</Pattern>
-    </Header>
-    <Source clearPayload="false">request</Source>
-</ExtractVariables>

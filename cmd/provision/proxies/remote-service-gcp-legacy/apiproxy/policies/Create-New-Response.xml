@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!-- Do NOT edit or pull out this policy from the proxies! -->
-<!-- This policy is used to create a new response without mixing with any request headers for an http2 client. -->
-<AssignMessage async="false" continueOnError="false" enabled="true" name="Create-New-Response">
-    <DisplayName>CreateNewResponse</DisplayName>
-    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-    <AssignTo createNew="true" transport="http" type="response"/>
-</AssignMessage>

@@ -347,40 +347,6 @@ func TestGetGCPProxyDeployment(t *testing.T) {
 	}
 }
 
-func TestGetGCPRevisionDeployment(t *testing.T) {
-	ts := proxyTestServer(t)
-	defer ts.Close()
-
-	baseUrl, err := url.Parse(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := &EdgeClient{
-		client:     http.DefaultClient,
-		BaseURLEnv: baseUrl,
-		BaseURL:    baseUrl,
-	}
-	ps := &ProxiesServiceOp{
-		client: client,
-	}
-
-	_, err = ps.GetGCPRevisionDeployment("proxy-gcp", 1)
-	testutil.ErrorContains(t, err, "only compatible with GCP Experience")
-
-	ps.client.IsGCPManaged = true
-	states := []string{"PROGRESSING", "READY", "ERROR", "UNKNOWN"}
-
-	for _, s := range states {
-		dep, err := ps.GetGCPRevisionDeployment("proxy-gcp", 1)
-		if err != nil {
-			t.Errorf("want no error got %v", err)
-		}
-		if dep.State != s {
-			t.Errorf("want deployment state %s, got %s", dep.State, s)
-		}
-	}
-
-}
 func TestSmartFilter(t *testing.T) {
 	strs := []string{
 		"test",

@@ -43,9 +43,8 @@ const (
 	authProxyName  = "remote-service"
 	tokenProxyName = "remote-token"
 
-	remoteServiceProxy       = "remote-service-gcp"
-	remoteServiceProxyLegacy = "remote-service-gcp-legacy"
-	remoteTokenProxy         = "remote-token-gcp"
+	remoteServiceProxy = "remote-service-gcp"
+	remoteTokenProxy   = "remote-token-gcp"
 )
 
 // default durations for the proxy verification retry
@@ -237,17 +236,6 @@ func (p *provision) run(printf shared.FormatFn) error {
 
 	if err := p.checkAndDeployProxy(authProxyName, customizedProxy, p.forceProxyInstall, verbosef); err != nil {
 		return errors.Wrapf(err, "deploying runtime proxy %s", authProxyName)
-	}
-
-	if p.IsGCPManaged && !p.isCloud() && p.checkProxyDeploymentStatus(authProxyName, verbosef) != nil {
-		shared.Errorf("\nWARNING: Falling back to the proxy bundle supporting runtime version 1.4.x or less.")
-		customizedProxy, err = getCustomizedProxy(tempDir, remoteServiceProxyLegacy, replaceVersion)
-		if err != nil {
-			return err
-		}
-		if err = p.checkAndDeployProxy(authProxyName, customizedProxy, true, verbosef); err != nil {
-			return errors.Wrapf(err, "deploying runtime proxy %s", authProxyName)
-		}
 	}
 
 	// Deploy remote-token proxy

@@ -21,7 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"time"
 
 	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
 	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
@@ -171,41 +170,4 @@ func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, pr
 	}
 
 	return nil
-}
-
-func (p *provision) checkProxyDeploymentStatus(name string, printf shared.FormatFn) error {
-	proxy, _, err := p.ApigeeClient.Proxies.Get(authProxyName)
-	if err != nil {
-		return err
-	}
-	if proxy == nil || len(proxy.Revisions) == 0 {
-		return fmt.Errorf("unable to find revisions of proxy: %s", authProxyName)
-	}
-	sort.Sort(apigee.RevisionSlice(proxy.Revisions))
-	rev := proxy.Revisions[len(proxy.Revisions)-1]
-
-	timeout := time.After(duration)
-	tick := time.Tick(interval)
-	for {
-		select {
-		case <-timeout:
-			return fmt.Errorf("unable to verify deployment status of proxy %s revision %d", name, rev)
-		case <-tick:
-			printf("\nchecking deployment status of proxy %s revision %d", name, rev)
-			dep, err := p.ApigeeClient.Proxies.GetGCPRevisionDeployment(name, rev)
-			if err != nil {
-				return err
-			}
-			switch dep.State {
-			case "READY":
-				return nil
-			case "PROGRESSING":
-				printf("\nproxy %s revision %d deployment in progress", name, rev)
-			case "ERROR":
-				return fmt.Errorf("failed to deploy proxy %s revision %d, deleting the revision", name, rev)
-			default:
-				return fmt.Errorf("unknown deployment state for proxy %s revision %d", name, rev)
-			}
-		}
-	}
 }

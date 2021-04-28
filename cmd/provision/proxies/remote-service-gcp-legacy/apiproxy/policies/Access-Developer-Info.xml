@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<AccessEntity async="false" continueOnError="false" enabled="true" name="Access-Developer-Info">
-    <DisplayName>Access Developer Info</DisplayName>
-    <Properties/>
-    <EntityIdentifier ref="apikey" type="consumerkey"/>
-    <EntityType value="developer"/>
-</AccessEntity>

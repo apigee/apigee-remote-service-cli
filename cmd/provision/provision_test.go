@@ -171,77 +171,52 @@ func fakePropertyset() ([]byte, error) {
 }
 
 func serveMux(t *testing.T) *http.ServeMux {
-	gcpDeps := apigee.GCPDeployments{
-		Deployments: []apigee.GCPDeployment{
-			{
-				Environment: "test",
-				Name:        "remote-service",
-				Revision:    "3",
-			},
-			{
-				Environment: "test",
-				Name:        "remote-service",
-				Revision:    "2",
-			},
-			{
-				Environment: "test",
-				Name:        "remote-service",
-				Revision:    "1",
-			},
-		},
-	}
-
-	gcpProxy := apigee.Proxy{
-		Name:      "remote-service",
-		Revisions: []apigee.Revision{3, 2, 1},
-		MetaData: apigee.ProxyMetadata{
-			LastModifiedBy: "gcp",
-			CreatedBy:      "gcp",
-		},
-	}
-
-	gcpDep := apigee.GCPDeployment{State: "PROGRESSING"}
-
 	m := http.NewServeMux()
 	m.HandleFunc("/v1/organizations/gcp/environments/test/apis/remote-service/deployments", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		default:
-			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
-		case http.MethodGet:
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(gcpDeps); err != nil {
-				t.Fatalf("want no error %v", err)
-			}
+		res := apigee.GCPDeployments{
+			Deployments: []apigee.GCPDeployment{
+				{
+					Environment: "test",
+					Name:        "remote-service",
+					Revision:    "3",
+				},
+				{
+					Environment: "test",
+					Name:        "remote-service",
+					Revision:    "2",
+				},
+				{
+					Environment: "test",
+					Name:        "remote-service",
+					Revision:    "1",
+				},
+			},
 		}
-	})
-	m.HandleFunc("/v1/organizations/gcp/environments/test/apis/remote-service/revisions/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		default:
 			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
-		case http.MethodPost:
-			if strings.Contains(r.URL.Path, "4") {
-				gcpProxy.Revisions = append(gcpProxy.Revisions, 4)
-			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte("{}"))
 		case http.MethodGet:
-			if strings.Contains(r.URL.Path, "4") {
-				gcpDep.State = "ERROR"
-			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(gcpDep); err != nil {
+			if err := json.NewEncoder(w).Encode(res); err != nil {
 				t.Fatalf("want no error %v", err)
 			}
-			gcpDep.State = "READY"
 		}
 	})
 	m.HandleFunc("/v1/organizations/gcp/apis/remote-service", func(w http.ResponseWriter, r *http.Request) {
+		res := apigee.Proxy{
+			Name:      "remote-service",
+			Revisions: []apigee.Revision{3, 2, 1},
+			MetaData: apigee.ProxyMetadata{
+				LastModifiedBy: "gcp",
+				CreatedBy:      "gcp",
+			},
+		}
 		switch r.Method {
 		default:
 			t.Fatalf("%s to %s not allowed", r.Method, r.URL.Path)
 		case http.MethodGet:
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(gcpProxy); err != nil {
+			if err := json.NewEncoder(w).Encode(res); err != nil {
 				t.Fatalf("want no error %v", err)
 			}
 		}
@@ -574,7 +549,7 @@ func TestProvisionHybrid(t *testing.T) {
 	ts := httptest.NewServer(handler(t))
 	defer ts.Close()
 
-	duration = 300 * time.Millisecond
+	duration = 200 * time.Millisecond
 	interval = 100 * time.Millisecond
 
 	print := testutil.Printer("TestProvisionHybrid")
