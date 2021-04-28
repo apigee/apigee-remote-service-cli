@@ -6,5 +6,5 @@
         <Property name="products.filter.env.enable">false</Property>
     </Properties>
     <ClassName>io.apigee.hybrid.microgateway.javacallout.Callout</ClassName>
-    <ResourceURL>java://envoy-javacallout-1.1.0.jar</ResourceURL>
+    <ResourceURL>java://envoy-javacallout-1.0.2.jar</ResourceURL>
 </JavaCallout>

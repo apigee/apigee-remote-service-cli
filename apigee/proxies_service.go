@@ -43,6 +43,7 @@ type ProxiesService interface {
 	GetDeployedRevision(proxy string) (*Revision, error)
 	GetGCPDeployments(proxy string) ([]GCPDeployment, *Response, error)
 	GetGCPDeployedRevision(proxy string) (*Revision, error)
+	GetGCPRevisionDeployment(proxy string, revision Revision) (*GCPDeployment, error)
 }
 
 // ProxiesServiceOp represents operations against Apigee proxies
@@ -64,6 +65,7 @@ type GCPDeployment struct {
 	Revision        string `json:"revision,omitempty"`
 	DeployStartTime string `json:"deployStartTime,omitempty"`
 	BasePath        string `json:"basePath,omitempty"`
+	State           string `json:"state,omitempty"`
 }
 
 // Proxy contains information about an API Proxy within an Edge organization.
@@ -475,4 +477,23 @@ func (s *ProxiesServiceOp) GetGCPDeployedRevision(proxy string) (*Revision, erro
 	}
 
 	return nil, nil
+}
+
+// GetGCPRevisionDeployment returns the Deployment of an API proxy revision.
+func (s *ProxiesServiceOp) GetGCPRevisionDeployment(proxy string, revision Revision) (*GCPDeployment, error) {
+	if !s.client.IsGCPManaged {
+		return nil, errors.New("only compatible with GCP Experience")
+	}
+
+	urlPath := path.Join(proxiesPath, proxy, "revisions", revision.String(), "deployments")
+	req, e := s.client.NewRequest("GET", urlPath, nil)
+	if e != nil {
+		return nil, e
+	}
+	deployment := &GCPDeployment{}
+	if _, e := s.client.Do(req, &deployment); e != nil {
+		return nil, e
+	}
+
+	return deployment, nil
 }

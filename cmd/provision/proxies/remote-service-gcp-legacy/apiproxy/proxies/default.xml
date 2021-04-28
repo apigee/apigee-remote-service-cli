@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description/>
+    <FaultRules/>
+    <Flows>
+        <Flow name="Verify API Key">
+            <Description/>
+            <Request>
+                <Step>
+                    <Name>Raise-Fault-Missing-Secret</Name>
+                    <Condition>
+                        (private.secret.remote-service.key is null || private.secret.remote-service.properties.kid is null) and (propertyset.remote-service.key is null || propertyset.remote-service.kid is null)
+                    </Condition>
+                </Step>
+                <Step>
+                    <Name>Set-JWKS</Name>
+                </Step>
+                <Step>
+                    <Name>Verify-Internal-JWT</Name>
+                </Step>
+                <Step>
+                    <Name>Extract-API-Key</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Unknown-Request</Name>
+                    <Condition>apikey is null</Condition>
+                </Step>
+                <Step>
+                    <Name>Access-App-Info</Name>
+                </Step>
+                <Step>
+                    <Name>Extract-App-Name</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Invalid-API-Key</Name>
+                    <Condition>AccessEntity.ChildNodes.Access-App-Info.App.Credentials is null</Condition>
+                </Step>
+                <Step>
+                    <Name>Products-to-JSON</Name>
+                </Step>
+                <Step>
+                    <Name>Set-JWT-Variables</Name>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Invalid-API-Key</Name>
+                    <Condition>isValidApiKey != "true"</Condition>
+                </Step>
+                <Step>
+                    <Name>Access-Developer-Info</Name>
+                </Step>
+                <Step>
+                    <Name>Generate-VerifyKey-Token</Name>
+                </Step>
+            </Request>
+            <Response>
+                <Step>
+                    <Name>Create-New-Response</Name>
+                </Step>
+                <Step>
+                    <Name>Set-VerifyKey-Response</Name>
+                </Step>
+            </Response>
+            <Condition>(proxy.pathsuffix MatchesPath "/verifyApiKey") and (request.verb = "POST")</Condition>
+        </Flow>
+        <Flow name="Get API Products">
+            <Description/>
+            <Request>
+                <Step>
+                    <Name>Set-JWKS</Name>
+                </Step>
+                <Step>
+                    <Name>Verify-Internal-JWT</Name>
+                </Step>
+                <Step>
+                    <Name>Extract-Request-ETag</Name>
+                </Step>
+                <Step>
+                    <Name>Lookup-Products</Name>
+                </Step>
+            </Request>
+            <Response>
+                <Step>
+                    <Name>Parse-Product-Cache</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = true</Condition>
+                </Step>
+                <Step>
+                    <Name>Create-New-Response</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
+                    <Name>Products-Callout</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
+                    <Name>Set-Product-Cache</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
+                    <Name>Populate-Product-List</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
+                </Step>
+                <Step>
+                    <Name>Raise-Fault-Not-Modified</Name>
+                    <Condition>etag = response.header.etag</Condition>
+                </Step>
+                <Step>
+                    <Name>Send-Product-List</Name>
+                    <Condition>lookupcache.Lookup-Products.cachehit = true</Condition>
+                </Step>
+            </Response>
+            <Condition>(proxy.pathsuffix MatchesPath "/products") and (request.verb = "GET")</Condition>
+        </Flow>
+        <Flow name="Get Version">
+            <Description>Get the version of the API Proxy</Description>
+            <Request>
+                <Step>
+                    <Name>Get-Runtime-Version</Name>
+                </Step>
+            </Request>
+            <Response>
+                <Step>
+                    <Name>Send-Version</Name>
+                </Step>
+            </Response>
+            <Condition>(proxy.pathsuffix MatchesPath "/version") and (request.verb = "GET")</Condition>
+        </Flow>
+        <Flow name="DistributedQuota">
+            <Request>
+                <Step>
+                    <Name>Set-JWKS</Name>
+                </Step>
+                <Step>
+                    <Name>Verify-Internal-JWT</Name>
+                </Step>
+                <Step>
+                    <Name>Set-Quota-Variables</Name>
+                </Step>
+                <Step>
+                    <Name>DistributedQuota</Name>
+                </Step>
+                <Step>
+                    <Name>Eval-Quota-Result</Name>
+                </Step>
+            </Request>
+            <Response>
+                <Step>
+                    <Name>Set-Quota-Response</Name>
+                </Step>
+            </Response>
+            <Condition>(proxy.pathsuffix MatchesPath "/quotas") and (request.verb = "POST")</Condition>
+        </Flow>
+        <Flow name="Unknown Request">
+            <Description>Unknown Request</Description>
+            <Request>
+                <Step>
+                    <Name>Raise-Fault-Unknown-Request</Name>
+                </Step>
+            </Request>
+            <Response/>
+        </Flow>
+    </Flows>
+    <HTTPProxyConnection>
+        <BasePath>/remote-service</BasePath>
+        <Properties/>
+    </HTTPProxyConnection>
+    <RouteRule name="noroute"/>
+</ProxyEndpoint>

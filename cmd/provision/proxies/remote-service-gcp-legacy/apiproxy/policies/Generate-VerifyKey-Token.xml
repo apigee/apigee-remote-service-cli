@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<GenerateJWT async="false" continueOnError="false" enabled="true" name="Generate-VerifyKey-Token">
+    <DisplayName>Generate VerifyKey Token</DisplayName>
+    <Algorithm>RS256</Algorithm>
+    <PrivateKey>
+        <Value ref="private.remote-service.key"/>
+        <Id ref="private.remote-service.properties.kid"/>
+    </PrivateKey>
+    <Issuer ref="iss"/>
+    <Audience>remote-service-client</Audience>
+    <ExpiresIn>15m</ExpiresIn>
+    <NotBefore ref="nbf"/>
+    <AdditionalClaims>
+        <Claim name="client_id" ref="apikey"/>
+        <Claim name="api_product_list" ref="apiProductList" type="string" array="true"/>
+        <Claim name="application_name" ref="appName"/>
+        <Claim name="developer_email" ref="AccessEntity.ChildNodes.Access-Developer-Info.Developer.Email"/>
+    </AdditionalClaims>
+    <OutputVariable>jwtmessage</OutputVariable>
+</GenerateJWT>
