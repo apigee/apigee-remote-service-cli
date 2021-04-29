@@ -15,6 +15,7 @@
         <Policy>Extract-Request-ETag</Policy>
         <Policy>Generate-VerifyKey-Token</Policy>
         <Policy>Get-Runtime-Version</Policy>
+        <Policy>Legacy-Products-Callout</Policy>
         <Policy>Lookup-Products</Policy>
         <Policy>Parse-Product-Cache</Policy>
         <Policy>Populate-Product-List</Policy>
@@ -38,8 +39,8 @@
         <ProxyEndpoint>default</ProxyEndpoint>
     </ProxyEndpoints>
     <Resources>
+        <Resource>java://envoy-javacallout-1.1.0.jar</Resource>
         <Resource>java://envoy-javacallout-1.0.2.jar</Resource>
-        <Resource>java://envoy-javacallout-legacy.jar</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
         <Resource>jsc://parse-product-cache.js</Resource>
         <Resource>jsc://set-jwks-variable.js</Resource>

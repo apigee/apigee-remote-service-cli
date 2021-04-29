@@ -5,6 +5,6 @@
         <Property name="products.filter.attributes">apigee-remote-service-targets</Property>
         <Property name="products.filter.env.enable">false</Property>
     </Properties>
-    <ClassName>io.apigee.hybrid.microgateway.javacallout.Callout</ClassName>
-    <ResourceURL>java://envoy-javacallout-1.0.2.jar</ResourceURL>
+    <ClassName>io.apigee.hybrid.microgateway.javacallout.release15.Callout</ClassName>
+    <ResourceURL>java://envoy-javacallout-1.1.1.jar</ResourceURL>
 </JavaCallout>
