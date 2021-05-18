@@ -35,6 +35,8 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
 	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
+	"github.com/apigee/apigee-remote-service-envoy/v2/util"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -482,20 +484,20 @@ func generateConfig(t *testing.T) []byte {
 
 	privateKey, key := generateJWK(t)
 
-	config := server.DefaultConfig()
-	config.Tenant.RemoteServiceAPI = "https://RUNTIME/remote-service"
-	config.Tenant.OrgName = "hi"
-	config.Tenant.EnvName = "test"
-	if err := yamlEncoder.Encode(config); err != nil {
+	cfg := config.Default()
+	cfg.Tenant.RemoteServiceAPI = "https://RUNTIME/remote-service"
+	cfg.Tenant.OrgName = "hi"
+	cfg.Tenant.EnvName = "test"
+	if err := yamlEncoder.Encode(cfg); err != nil {
 		t.Fatal(err)
 	}
 	configYAML := yamlBuffer.String()
 	data := map[string]string{"config.yaml": configYAML}
 
-	configCRD := server.ConfigMapCRD{
+	configCRD := config.ConfigMapCRD{
 		APIVersion: "v1",
 		Kind:       "ConfigMap",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      "apigee-remote-service-envoy",
 			Namespace: "apigee",
 		},
@@ -514,23 +516,23 @@ func generateConfig(t *testing.T) []byte {
 	set := jwk.NewSet()
 	set.Add(key)
 	jwksBytes, _ := json.Marshal(set)
-	props := map[string]string{server.SecretPropsKIDKey: time.Now().Format(time.RFC3339)}
+	props := map[string]string{config.SecretPropsKIDKey: time.Now().Format(time.RFC3339)}
 	propsBuf := new(bytes.Buffer)
-	if err := server.WriteProperties(propsBuf, props); err != nil {
+	if err := util.WriteProperties(propsBuf, props); err != nil {
 		t.Fatal(err)
 	}
 
 	secretData := map[string]string{
-		server.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
-		server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
-		server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
+		config.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
+		config.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
+		config.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 	}
 
-	secretCRD := server.SecretCRD{
+	secretCRD := config.SecretCRD{
 		APIVersion: "v1",
 		Kind:       "Secret",
 		Type:       "Opaque",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      "hi-test-policy-secret",
 			Namespace: "apigee",
 		},

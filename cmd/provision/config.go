@@ -28,7 +28,9 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/util"
 	"gopkg.in/yaml.v3"
 )
 
@@ -42,18 +44,18 @@ const (
 	defaultResourceName = "apigee-remote-service-envoy"
 )
 
-func (p *provision) createConfig(cred *keySecret) *server.Config {
-	config := &server.Config{
-		Tenant: server.TenantConfig{
+func (p *provision) createConfig(cred *keySecret) *config.Config {
+	config := &config.Config{
+		Tenant: config.Tenant{
 			InternalAPI:      p.InternalProxyURL,
 			RemoteServiceAPI: p.RemoteServiceProxyURL,
 			OrgName:          p.Org,
 			EnvName:          p.Env,
-			TLS: server.TLSClientConfig{
+			TLS: config.TLSClientSpec{
 				AllowUnverifiedSSLCert: p.InsecureSkipVerify,
 			},
 		},
-		Auth: server.AuthConfig{
+		Auth: config.Auth{
 			JWTProviderKey: p.GetTokenURL(),
 			// TODO: turn this off when the support of Envoy 1.15.x stops
 			AppendMetadataHeaders: true,
@@ -77,22 +79,22 @@ func (p *provision) createConfig(cred *keySecret) *server.Config {
 	return config
 }
 
-func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, verifyErrors error, verbosef shared.FormatFn) error {
+func (p *provision) printConfig(cfg *config.Config, printf shared.FormatFn, verifyErrors error, verbosef shared.FormatFn) error {
 	// encode config
 	var yamlBuffer bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
 	yamlEncoder.SetIndent(2)
-	err := yamlEncoder.Encode(config)
+	err := yamlEncoder.Encode(cfg)
 	if err != nil {
 		return err
 	}
 	configYAML := yamlBuffer.String()
 
 	data := map[string]string{"config.yaml": configYAML}
-	configCRD := server.ConfigMapCRD{
+	configCRD := config.ConfigMapCRD{
 		APIVersion: "v1",
 		Kind:       "ConfigMap",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      defaultResourceName,
 			Namespace: p.Namespace,
 		},
@@ -109,11 +111,11 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 
 	// encodes the policy secrets in GCP managed cases
 	if p.policySecretData != nil {
-		secretCRD := server.SecretCRD{
+		secretCRD := config.SecretCRD{
 			APIVersion: "v1",
 			Kind:       "Secret",
 			Type:       "Opaque",
-			Metadata: server.Metadata{
+			Metadata: config.Metadata{
 				Name:      fmt.Sprintf(policySecretNameFormat, p.Org, p.Env),
 				Namespace: p.Namespace,
 			},
@@ -128,11 +130,11 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 
 	// encodes the service account credentials
 	if p.analyticsSecretData != nil {
-		secretCRD := server.SecretCRD{
+		secretCRD := config.SecretCRD{
 			APIVersion: "v1",
 			Kind:       "Secret",
 			Type:       "Opaque",
-			Metadata: server.Metadata{
+			Metadata: config.Metadata{
 				Name:      fmt.Sprintf(analyticsSecretNameFormat, p.Org, p.Env),
 				Namespace: p.Namespace,
 			},
@@ -168,27 +170,27 @@ func (p *provision) printConfig(config *server.Config, printf shared.FormatFn, v
 
 // createPolicySecretData creates the policySecretData to be encoded into the config file
 // if the runtime type is CLOUD (NG SaaS), it creates the related property set in Apigee
-func (p *provision) createPolicySecretData(config *server.Config, verbosef shared.FormatFn) error {
+func (p *provision) createPolicySecretData(cfg *config.Config, verbosef shared.FormatFn) error {
 	privateKeyBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType,
-		Bytes: x509.MarshalPKCS1PrivateKey(config.Tenant.PrivateKey)})
+		Bytes: x509.MarshalPKCS1PrivateKey(cfg.Tenant.PrivateKey)})
 
 	// create CRD for policy secret
-	jwksBytes, err := json.Marshal(config.Tenant.JWKS)
+	jwksBytes, err := json.Marshal(cfg.Tenant.JWKS)
 	if err != nil {
 		return err
 	}
 
-	props := map[string]string{server.SecretPropsKIDKey: config.Tenant.PrivateKeyID}
+	props := map[string]string{config.SecretPropsKIDKey: cfg.Tenant.PrivateKeyID}
 	propsBuf := new(bytes.Buffer)
-	if err := server.WriteProperties(propsBuf, props); err != nil {
+	if err := util.WriteProperties(propsBuf, props); err != nil {
 		return err
 	}
 
 	// encode policy secret
 	p.policySecretData = map[string]string{
-		server.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
-		server.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
-		server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
+		config.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBytes),
+		config.SecretPrivateKey: base64.StdEncoding.EncodeToString(privateKeyBytes),
+		config.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 	}
 
 	if p.isCloud() {
@@ -199,7 +201,7 @@ func (p *provision) createPolicySecretData(config *server.Config, verbosef share
 }
 
 // createAnalyticsSecretData creates the analyticsSecretData to be encoded into the config file
-func (p *provision) createAnalyticsSecretData(config *server.Config, verbosef shared.FormatFn) error {
+func (p *provision) createAnalyticsSecretData(cfg *config.Config, verbosef shared.FormatFn) error {
 	var cred []byte
 	// creates the analytics secret if service account is specified
 	if p.analyticsServiceAccount != "" {
@@ -211,8 +213,8 @@ func (p *provision) createAnalyticsSecretData(config *server.Config, verbosef sh
 		}
 	}
 
-	if len(config.Analytics.CredentialsJSON) > 0 {
-		cred = config.Analytics.CredentialsJSON
+	if len(cfg.Analytics.CredentialsJSON) > 0 {
+		cred = cfg.Analytics.CredentialsJSON
 	}
 
 	if len(cred) == 0 {
@@ -221,7 +223,7 @@ func (p *provision) createAnalyticsSecretData(config *server.Config, verbosef sh
 
 	// encode service account credentials into secret
 	p.analyticsSecretData = map[string]string{
-		server.ServiceAccount: base64.StdEncoding.EncodeToString(cred),
+		config.ServiceAccount: base64.StdEncoding.EncodeToString(cred),
 	}
 
 	return nil
@@ -234,7 +236,7 @@ func (p *provision) createSecretPropertyset(jwks []byte, privateKey []byte, prop
 		"key": strings.ReplaceAll(string(privateKey), "\n", `\n`),
 	}
 	propsBuf := new(bytes.Buffer)
-	if err := server.WriteProperties(propsBuf, m); err != nil {
+	if err := util.WriteProperties(propsBuf, m); err != nil {
 		return err
 	}
 	props = append(props, propsBuf.Bytes()...)

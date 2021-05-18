@@ -29,7 +29,9 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/util"
 	"github.com/apigee/apigee-remote-service-golib/v2/errorset"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
@@ -262,12 +264,12 @@ func (p *provision) run(printf shared.FormatFn) error {
 		}
 	}
 
-	config := p.ServerConfig
-	if config == nil {
-		config = p.createConfig(cred)
+	cfg := p.ServerConfig
+	if cfg == nil {
+		cfg = p.createConfig(cred)
 	}
 
-	if p.IsGCPManaged && (config.Tenant.PrivateKey == nil || p.rotate > 0) {
+	if p.IsGCPManaged && (cfg.Tenant.PrivateKey == nil || p.rotate > 0) {
 		var keyID string
 		var privateKey *rsa.PrivateKey
 		var jwks jwk.Set
@@ -283,27 +285,27 @@ func (p *provision) run(printf shared.FormatFn) error {
 				return err
 			}
 		}
-		config.Tenant.PrivateKey = privateKey
-		config.Tenant.PrivateKeyID = keyID
+		cfg.Tenant.PrivateKey = privateKey
+		cfg.Tenant.PrivateKeyID = keyID
 
 		if jwks, err = p.RotateJWKS(jwks, p.rotate); err != nil {
 			return err
 		}
 
-		config.Tenant.JWKS = jwks
+		cfg.Tenant.JWKS = jwks
 	}
 
 	var verifyErrors error
 	if p.IsGCPManaged {
-		verifyErrors = p.verifyWithRetry(config, verbosef)
+		verifyErrors = p.verifyWithRetry(cfg, verbosef)
 
 		// creates the policy secrets if is GCP managed
-		if err := p.createPolicySecretData(config, verbosef); err != nil {
+		if err := p.createPolicySecretData(cfg, verbosef); err != nil {
 			return errors.Wrapf(err, "creating policy secret data")
 		}
 
 		// create the analytics secrets if is GCP managed
-		if err := p.createAnalyticsSecretData(config, verbosef); err != nil {
+		if err := p.createAnalyticsSecretData(cfg, verbosef); err != nil {
 			return errors.Wrapf(err, "creating analytics secret data")
 		}
 		if len(p.analyticsSecretData) == 0 {
@@ -311,10 +313,10 @@ func (p *provision) run(printf shared.FormatFn) error {
 			shared.Errorf("\nIMPORTANT: Please make sure the application default credentials where the adapter is run are correctly configured.")
 		}
 	} else {
-		verifyErrors = p.verifyWithoutRetry(config, verbosef)
+		verifyErrors = p.verifyWithoutRetry(cfg, verbosef)
 	}
 
-	if err := p.printConfig(config, printf, verifyErrors, verbosef); err != nil {
+	if err := p.printConfig(cfg, printf, verifyErrors, verbosef); err != nil {
 		return errors.Wrapf(err, "generating config")
 	}
 
@@ -373,7 +375,7 @@ func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rs
 	}
 
 	// read the response into a map
-	m, err := server.ReadProperties(buf)
+	m, err := util.ReadProperties(buf)
 	if err != nil {
 		return
 	}
@@ -396,13 +398,13 @@ func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rs
 		err = fmt.Errorf("key not found in remote-service propertyset")
 		return
 	}
-	privateKey, err = server.LoadPrivateKey([]byte(strings.ReplaceAll(pkStr, `\n`, "\n")))
+	privateKey, err = util.LoadPrivateKey([]byte(strings.ReplaceAll(pkStr, `\n`, "\n")))
 	if err != nil {
 		return
 	}
 
 	// extracts the key id from the map
-	keyID, ok = m[server.SecretPropsKIDKey]
+	keyID, ok = m[config.SecretPropsKIDKey]
 	if !ok {
 		err = fmt.Errorf("kid not found in remote-service propertyset")
 		return
@@ -411,11 +413,11 @@ func (p *provision) policySecretsFromPropertyset() (keyID string, privateKey *rs
 	return
 }
 
-func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client, error) {
+func (p *provision) createAuthorizedClient(cfg *config.Config) (*http.Client, error) {
 
 	// add authorization to transport
 	tr := http.DefaultTransport
-	if config.Tenant.TLS.AllowUnverifiedSSLCert {
+	if cfg.Tenant.TLS.AllowUnverifiedSSLCert {
 		tr = &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
@@ -431,18 +433,18 @@ func (p *provision) createAuthorizedClient(config *server.Config) (*http.Client,
 		}
 	}
 
-	tr, err := server.AuthorizationRoundTripper(config, tr)
+	tr, err := server.AuthorizationRoundTripper(cfg, tr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &http.Client{
-		Timeout:   config.Tenant.ClientTimeout,
+		Timeout:   cfg.Tenant.ClientTimeout,
 		Transport: tr,
 	}, nil
 }
 
-func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.FormatFn) error {
+func (p *provision) verifyWithRetry(cfg *config.Config, verbosef shared.FormatFn) error {
 	var verifyErrors error
 	timeout := time.After(duration)
 	tick := time.Tick(interval)
@@ -459,7 +461,7 @@ func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.Forma
 			}
 			return verifyErrors
 		case <-tick:
-			verifyErrors = p.verify(config, verbosef)
+			verifyErrors = p.verify(cfg, verbosef)
 			if verifyErrors == nil {
 				return nil
 			}
@@ -468,8 +470,8 @@ func (p *provision) verifyWithRetry(config *server.Config, verbosef shared.Forma
 	}
 }
 
-func (p *provision) verifyWithoutRetry(config *server.Config, verbosef shared.FormatFn) error {
-	verifyErrors := p.verify(config, verbosef)
+func (p *provision) verifyWithoutRetry(cfg *config.Config, verbosef shared.FormatFn) error {
+	verifyErrors := p.verify(cfg, verbosef)
 	if verifyErrors != nil {
 		shared.Errorf("\nWARNING: Apigee may not be provisioned properly.")
 		shared.Errorf("Unable to verify proxy endpoint(s). Errors:\n")
@@ -481,9 +483,9 @@ func (p *provision) verifyWithoutRetry(config *server.Config, verbosef shared.Fo
 	return verifyErrors
 }
 
-func (p *provision) verify(config *server.Config, verbosef shared.FormatFn) error {
+func (p *provision) verify(cfg *config.Config, verbosef shared.FormatFn) error {
 
-	client, err := p.createAuthorizedClient(config)
+	client, err := p.createAuthorizedClient(cfg)
 	if err != nil {
 		return err
 	}

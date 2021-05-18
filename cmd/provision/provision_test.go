@@ -34,7 +34,9 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/util"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/spf13/cobra"
@@ -158,13 +160,13 @@ func fakePropertyset() ([]byte, error) {
 	}
 
 	props := map[string]string{
-		server.SecretPropsKIDKey: keyID,
+		config.SecretPropsKIDKey: keyID,
 		"crt":                    string(jwksBytes),
 		"key":                    strings.ReplaceAll(string(privateKeyBytes), "\n", `\n`),
 	}
 
 	buf := new(bytes.Buffer)
-	if err := server.WriteProperties(buf, props); err != nil {
+	if err := util.WriteProperties(buf, props); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

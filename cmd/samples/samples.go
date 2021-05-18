@@ -27,7 +27,7 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
-	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -196,7 +196,7 @@ func (s *samples) validateFieldsFromFlags(c *cobra.Command) error {
 }
 
 func (s *samples) loadConfig() error {
-	s.ServerConfig = &server.Config{}
+	s.ServerConfig = &config.Config{}
 	err := s.ServerConfig.Load(s.ConfigPath, "", "", false)
 	if err != nil {
 		return err
