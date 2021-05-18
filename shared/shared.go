@@ -26,7 +26,7 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/v2/apigee"
 	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
-	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"github.com/spf13/cobra"
 )
 
@@ -90,7 +90,7 @@ type RootArgs struct {
 	TLSCertFile        string
 	TLSKeyFile         string
 
-	ServerConfig *server.Config // config loaded from ConfigPath
+	ServerConfig *config.Config // config loaded from ConfigPath
 
 	// the following is derived in Resolve()
 	InternalProxyURL      string
@@ -302,7 +302,7 @@ func (r *RootArgs) loadConfig() error {
 		return nil
 	}
 
-	r.ServerConfig = &server.Config{}
+	r.ServerConfig = &config.Config{}
 	err := r.ServerConfig.Load(r.ConfigPath, "", "", false)
 	if err != nil {
 		return err

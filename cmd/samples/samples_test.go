@@ -24,7 +24,7 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
-	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -95,7 +95,7 @@ func TestTemplatesListing(t *testing.T) {
 }
 
 func TestSamplesParseConfigs(t *testing.T) {
-	cfg := server.DefaultConfig()
+	cfg := config.Default()
 	cfg.Tenant.RemoteServiceAPI = "http://runtime/remote-service"
 	cfg.Tenant.OrgName = "hi"
 	cfg.Tenant.EnvName = "test"
@@ -429,23 +429,23 @@ func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byt
 	yamlEncoder := yaml.NewEncoder(&yamlBuffer)
 	yamlEncoder.SetIndent(2)
 
-	config := server.DefaultConfig()
+	cfg := config.Default()
 	if !isGCPManaged {
-		config.Tenant.InternalAPI = server.LegacySaaSInternalBase
+		cfg.Tenant.InternalAPI = config.LegacySaaSInternalBase
 	}
-	config.Tenant.RemoteServiceAPI = "https://RUNTIME:9001/remote-service"
-	config.Tenant.OrgName = "hi"
-	config.Tenant.EnvName = "test"
-	if err := yamlEncoder.Encode(config); err != nil {
+	cfg.Tenant.RemoteServiceAPI = "https://RUNTIME:9001/remote-service"
+	cfg.Tenant.OrgName = "hi"
+	cfg.Tenant.EnvName = "test"
+	if err := yamlEncoder.Encode(cfg); err != nil {
 		t.Fatal(err)
 	}
 	configYAML := yamlBuffer.String()
 	data := map[string]string{"config.yaml": configYAML}
 
-	configCRD := server.ConfigMapCRD{
+	configCRD := config.ConfigMapCRD{
 		APIVersion: "v1",
 		Kind:       "ConfigMap",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      "apigee-remote-service-envoy",
 			Namespace: "apigee",
 		},
@@ -459,10 +459,10 @@ func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byt
 		t.Fatal(err)
 	}
 
-	policySecretCRD := server.SecretCRD{
+	policySecretCRD := config.SecretCRD{
 		APIVersion: "v1",
 		Kind:       "Secret",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      "hi-test-policy-secret",
 			Namespace: "apigee",
 		},
@@ -476,10 +476,10 @@ func generateConfig(t *testing.T, isGCPManaged bool, analyticsSecret bool) []byt
 		return yamlBuffer.Bytes()
 	}
 
-	analyticsSecretCRD := server.SecretCRD{
+	analyticsSecretCRD := config.SecretCRD{
 		APIVersion: "v1",
 		Kind:       "Secret",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      "hi-test-analytics-secret",
 			Namespace: "apigee",
 		},

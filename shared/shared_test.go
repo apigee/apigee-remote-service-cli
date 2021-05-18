@@ -31,8 +31,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"github.com/apigee/apigee-remote-service-envoy/v2/server"
 	"github.com/apigee/apigee-remote-service-envoy/v2/testutil"
+	"github.com/apigee/apigee-remote-service-envoy/v2/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -71,20 +73,20 @@ func TestAddCommandWithFlags(t *testing.T) {
 func TestResolveWithConfig(t *testing.T) {
 	var tf *os.File
 	var err error
-	var config string
-	var configCRD *server.ConfigMapCRD
-	var secretCRD *server.SecretCRD
+	var cfg string
+	var configCRD *config.ConfigMapCRD
+	var secretCRD *config.SecretCRD
 	var configMapYAML string
 	r := &RootArgs{}
 
-	config = `
+	cfg = `
 tenant:
   remote_service_api: https://org-test.apigee.net/remote-service
   org_name: org
   env_name: env
 analytics:
   fluentd_endpoint: apigee-udca-myorg-test.apigee.svc.cluster.local:20001`
-	configCRD = makeConfigCRD(config)
+	configCRD = makeConfigCRD(cfg)
 	secretCRD, err = makeSecretCRD()
 	if err != nil {
 		t.Fatal(err)
@@ -118,7 +120,7 @@ analytics:
 		t.Errorf("want no error got %v", err)
 	}
 
-	config = `
+	cfg = `
 tenant:
   remote_service_api: https://org-test.apigee.net/remote-service
   internal_api: https://istioservices.apigee.net/edgemicro
@@ -126,7 +128,7 @@ tenant:
   env_name: env
 analytics:
   fluentd_endpoint: apigee-udca-myorg-test.apigee.svc.cluster.local:20001`
-	configCRD = makeConfigCRD(config)
+	configCRD = makeConfigCRD(cfg)
 	secretCRD, err = makeSecretCRD()
 	if err != nil {
 		t.Fatal(err)
@@ -156,7 +158,7 @@ analytics:
 		t.Errorf("want no error got %v", err)
 	}
 
-	config = `
+	cfg = `
 tenant:
   remote_service_api: https://org-test.apigee.net/remote-service
   internal_api: https://opdk.apigee.net/edgemicro
@@ -164,7 +166,7 @@ tenant:
   env_name: env
 analytics:
   fluentd_endpoint: apigee-udca-myorg-test.apigee.svc.cluster.local:20001`
-	configCRD = makeConfigCRD(config)
+	configCRD = makeConfigCRD(cfg)
 	secretCRD, err = makeSecretCRD()
 	if err != nil {
 		t.Fatal(err)
@@ -198,13 +200,13 @@ analytics:
 func TestResolveWithFlagOverride(t *testing.T) {
 	var tf *os.File
 	var err error
-	var configCRD *server.ConfigMapCRD
-	var secretCRD *server.SecretCRD
+	var configCRD *config.ConfigMapCRD
+	var secretCRD *config.SecretCRD
 	var configMapYAML string
 	var r *RootArgs
-	var config string
+	var cfg string
 
-	config = `
+	cfg = `
 global:
   namespace: ns
 tenant:
@@ -212,7 +214,7 @@ tenant:
   org_name: org
   env_name: env
   allow_unverified_ssl_cert: false`
-	configCRD = makeConfigCRD(config)
+	configCRD = makeConfigCRD(cfg)
 	secretCRD, err = makeSecretCRD()
 	if err != nil {
 		t.Fatal(err)
@@ -258,7 +260,7 @@ tenant:
 		t.Error("want InsecureSkipVerify to be true, got false")
 	}
 
-	config = `
+	cfg = `
 global:
   namespace: ns
 tenant:
@@ -266,7 +268,7 @@ tenant:
   internal_api: https://istioservices.apigee.net/edgemicro
   org_name: org
   env_name: env`
-	configCRD = makeConfigCRD(config)
+	configCRD = makeConfigCRD(cfg)
 	secretCRD, err = makeSecretCRD()
 	if err != nil {
 		t.Fatal(err)
@@ -300,7 +302,7 @@ tenant:
 		t.Error("want IsOPDK to be true, got false")
 	}
 
-	config = `
+	cfg = `
   global:
     namespace: ns
   tenant:
@@ -308,7 +310,7 @@ tenant:
     internal_api: https://opdk.apigee.net/edgemicro
     org_name: org
     env_name: env`
-	configCRD = makeConfigCRD(config)
+	configCRD = makeConfigCRD(cfg)
 	secretCRD, err = makeSecretCRD()
 	if err != nil {
 		t.Fatal(err)
@@ -342,14 +344,14 @@ tenant:
 		t.Error("want IsLegacySaaS to be true, got false")
 	}
 
-	config = `
+	cfg = `
   global:
     namespace: ns
   tenant:
     remote_service_api: https://org-test.apigee.net/remote-service
     org_name: org
     env_name: env`
-	configCRD = makeConfigCRD(config)
+	configCRD = makeConfigCRD(cfg)
 	secretCRD, err = makeSecretCRD()
 	if err != nil {
 		t.Fatal(err)
@@ -679,12 +681,12 @@ func TestURLCreators(t *testing.T) {
 	}
 }
 
-func makeConfigCRD(config string) *server.ConfigMapCRD {
-	data := map[string]string{"config.yaml": config}
-	return &server.ConfigMapCRD{
+func makeConfigCRD(cfg string) *config.ConfigMapCRD {
+	data := map[string]string{"config.yaml": cfg}
+	return &config.ConfigMapCRD{
 		APIVersion: "v1",
 		Kind:       "ConfigMap",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      "apigee-remote-service-envoy",
 			Namespace: "apigee",
 		},
@@ -692,7 +694,7 @@ func makeConfigCRD(config string) *server.ConfigMapCRD {
 	}
 }
 
-func makeSecretCRD() (*server.SecretCRD, error) {
+func makeSecretCRD() (*config.SecretCRD, error) {
 	kid := "my kid"
 	privateKey, jwksBuf, err := testutil.GenerateKeyAndJWKs(kid)
 	if err != nil {
@@ -700,23 +702,23 @@ func makeSecretCRD() (*server.SecretCRD, error) {
 	}
 	pkBytes := pem.EncodeToMemory(&pem.Block{Type: server.PEMKeyType, Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
 
-	props := map[string]string{server.SecretPropsKIDKey: kid}
+	props := map[string]string{config.SecretPropsKIDKey: kid}
 	propsBuf := new(bytes.Buffer)
-	if err := server.WriteProperties(propsBuf, props); err != nil {
+	if err := util.WriteProperties(propsBuf, props); err != nil {
 		return nil, err
 	}
 
 	data := map[string]string{
-		server.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBuf),
-		server.SecretPrivateKey: base64.StdEncoding.EncodeToString(pkBytes),
-		server.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
+		config.SecretJWKSKey:    base64.StdEncoding.EncodeToString(jwksBuf),
+		config.SecretPrivateKey: base64.StdEncoding.EncodeToString(pkBytes),
+		config.SecretPropsKey:   base64.StdEncoding.EncodeToString(propsBuf.Bytes()),
 	}
 
-	return &server.SecretCRD{
+	return &config.SecretCRD{
 		APIVersion: "v1",
 		Kind:       "Secret",
 		Type:       "Opaque",
-		Metadata: server.Metadata{
+		Metadata: config.Metadata{
 			Name:      "org-env-policy-secret",
 			Namespace: "apigee",
 		},

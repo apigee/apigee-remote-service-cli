@@ -21,7 +21,7 @@ import (
 
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
-	"github.com/apigee/apigee-remote-service-envoy/v2/server"
+	"github.com/apigee/apigee-remote-service-envoy/v2/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -82,9 +82,9 @@ func TestConfigWithAnalyticsSecretFile(t *testing.T) {
 
 	// test if the generated config has all three CRDs
 	cfgBytes := []byte(print.Prints[2])
-	configMap := &server.ConfigMapCRD{}
-	secret := &server.SecretCRD{}
-	serviceAccount := &server.ConfigMapCRD{}
+	configMap := &config.ConfigMapCRD{}
+	secret := &config.SecretCRD{}
+	serviceAccount := &config.ConfigMapCRD{}
 	decoder := yaml.NewDecoder(bytes.NewReader(cfgBytes))
 	if err := decoder.Decode(configMap); err != nil {
 		t.Errorf("decoding ConfigMap error: %v", err)
@@ -159,9 +159,9 @@ func TestConfigWithAnalyticsSecretInConfig(t *testing.T) {
 
 	// test if the generated config has all three CRDs
 	cfgBytes := []byte(print.Prints[2])
-	configMap := &server.ConfigMapCRD{}
-	secret := &server.SecretCRD{}
-	serviceAccount := &server.ConfigMapCRD{}
+	configMap := &config.ConfigMapCRD{}
+	secret := &config.SecretCRD{}
+	serviceAccount := &config.ConfigMapCRD{}
 	decoder := yaml.NewDecoder(bytes.NewReader(cfgBytes))
 	if err := decoder.Decode(configMap); err != nil {
 		t.Errorf("decoding ConfigMap error: %v", err)
