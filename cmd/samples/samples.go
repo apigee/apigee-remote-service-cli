@@ -42,9 +42,11 @@ var (
 		"envoy-1.15": "envoy-1.15",
 		"envoy-1.16": "envoy-1.16",
 		"envoy-1.17": "envoy-1.16",
+		"envoy-1.18": "envoy-1.16",
 		"istio-1.7":  "istio-1.7",
 		"istio-1.8":  "istio-1.7",
 		"istio-1.9":  "istio-1.9",
+		"istio-1.10": "istio-1.9",
 	}
 )
 
@@ -161,7 +163,7 @@ files related to deployment of their target services.`,
 	}
 
 	c.Flags().StringVarP(&s.ConfigPath, "config", "c", "", "path to Apigee Remote Service config file")
-	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.7", "template name (run \"samples templates\" to see available options)")
+	c.Flags().StringVarP(&s.template, "template", "t", "istio-1.9", "template name (run \"samples templates\" to see available options)")
 	c.Flags().BoolVarP(&s.overwrite, "force", "f", false, "force overwriting existing directory")
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
@@ -178,7 +180,7 @@ files related to deployment of their target services.`,
 func (s *samples) validateFieldsFromFlags(c *cobra.Command) error {
 	dir, ok := supportedTemplates[s.template]
 	if !ok {
-		return fmt.Errorf("template option: %q not found", s.template)
+		return fmt.Errorf("template option: %q not found; run samples templates to list available options", s.template)
 	}
 	s.templateDir = dir
 
