@@ -19,7 +19,8 @@
         <Policy>Lookup-Products</Policy>
         <Policy>Parse-Product-Cache</Policy>
         <Policy>Populate-Product-List</Policy>
-        <Policy>Products-Callout</Policy>
+        <Policy>Products-Callout-15</Policy>
+        <Policy>Products-Callout-16</Policy>
         <Policy>Products-to-JSON</Policy>
         <Policy>Raise-Fault-Invalid-API-Key</Policy>
         <Policy>Raise-Fault-Missing-Secret</Policy>
@@ -30,6 +31,7 @@
         <Policy>Set-JWKS</Policy>
         <Policy>Set-JWT-Variables</Policy>
         <Policy>Set-Product-Cache</Policy>
+        <Policy>Set-Products-Filtering-Options</Policy>
         <Policy>Set-Quota-Response</Policy>
         <Policy>Set-Quota-Variables</Policy>
         <Policy>Set-VerifyKey-Response</Policy>
@@ -41,11 +43,13 @@
     <Resources>
         <Resource>java://envoy-javacallout-1.1.0.jar</Resource>
         <Resource>java://envoy-javacallout-1.0.2.jar</Resource>
+        <Resource>java://envoy-javacallout-1.2.0.jar</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
         <Resource>jsc://parse-product-cache.js</Resource>
         <Resource>jsc://set-jwks-variable.js</Resource>
         <Resource>jsc://set-jwt-variables.js</Resource>
         <Resource>jsc://set-product-cache.js</Resource>
+        <Resource>jsc://set-product-filtering.js</Resource>
         <Resource>jsc://set-quota-variables.js</Resource>
         <Resource>jsc://set-verifykey-response.js</Resource>
         <Resource>py://get-runtime-version.py</Resource>
