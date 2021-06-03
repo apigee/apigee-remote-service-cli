@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Javascript timeLimit="20000" async="false" continueOnError="false" enabled="true" name="Set-Products-Filtering-Options">
-    <DisplayName>Set Products Filtering Options</DisplayName>
-    <Properties/>
-    <ResourceURL>jsc://set-products-filtering.js</ResourceURL>
-</Javascript>

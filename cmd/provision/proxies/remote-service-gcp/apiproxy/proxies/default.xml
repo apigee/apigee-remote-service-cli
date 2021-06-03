@@ -77,10 +77,6 @@
                 <Step>
                     <Name>Lookup-Products</Name>
                 </Step>
-                <Step>
-                    <Name>Set-Products-Filtering-Options</Name>
-                    <Condition>lookupcache.Lookup-Products.cachehit = false</Condition>
-                </Step>
             </Request>
             <Response>
                 <Step>
@@ -99,12 +95,16 @@
                     <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version LesserThan "1.5.0")</Condition>
                 </Step>
                 <Step>
-                    <Name>Products-Callout-15</Name>
-                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version GreaterThanOrEquals "1.5.0") and (runtime_version LesserThan "1.5.2")</Condition>
+                    <Name>Products-Callout</Name>
+                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version GreaterThanOrEquals "1.5.0") and (runtime_version LesserThan "1.6.0")</Condition>
                 </Step>
                 <Step>
-                    <Name>Products-Callout-16</Name>
-                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version GreaterThanOrEquals "1.6.0")</Condition>
+                    <Name>Products-Callout-Remoteservice</Name>
+                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version GreaterThanOrEquals "1.6.0") and (request.queryparam.types != "proxy")</Condition>
+                </Step>
+                <Step>
+                    <Name>Products-Callout-Proxy</Name>
+                    <Condition>(lookupcache.Lookup-Products.cachehit = false) and (runtime_version GreaterThanOrEquals "1.6.0") and (request.queryparam.types = "proxy")</Condition>
                 </Step>
                 <Step>
                     <Name>Set-Product-Cache</Name>
