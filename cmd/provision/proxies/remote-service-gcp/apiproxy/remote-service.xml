@@ -49,7 +49,6 @@
         <Resource>jsc://set-jwks-variable.js</Resource>
         <Resource>jsc://set-jwt-variables.js</Resource>
         <Resource>jsc://set-product-cache.js</Resource>
-        <Resource>jsc://set-product-filtering.js</Resource>
         <Resource>jsc://set-quota-variables.js</Resource>
         <Resource>jsc://set-verifykey-response.js</Resource>
         <Resource>py://get-runtime-version.py</Resource>
