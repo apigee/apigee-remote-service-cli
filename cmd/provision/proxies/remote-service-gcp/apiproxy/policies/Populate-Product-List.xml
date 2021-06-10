@@ -3,8 +3,8 @@
     <DisplayName>Populate Product List</DisplayName>
     <Properties/>
     <CacheKey>
-        <Prefix/>
         <KeyFragment ref="request.uri"/>
+        <KeyFragment ref="request.queryparam.types"/>
     </CacheKey>
     <CacheResource>remote-service</CacheResource>
     <Scope>Exclusive</Scope>

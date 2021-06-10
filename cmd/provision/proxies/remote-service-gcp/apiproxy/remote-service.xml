@@ -20,6 +20,8 @@
         <Policy>Parse-Product-Cache</Policy>
         <Policy>Populate-Product-List</Policy>
         <Policy>Products-Callout</Policy>
+        <Policy>Products-Callout-Remoteservice</Policy>
+        <Policy>Products-Callout-Proxy</Policy>
         <Policy>Products-to-JSON</Policy>
         <Policy>Raise-Fault-Invalid-API-Key</Policy>
         <Policy>Raise-Fault-Missing-Secret</Policy>
@@ -41,6 +43,7 @@
     <Resources>
         <Resource>java://envoy-javacallout-1.1.0.jar</Resource>
         <Resource>java://envoy-javacallout-1.0.2.jar</Resource>
+        <Resource>java://envoy-javacallout-1.2.1.jar</Resource>
         <Resource>jsc://eval-quota-result.js</Resource>
         <Resource>jsc://parse-product-cache.js</Resource>
         <Resource>jsc://set-jwks-variable.js</Resource>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<JavaCallout async="false" continueOnError="false" enabled="true" name="Products-Callout-Proxy">
+    <DisplayName>Products Callout Proxy</DisplayName>
+    <Properties>
+        <Property name="products.filter.operation.config.types">proxy</Property>
+        <Property name="products.filter.env.enable">false</Property>
+    </Properties>
+    <ClassName>io.apigee.hybrid.microgateway.javacallout.release1x2x1.Callout</ClassName>
+    <ResourceURL>java://envoy-javacallout-1.2.1.jar</ResourceURL>
+</JavaCallout>

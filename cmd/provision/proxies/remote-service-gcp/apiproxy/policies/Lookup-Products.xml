@@ -3,6 +3,7 @@
     <DisplayName>Lookup Products</DisplayName>
     <CacheKey>
         <KeyFragment ref="request.uri"/>
+        <KeyFragment ref="request.queryparam.types"/>
     </CacheKey>
     <Scope>Exclusive</Scope>
     <AssignTo>prodcache</AssignTo>
