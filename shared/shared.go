@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	// GCPExperienceBase is the default management API URL for GCP Experience
+	// GCPExperienceBase is the default management API URL for Apigee X/Hybrid
 	GCPExperienceBase = "https://apigee.googleapis.com"
 
 	// LegacySaaSManagementBase is the default base for legacy SaaS management operations
@@ -82,7 +82,7 @@ type RootArgs struct {
 	NetrcPath          string
 	IsOPDK             bool
 	IsLegacySaaS       bool
-	IsGCPManaged       bool
+	IsGCPManaged       bool // true for Apigee X/Hybrid
 	ConfigPath         string
 	InsecureSkipVerify bool
 	Namespace          string
@@ -173,7 +173,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 
 	// calculate internal proxy URL from runtime URL for LegacySaaS or OPDK
-	// note: GCPExperience doesn't have an internal proxy
+	// note: Apigee X/Hybrid doesn't have an internal proxy
 	if r.IsOPDK {
 		r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormatOPDK, r.RuntimeBase)
 	}

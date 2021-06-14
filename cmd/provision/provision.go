@@ -115,7 +115,7 @@ to your organization and environment.`,
 		"Apigee multi-factor authorization token (legacy only)")
 
 	c.Flags().StringVarP(&p.analyticsServiceAccount, "analytics-sa", "", "",
-		"path to the service account json file (for GCP-managed analytics only)")
+		"path to the service account json file (for Apigee X/Hybrid analytics only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")
@@ -299,12 +299,12 @@ func (p *provision) run(printf shared.FormatFn) error {
 	if p.IsGCPManaged {
 		verifyErrors = p.verifyWithRetry(cfg, verbosef)
 
-		// creates the policy secrets if is GCP managed
+		// creates the policy secrets if is Apigee X/Hybrid
 		if err := p.createPolicySecretData(cfg, verbosef); err != nil {
 			return errors.Wrapf(err, "creating policy secret data")
 		}
 
-		// create the analytics secrets if is GCP managed
+		// create the analytics secrets if is Apigee X/Hybrid
 		if err := p.createAnalyticsSecretData(cfg, verbosef); err != nil {
 			return errors.Wrapf(err, "creating analytics secret data")
 		}
