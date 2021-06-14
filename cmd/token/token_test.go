@@ -34,8 +34,8 @@ import (
 	"github.com/apigee/apigee-remote-service-cli/v2/cmd"
 	"github.com/apigee/apigee-remote-service-cli/v2/shared"
 	"github.com/apigee/apigee-remote-service-cli/v2/testutil"
-	"github.com/apigee/apigee-remote-service-envoy/v2/server"
 	"github.com/apigee/apigee-remote-service-envoy/v2/config"
+	"github.com/apigee/apigee-remote-service-envoy/v2/server"
 	"github.com/apigee/apigee-remote-service-envoy/v2/util"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -154,7 +154,7 @@ func TestTokenCreate(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
-	testutil.ErrorContains(t, err, "--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
+	testutil.ErrorContains(t, err, "--runtime is required for Apigee X/Hybrid or opdk")
 }
 
 func TestTokenInspect(t *testing.T) {

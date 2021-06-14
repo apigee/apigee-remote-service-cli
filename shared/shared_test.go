@@ -109,7 +109,7 @@ analytics:
 	}
 	r.ConfigPath = tf.Name()
 
-	want := "--token is required for hybrid"
+	want := "--token is required for Apigee X/Hybrid"
 	if err := r.Resolve(false, true); err == nil || err.Error() != want {
 		t.Errorf("want %s got %v", want, err)
 	}
@@ -438,7 +438,7 @@ func TestResolveWithoutConfig(t *testing.T) {
 	r := &RootArgs{}
 	var want string
 
-	want = "--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)"
+	want = "--runtime is required for Apigee X/Hybrid or opdk"
 	if err := r.Resolve(false, true); err == nil || err.Error() != want {
 		t.Errorf("want %s got %v", want, err)
 	}

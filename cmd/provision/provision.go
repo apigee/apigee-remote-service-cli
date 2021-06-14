@@ -82,7 +82,7 @@ to your organization and environment.`,
 				return err
 			}
 			if !p.IsGCPManaged && p.rotate > 0 {
-				return fmt.Errorf(`--rotate only valid for hybrid, use 'token rotate-cert' for others`)
+				return fmt.Errorf(`--rotate only valid for Apigee X/Hybrid, use 'token rotate-cert' for others`)
 			}
 			return nil
 		},
@@ -115,7 +115,7 @@ to your organization and environment.`,
 		"Apigee multi-factor authorization token (legacy only)")
 
 	c.Flags().StringVarP(&p.analyticsServiceAccount, "analytics-sa", "", "",
-		"path to the service account json file (for GCP-managed analytics only)")
+		"path to the service account json file (for Apigee X/Hybrid analytics only)")
 
 	c.Flags().BoolVarP(&p.forceProxyInstall, "force-proxy-install", "f", false,
 		"force new proxy install (upgrades proxy)")
@@ -124,7 +124,7 @@ to your organization and environment.`,
 	c.Flags().StringVarP(&p.Namespace, "namespace", "n", "apigee",
 		"emit configuration in the specified namespace")
 
-	c.Flags().IntVarP(&p.rotate, "rotate", "", 0, "if n > 0, generate new private key and keep n public keys (hybrid only)")
+	c.Flags().IntVarP(&p.rotate, "rotate", "", 0, "if n > 0, generate new private key and keep n public keys (Apigee X/Hybrid only)")
 
 	return c
 }
@@ -299,12 +299,12 @@ func (p *provision) run(printf shared.FormatFn) error {
 	if p.IsGCPManaged {
 		verifyErrors = p.verifyWithRetry(cfg, verbosef)
 
-		// creates the policy secrets if is GCP managed
+		// creates the policy secrets if is Apigee X/Hybrid
 		if err := p.createPolicySecretData(cfg, verbosef); err != nil {
 			return errors.Wrapf(err, "creating policy secret data")
 		}
 
-		// create the analytics secrets if is GCP managed
+		// create the analytics secrets if is Apigee X/Hybrid
 		if err := p.createAnalyticsSecretData(cfg, verbosef); err != nil {
 			return errors.Wrapf(err, "creating analytics secret data")
 		}
@@ -355,7 +355,7 @@ func (p *provision) retrieveRuntimeType() error {
 	return nil
 }
 
-// isCloud determines whether it is NG SaaS
+// isCloud determines whether it is Apigee X
 func (p *provision) isCloud() bool {
 	return p.IsGCPManaged && p.runtimeType == "CLOUD"
 }

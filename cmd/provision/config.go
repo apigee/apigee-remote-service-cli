@@ -68,7 +68,7 @@ func (p *provision) createConfig(cred *keySecret) *config.Config {
 	}
 
 	if p.IsGCPManaged {
-		config.Tenant.InternalAPI = "" // no internal API for GCP
+		config.Tenant.InternalAPI = "" // no internal API for Apigee X/Hybrid
 		config.Analytics.CollectionInterval = 10 * time.Second
 	}
 
@@ -109,7 +109,7 @@ func (p *provision) printConfig(cfg *config.Config, printf shared.FormatFn, veri
 		return err
 	}
 
-	// encodes the policy secrets in GCP managed cases
+	// encodes the policy secrets in cases of Apigee X/Hybrid
 	if p.policySecretData != nil {
 		secretCRD := config.SecretCRD{
 			APIVersion: "v1",

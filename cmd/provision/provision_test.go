@@ -527,7 +527,7 @@ data:
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "--rotate only valid for hybrid, use 'token rotate-cert' for others")
+	testutil.ErrorContains(t, err, "--rotate only valid for Apigee X/Hybrid, use 'token rotate-cert' for others")
 }
 
 func TestProvisionOPDK(t *testing.T) {
@@ -595,7 +595,7 @@ data:
 	shared.AddCommandWithFlags(rootCmd, rootArgs, testCmd(rootArgs, print.Printf, func(r *shared.RootArgs) { setTestUrls(r, ts.URL) }))
 
 	err := rootCmd.Execute()
-	testutil.ErrorContains(t, err, "--token is required for hybrid")
+	testutil.ErrorContains(t, err, "--token is required for Apigee X/Hybrid")
 }
 
 func TestProvisionNGSaaS(t *testing.T) {

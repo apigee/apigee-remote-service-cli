@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	// GCPExperienceBase is the default management API URL for GCP Experience
+	// GCPExperienceBase is the default management API URL for Apigee X/Hybrid
 	GCPExperienceBase = "https://apigee.googleapis.com"
 
 	// LegacySaaSManagementBase is the default base for legacy SaaS management operations
@@ -82,7 +82,7 @@ type RootArgs struct {
 	NetrcPath          string
 	IsOPDK             bool
 	IsLegacySaaS       bool
-	IsGCPManaged       bool
+	IsGCPManaged       bool // true for Apigee X/Hybrid
 	ConfigPath         string
 	InsecureSkipVerify bool
 	Namespace          string
@@ -104,7 +104,7 @@ type RootArgs struct {
 func AddCommandWithFlags(c *cobra.Command, rootArgs *RootArgs, cmds ...*cobra.Command) {
 	for _, subC := range cmds {
 		subC.PersistentFlags().StringVarP(&rootArgs.RuntimeBase, "runtime", "r",
-			"", "Apigee runtime base URL (required for hybrid or opdk)")
+			"", "Apigee runtime base URL (required for Apigee X/Hybrid or opdk)")
 
 		subC.PersistentFlags().BoolVarP(&rootArgs.Verbose, "verbose", "v",
 			false, "verbose output")
@@ -169,11 +169,11 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	}
 
 	if requireRuntime && r.RuntimeBase == "" {
-		return fmt.Errorf("--runtime is required for hybrid or opdk (or --organization and --environment with --legacy)")
+		return fmt.Errorf("--runtime is required for Apigee X/Hybrid or opdk")
 	}
 
 	// calculate internal proxy URL from runtime URL for LegacySaaS or OPDK
-	// note: GCPExperience doesn't have an internal proxy
+	// note: Apigee X/Hybrid doesn't have an internal proxy
 	if r.IsOPDK {
 		r.InternalProxyURL = fmt.Sprintf(internalProxyURLFormatOPDK, r.RuntimeBase)
 	}
@@ -185,7 +185,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	r.RemoteTokenProxyURL = fmt.Sprintf(remoteTokenProxyURLFormat, r.RuntimeBase)
 
 	if r.IsGCPManaged && !skipAuth && r.Token == "" {
-		return fmt.Errorf("--token is required for hybrid")
+		return fmt.Errorf("--token is required for Apigee X/Hybrid")
 	}
 
 	r.ClientOpts = &apigee.EdgeClientOptions{

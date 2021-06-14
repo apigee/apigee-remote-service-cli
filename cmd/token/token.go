@@ -131,7 +131,7 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 
 			if t.IsGCPManaged {
-				return fmt.Errorf("only valid for legacy or opdk, use create-secret for hybrid")
+				return fmt.Errorf("only valid for legacy or opdk, use create-secret for Apigee X/Hybrid")
 			}
 
 			if t.ServerConfig != nil {
@@ -167,13 +167,13 @@ func cmdRotateCert(t *token, printf shared.FormatFn) *cobra.Command {
 func cmdCreateInternalJWT(t *token, printf shared.FormatFn) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "internal",
-		Short: "Create a JWT token for authorizing remote-service API calls (hybrid only)",
-		Long:  "Create a JWT token for authorizing remote-service API calls (hybrid only)",
+		Short: "Create a JWT token for authorizing remote-service API calls (Apigee X/Hybrid only)",
+		Long:  "Create a JWT token for authorizing remote-service API calls (Apigee X/Hybrid only)",
 		Args:  cobra.NoArgs,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !t.IsGCPManaged {
-				return fmt.Errorf("generating internal JWT only valid for hybrid")
+				return fmt.Errorf("generating internal JWT only valid for Apigee X/Hybrid")
 			}
 			if t.internalJWTDuration > 60*time.Minute {
 				return fmt.Errorf("JWT should not be valid for longer than 1 hour")

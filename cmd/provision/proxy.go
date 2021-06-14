@@ -130,7 +130,7 @@ func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, pr
 		}
 	}
 
-	if oldRev != nil && !p.IsGCPManaged { // it's not necessary to undeploy first with GCP
+	if oldRev != nil && !p.IsGCPManaged { // it's not necessary to undeploy first with Apigee X/Hybrid
 		printf("undeploying proxy %s revision %d on env %s...",
 			name, oldRev, p.Env)
 		_, res, err := p.ApigeeClient.Proxies.Undeploy(name, p.Env, *oldRev)
