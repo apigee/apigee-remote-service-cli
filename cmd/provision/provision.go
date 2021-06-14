@@ -82,7 +82,7 @@ to your organization and environment.`,
 				return err
 			}
 			if !p.IsGCPManaged && p.rotate > 0 {
-				return fmt.Errorf(`--rotate only valid for hybrid, use 'token rotate-cert' for others`)
+				return fmt.Errorf(`--rotate only valid for Apigee X/Hybrid, use 'token rotate-cert' for others`)
 			}
 			return nil
 		},
@@ -124,7 +124,7 @@ to your organization and environment.`,
 	c.Flags().StringVarP(&p.Namespace, "namespace", "n", "apigee",
 		"emit configuration in the specified namespace")
 
-	c.Flags().IntVarP(&p.rotate, "rotate", "", 0, "if n > 0, generate new private key and keep n public keys (hybrid only)")
+	c.Flags().IntVarP(&p.rotate, "rotate", "", 0, "if n > 0, generate new private key and keep n public keys (Apigee X/Hybrid only)")
 
 	return c
 }
@@ -355,7 +355,7 @@ func (p *provision) retrieveRuntimeType() error {
 	return nil
 }
 
-// isCloud determines whether it is NG SaaS
+// isCloud determines whether it is Apigee X
 func (p *provision) isCloud() bool {
 	return p.IsGCPManaged && p.runtimeType == "CLOUD"
 }

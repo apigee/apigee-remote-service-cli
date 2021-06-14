@@ -47,7 +47,7 @@ func TestBindingsParams(t *testing.T) {
 	}
 
 	// hybrid requires token
-	wantErr = "--token is required for hybrid"
+	wantErr = "--token is required for Apigee X/Hybrid"
 	flags = []string{"bindings", "list", "--runtime", "/runtime/"}
 	rootArgs = &shared.RootArgs{}
 	rootCmd = cmd.GetRootCmd(flags, print.Printf)
