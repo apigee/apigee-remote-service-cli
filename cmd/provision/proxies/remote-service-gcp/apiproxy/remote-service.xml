@@ -11,7 +11,6 @@
         <Policy>DistributedQuota</Policy>
         <Policy>Eval-Quota-Result</Policy>
         <Policy>Extract-API-Key</Policy>
-        <Policy>Extract-App-Name</Policy>
         <Policy>Extract-Request-ETag</Policy>
         <Policy>Generate-VerifyKey-Token</Policy>
         <Policy>Get-Runtime-Version</Policy>
@@ -22,7 +21,6 @@
         <Policy>Products-Callout</Policy>
         <Policy>Products-Callout-Remoteservice</Policy>
         <Policy>Products-Callout-Proxy</Policy>
-        <Policy>Products-to-JSON</Policy>
         <Policy>Raise-Fault-Invalid-API-Key</Policy>
         <Policy>Raise-Fault-Missing-Secret</Policy>
         <Policy>Raise-Fault-Not-Modified</Policy>

@@ -29,12 +29,6 @@
                     <Condition>AccessEntity.Access-App-Info is null</Condition>
                 </Step>
                 <Step>
-                    <Name>Extract-App-Name</Name>
-                </Step>
-                <Step>
-                    <Name>Products-to-JSON</Name>
-                </Step>
-                <Step>
                     <Name>AccessTokenRequest</Name>
                 </Step>
                 <Step>

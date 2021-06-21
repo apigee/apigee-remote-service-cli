@@ -5,4 +5,5 @@
     <Properties/>
     <EntityIdentifier ref="apikey" type="consumerkey"/>
     <EntityType value="app"/>
+    <OutputFormat>JSON</OutputFormat>
 </AccessEntity>
