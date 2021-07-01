@@ -70,6 +70,8 @@ type samples struct {
 type targetService struct {
 	Name string
 	Host string
+	Port string
+	TLS  bool
 }
 
 type tls struct {
@@ -168,6 +170,8 @@ files related to deployment of their target services.`,
 	c.Flags().StringVarP(&s.outDir, "out", "", "./samples", "directory to create config files within")
 	c.Flags().StringVarP(&s.TargetService.Name, "name", "n", "httpbin", "target service name")
 	c.Flags().StringVarP(&s.TargetService.Host, "host", "", "httpbin.org", "target service host (envoy templates only)")
+	c.Flags().StringVarP(&s.TargetService.Port, "port", "", "443", "target service host (envoy templates only)")
+	c.Flags().BoolVarP(&s.TargetService.TLS, "target-tls", "", false, "target server TLS (envoy templates only)")
 	c.Flags().StringVarP(&s.AdapterHost, "adapter-host", "", "127.0.0.1", "adapter host name (envoy templates only)")
 	c.Flags().StringVarP(&s.TLS.Dir, "tls", "", "", "directory containing tls.key and tls.crt used for the adapter service (envoy templates only)")
 	c.Flags().StringVarP(&s.ImageTag, "tag", "", getTagFromBuildVersion(), "version tag of the Envoy Adapter image (istio templates only)")
@@ -192,6 +196,10 @@ func (s *samples) validateFieldsFromFlags(c *cobra.Command) error {
 		if c.Flags().Changed("adapter-host") || c.Flags().Changed("host") || c.Flags().Changed("tls") {
 			return fmt.Errorf("flags --adapter-host, --host or --tls should only be used for envoy templates")
 		}
+	}
+	// Turn on TLS if port is 443.
+	if s.TargetService.Port == "443" {
+		s.TargetService.TLS = true
 	}
 
 	return nil
