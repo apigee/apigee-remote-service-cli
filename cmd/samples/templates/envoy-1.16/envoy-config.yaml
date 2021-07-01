@@ -118,12 +118,14 @@ static_resources:
             address:
               socket_address:
                 address: "{{.TargetService.Host}}"
-                port_value: 443
+                port_value: {{.TargetService.Port}}
+{{- if .TargetService.TLS}}
     transport_socket:
       name: envoy.transport_sockets.tls
       typed_config:
         "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
         sni: "{{.TargetService.Host}}"
+{{- end}}
 
   # define cluster for Apigee remote service
   - name: apigee-remote-service-envoy
