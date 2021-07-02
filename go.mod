@@ -16,6 +16,6 @@ require (
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/lestrrat-go/jwx v1.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.1.3
+	github.com/spf13/cobra v1.2.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
