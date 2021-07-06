@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var appStatus = context.getVariable('AccessEntity.ChildNodes.Access-App-Info.App.Status')
-var apiCredential = JSON.parse(context.getVariable('apiCredential'));
+var app = JSON.parse(context.getVariable('AccessEntity.Access-App-Info'));
 // {"Credentials":{"Credential":[
 //    {"Attributes":{},"ConsumerKey":"xxx","ConsumerSecret":"xx",
 //      "ExpiresAt":"-1","IssuedAt":"1530046158362","ApiProducts":
@@ -22,18 +21,18 @@ var apiCredential = JSON.parse(context.getVariable('apiCredential'));
 
 var apikey = context.getVariable('apikey');
 var now = Date.now()
-var credentials = apiCredential.Credentials.Credential;
+var credentials = app.credentials;
 
 var apiProductsList = [];
 try {
-    if (appStatus == "approved") {
+    if (app.status == "approved") {
         credentials.forEach(function(credential) {
-            if (credential.ConsumerKey == apikey 
-            && (credential.ExpiresAt == -1 || credential.ExpiresAt > now)
-            && credential.Status == "approved") {
-                credential.ApiProducts.ApiProduct.forEach(function(apiProduct){
-                    if (apiProduct.Status == "approved") {
-                      apiProductsList.push(apiProduct.Name);
+            if (credential.consumerKey == apikey 
+            && (credential.expiresAt == -1 || credential.expiresAt > now)
+            && credential.status == "approved") {
+                credential.apiProducts.forEach(function(apiProduct){
+                    if (apiProduct.status == "approved") {
+                      apiProductsList.push(apiProduct.apiproduct);
                     }
                 });
             }
@@ -47,6 +46,7 @@ try {
     print(err);
 }
 
+context.setVariable("appName", app.name);
 context.setVariable("scope", context.getVariable("oauthv2accesstoken.AccessTokenRequest.scope"));
 context.setVariable("apiProductList", apiProductsList.join());
 context.setVariable("nbf", new Date(now).toUTCString());

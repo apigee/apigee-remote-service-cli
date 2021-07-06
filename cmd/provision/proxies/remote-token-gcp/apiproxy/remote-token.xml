@@ -9,10 +9,8 @@
         <Policy>AccessTokenRequest</Policy>
         <Policy>Create-New-Response</Policy>
         <Policy>Create-OAuth-Request</Policy>
-        <Policy>Extract-App-Name</Policy>
         <Policy>Extract-OAuth-Params</Policy>
         <Policy>Generate-Access-Token</Policy>
-        <Policy>Products-to-JSON</Policy>
         <Policy>Raise-Fault-Missing-Secret</Policy>
         <Policy>Raise-Fault-Unknown-Request</Policy>
         <Policy>Send-JWKs-Message</Policy>
