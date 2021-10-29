@@ -150,8 +150,7 @@ func printProducts(products []product.APIProduct, printf shared.FormatFn) error 
 	var bound, unbound []product.APIProduct
 	for _, p := range products {
 
-		p.APIs = p.GetBoundAPIs()
-		if len(p.APIs) == 0 {
+		if len(p.GetBoundAPIs()) == 0 {
 			unbound = append(unbound, p)
 		} else {
 			bound = append(bound, p)
@@ -200,8 +199,8 @@ const productsTemplate = `
  {{- end}}
  {{- if .APIs}}
   Target (API) bindings:
-  {{- range .APIs}}
-    {{.}}
+  {{- range $key, $val := .APIs}}
+    {{$key}}
   {{- end}}
   Paths:
   {{- range .Resources}}

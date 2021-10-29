@@ -217,7 +217,7 @@ func TestTokenInspect(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
-	testutil.ErrorContains(t, err, "inspecting token: parsing jwt token: invalid jws message")
+	testutil.ErrorContains(t, err, "inspecting token: parsing jwt token: failed to parse token: EOF")
 }
 
 func TestTokenRotateCert(t *testing.T) {

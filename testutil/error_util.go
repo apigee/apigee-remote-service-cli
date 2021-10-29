@@ -23,9 +23,9 @@ import (
 func ErrorContains(t *testing.T, out error, want string) {
 	if out == nil {
 		if want != "" {
-			t.Errorf("got no error want %s", want)
+			t.Errorf("got no error want %q", want)
 		}
 	} else if !strings.Contains(out.Error(), want) {
-		t.Errorf("want %s, got %v ", want, out)
+		t.Errorf("want %q, got %q ", want, out)
 	}
 }
