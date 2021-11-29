@@ -42,9 +42,15 @@ var (
 		"envoy-1.15": "envoy-1.15",
 		"envoy-1.16": "envoy-1.16",
 		"envoy-1.17": "envoy-1.16",
+		"envoy-1.18": "envoy-1.16",
+		"envoy-1.19": "envoy-1.16",
+		"envoy-1.20": "envoy-1.16",
 		"istio-1.7":  "istio-1.7",
 		"istio-1.8":  "istio-1.7",
 		"istio-1.9":  "istio-1.9",
+		"istio-1.10": "istio-1.9",
+		"istio-1.11": "istio-1.9",
+		"istio-1.12": "istio-1.9",
 	}
 )
 
