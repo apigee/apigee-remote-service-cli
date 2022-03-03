@@ -11,8 +11,8 @@ go 1.16
 replace github.com/hashicorp/hcl => ./hcl_shim
 
 require (
-	github.com/apigee/apigee-remote-service-envoy/v2 v2.0.2-0.20211029193315-1898ceeea739
-	github.com/apigee/apigee-remote-service-golib/v2 v2.0.2-0.20211028211932-ca805faaa43b
+	github.com/apigee/apigee-remote-service-envoy/v2 v2.0.2-0.20220303233135-fce19fc2212f
+	github.com/apigee/apigee-remote-service-golib/v2 v2.0.2-0.20220302182631-59c55026e27e
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/lestrrat-go/jwx v1.2.5
 	github.com/pkg/errors v0.9.1
