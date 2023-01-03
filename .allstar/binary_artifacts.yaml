@@ -1,0 +1,5 @@
+# Ignore reason: These are internal Apigee edge callouts
+ignorePaths:
+- cmd/provision/proxies/internal-proxy/apiproxy/resources/java/edge-micro-javacallout-1.0.0.jar
+- cmd/provision/proxies/remote-service-gcp/apiproxy/resources/java/envoy-javacallout-1.1.1.jar
+- cmd/provision/proxies/remote-service-legacy/apiproxy/resources/java/products-javacallout-2.0.0.jar
