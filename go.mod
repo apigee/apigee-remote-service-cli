@@ -7,8 +7,8 @@ go 1.16
 // replace github.com/apigee/apigee-remote-service-envoy/v2 => ../apigee-remote-service-envoy
 
 require (
-	github.com/apigee/apigee-remote-service-envoy/v2 v2.0.6-0.20221018213743-ecbe12aaafd4
-	github.com/apigee/apigee-remote-service-golib/v2 v2.0.6
+	github.com/apigee/apigee-remote-service-envoy/v2 v2.0.7
+	github.com/apigee/apigee-remote-service-golib/v2 v2.0.7
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/lestrrat-go/jwx v1.1.6
 	github.com/pkg/errors v0.9.1
