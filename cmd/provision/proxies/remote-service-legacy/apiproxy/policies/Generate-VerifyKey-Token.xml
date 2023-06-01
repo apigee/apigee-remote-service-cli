@@ -13,6 +13,7 @@
     <AdditionalClaims>
         <Claim name="client_id" ref="apikey"/>
         <Claim name="api_product_list" ref="apiProductList" type="string" array="true"/>
+        <Claim name="application_id" ref="AccessEntity.ChildNodes.Access-App-Info.App.AppId"/>
         <Claim name="application_name" ref="appName"/>
         <Claim name="developer_email" ref="AccessEntity.ChildNodes.Access-Developer-Info.Developer.Email"/>
     </AdditionalClaims>
