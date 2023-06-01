@@ -21,6 +21,7 @@ import (
 
 // ErrorContains checks if the error string contains the wanted pattern
 func ErrorContains(t *testing.T, out error, want string) {
+	t.Helper()
 	if out == nil {
 		if want != "" {
 			t.Errorf("got no error want %s", want)
