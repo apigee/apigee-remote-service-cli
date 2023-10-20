@@ -283,7 +283,7 @@ func TestMutualTLSNoCerts(t *testing.T) {
 	}
 
 	_, err = c.Do(req, nil)
-	testutil.ErrorContains(t, err, "remote error: tls: bad certificate")
+	testutil.ErrorContains(t, err, "remote error: tls: certificate required")
 }
 
 func newMutualTLSServer() *httptest.Server {
