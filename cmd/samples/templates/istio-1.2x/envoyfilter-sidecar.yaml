@@ -17,7 +17,7 @@
 # may tailor by specifying `workloadSelector` for specific targets.
 # Uses `apigee-remote-service-envoy.apigee:5000` as target.
 
-# This is for Istio 1.9-1.19.
+# This is for Istio 1.2x.
 
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
@@ -33,15 +33,15 @@ spec:
   - applyTo: HTTP_FILTER
     match:
       proxy:
-        proxyVersion: '^1\.(9|1\d).*'
+        proxyVersion: '^1\.2.*'
       context: SIDECAR_INBOUND
       listener:
         filterChain:
           filter:
-            name: envoy.http_connection_manager
+            name: "envoy.filters.network.http_connection_manager"
             subFilter:
-              name: envoy.router
-    
+              name: "envoy.filters.http.router"
+
     patch:
       operation: INSERT_BEFORE
       value:
@@ -60,12 +60,12 @@ spec:
   - applyTo: NETWORK_FILTER
     match:
       proxy:
-        proxyVersion: '^1\.(9|1\d).*'
+        proxyVersion: '^1\.2.*'
       context: SIDECAR_INBOUND
       listener:
         filterChain:
           filter:
-            name: "envoy.http_connection_manager"
+            name: "envoy.filters.network.http_connection_manager"
     patch:
       operation: MERGE
       value:
