@@ -61,6 +61,8 @@ var (
 		"istio-1.20": "istio-1.2x",
 		"istio-1.21": "istio-1.2x",
 		"istio-1.22": "istio-1.2x",
+		"istio-1.23": "istio-1.2x",
+		"istio-1.24": "istio-1.2x",
 	}
 )
 

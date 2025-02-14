@@ -102,6 +102,8 @@ func TestTemplatesListing(t *testing.T) {
 		"  istio-1.20",
 		"  istio-1.21",
 		"  istio-1.22",
+		"  istio-1.23",
+		"  istio-1.24",
 		"  istio-1.7",
 		"  istio-1.8",
 		"  istio-1.9",
