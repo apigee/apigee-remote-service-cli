@@ -44,13 +44,25 @@ var (
 		"envoy-1.17": "envoy-1.16",
 		"envoy-1.18": "envoy-1.16",
 		"envoy-1.19": "envoy-1.16",
-		"envoy-1.20": "envoy-1.16",
+		"envoy-1.20": "envoy-1.16", // TOOD: Add support for newer envoy versions (should work with envoy-1.16, but needs testing).
 		"istio-1.7":  "istio-1.7",
 		"istio-1.8":  "istio-1.7",
 		"istio-1.9":  "istio-1.9",
 		"istio-1.10": "istio-1.9",
 		"istio-1.11": "istio-1.9",
 		"istio-1.12": "istio-1.9",
+		"istio-1.13": "istio-1.9",
+		"istio-1.14": "istio-1.9",
+		"istio-1.15": "istio-1.9",
+		"istio-1.16": "istio-1.9",
+		"istio-1.17": "istio-1.9",
+		"istio-1.18": "istio-1.9",
+		"istio-1.19": "istio-1.9",
+		"istio-1.20": "istio-1.2x",
+		"istio-1.21": "istio-1.2x",
+		"istio-1.22": "istio-1.2x",
+		"istio-1.23": "istio-1.2x",
+		"istio-1.24": "istio-1.2x",
 	}
 )
 
