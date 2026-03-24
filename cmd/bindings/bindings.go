@@ -40,7 +40,6 @@ type bindings struct {
 // Cmd returns base command
 func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 	cfg := &bindings{RootArgs: rootArgs}
-
 	c := &cobra.Command{
 		Use:   "bindings",
 		Short: "Manage Apigee Product to Remote Target bindings",
@@ -50,23 +49,15 @@ func Cmd(rootArgs *shared.RootArgs, printf shared.FormatFn) *cobra.Command {
 		},
 	}
 
-	c.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "", false,
-		"Apigee SaaS (sets management and runtime URL)")
-	c.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "", false,
-		"Apigee opdk")
-	c.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t", "",
-		"Apigee OAuth or SAML token (overrides any other given credentials)")
-	c.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u", "",
-		"Apigee username (legacy or opdk only)")
-	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "",
-		"Apigee password (legacy or opdk only)")
-	c.PersistentFlags().StringVarP(&rootArgs.MFAToken, "mfa", "", "",
-		"Apigee multi-factor authorization token (legacy only)")
-	c.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m",
-		"", "Apigee management base URL")
+	c.PersistentFlags().BoolVarP(&rootArgs.IsLegacySaaS, "legacy", "", false, "Apigee SaaS")
+	c.PersistentFlags().BoolVarP(&rootArgs.IsOPDK, "opdk", "", false, "Apigee opdk")
+	c.PersistentFlags().StringVarP(&rootArgs.Token, "token", "t", "", "Apigee OAuth/SAML token")
+	c.PersistentFlags().StringVarP(&rootArgs.Username, "username", "u", "", "Apigee username")
+	c.PersistentFlags().StringVarP(&rootArgs.Password, "password", "p", "", "Apigee password")
+	c.PersistentFlags().StringVarP(&rootArgs.MFAToken, "mfa", "", "", "Apigee MFA token")
+	c.PersistentFlags().StringVarP(&rootArgs.ManagementBase, "management", "m", "", "Apigee management base URL")
 
 	c.AddCommand(cmdBindingsList(cfg, printf))
-
 	return c
 }
 
@@ -76,7 +67,6 @@ func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 		Short: "List Apigee Products to Remote Target (API) bindings",
 		Long:  "List Apigee Products to Remote Target (API) bindings",
 		Args:  cobra.MaximumNArgs(1),
-
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return b.cmdListAll(printf)
@@ -84,7 +74,6 @@ func cmdBindingsList(b *bindings, printf shared.FormatFn) *cobra.Command {
 			return b.cmdList(args[0], printf)
 		},
 	}
-
 	return c
 }
 
@@ -95,18 +84,18 @@ func (b *bindings) getProduct(name string) (*product.APIProduct, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
 	}
-
 	p := &product.APIProduct{}
 	resp, err := b.ApigeeClient.Do(req, p)
 	if err != nil {
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			defer resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil, nil
 		}
 		return nil, errors.Wrap(err, "retrieving products")
 	}
-	defer resp.Body.Close()
-
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
 	return p, nil
 }
 
@@ -119,14 +108,14 @@ func (b *bindings) getProducts() ([]product.APIProduct, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
 	}
-
 	var res product.APIResponse
 	resp, err := b.ApigeeClient.Do(req, &res)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving products")
 	}
-	defer resp.Body.Close()
-
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
 	return res.APIProducts, nil
 }
 
@@ -143,13 +132,18 @@ func (b *bindings) cmdList(productName string, printf shared.FormatFn) error {
 	if err != nil {
 		return err
 	}
+	if p == nil {
+		return nil
+	}
 	return printProducts([]product.APIProduct{*p}, printf)
 }
 
 func printProducts(products []product.APIProduct, printf shared.FormatFn) error {
+	if printf == nil {
+		return fmt.Errorf("printf is required")
+	}
 	var bound, unbound []product.APIProduct
 	for _, p := range products {
-
 		p.APIs = p.GetBoundAPIs()
 		if len(p.APIs) == 0 {
 			unbound = append(unbound, p)
@@ -157,20 +151,15 @@ func printProducts(products []product.APIProduct, printf shared.FormatFn) error 
 			bound = append(bound, p)
 		}
 	}
-
 	sort.Sort(byName(bound))
 	sort.Sort(byName(unbound))
 	data := struct {
 		Bound   []product.APIProduct
 		Unbound []product.APIProduct
-	}{
-		Bound:   bound,
-		Unbound: unbound,
-	}
+	}{Bound: bound, Unbound: unbound}
+
 	tmp := template.New("products")
-	tmp.Funcs(template.FuncMap{
-		"scopes": func(in []string) string { return strings.Join(in, ",") },
-	})
+	tmp.Funcs(template.FuncMap{"scopes": func(in []string) string { return strings.Join(in, ",") }})
 	tmp, err := tmp.Parse(productsTemplate)
 	if err != nil {
 		return errors.Wrap(err, "creating template")
@@ -179,7 +168,6 @@ func printProducts(products []product.APIProduct, printf shared.FormatFn) error 
 	if err != nil {
 		return errors.Wrap(err, "executing template")
 	}
-
 	return nil
 }
 
@@ -192,13 +180,13 @@ func (a byName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 const productsTemplate = `
 {{- define "product"}}
 {{.Name}}:
- {{- if .Scopes}}
+{{- if .Scopes}}
   Scopes: {{scopes (.Scopes)}}
- {{- end}}
- {{- if .QuotaLimit}}
+{{- end}}
+{{- if .QuotaLimit}}
   Quota: {{.QuotaLimit}} requests every {{.QuotaInterval}} {{.QuotaTimeUnit}} 
- {{- end}}
- {{- if .APIs}}
+{{- end}}
+{{- if .APIs}}
   Target (API) bindings:
   {{- range .APIs}}
     {{.}}
@@ -207,7 +195,7 @@ const productsTemplate = `
   {{- range .Resources}}
     {{.}}
   {{- end}}
- {{- end}}
+{{- end}}
 {{- end}}
 API Products
 ============          
@@ -219,7 +207,6 @@ Bound
  {{- end}}
 {{- end}}
 {{- if .Unbound}}
-
 Unbound
 -------
  {{- range .Unbound}}

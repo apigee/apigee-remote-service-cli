@@ -62,27 +62,26 @@ var _ KVMService = &KVMServiceOp{}
 // Get returns a response given a KVM map name
 func (s *KVMServiceOp) Get(mapname string) (*KVM, *Response, error) {
 	path := path.Join(kvmPath, mapname)
-	req, e := s.client.NewRequest("GET", path, nil)
-	if e != nil {
-		return nil, nil, e
+	req, err := s.client.NewRequest("GET", path, nil)
+	if err != nil {
+		return nil, nil, err
 	}
+
 	returnedKVM := KVM{}
-	resp, e := s.client.Do(req, &returnedKVM)
-	if e != nil {
-		return nil, resp, e
-	}
-	return &returnedKVM, resp, e
+	resp, err := s.client.Do(req, &returnedKVM)
+	return &returnedKVM, resp, err
 }
 
 // Create creates a KVM and returns a response
 func (s *KVMServiceOp) Create(kvm KVM) (*Response, error) {
 	path := path.Join(kvmPath)
-	req, e := s.client.NewRequest("POST", path, kvm)
-	if e != nil {
-		return nil, e
+	req, err := s.client.NewRequest("POST", path, kvm)
+	if err != nil {
+		return nil, err
 	}
-	resp, e := s.client.Do(req, &kvm)
-	return resp, e
+
+	resp, err := s.client.Do(req, &kvm)
+	return resp, err
 }
 
 // UpdateEntry updates a KVM entry
@@ -92,6 +91,7 @@ func (s *KVMServiceOp) UpdateEntry(kvmName string, entry Entry) (*Response, erro
 	if e != nil {
 		return nil, e
 	}
+
 	resp, e := s.client.Do(req, &entry)
 	return resp, e
 }
@@ -103,6 +103,7 @@ func (s *KVMServiceOp) AddEntry(kvmName string, entry Entry) (*Response, error) 
 	if e != nil {
 		return nil, e
 	}
+
 	resp, e := s.client.Do(req, &entry)
 	return resp, e
 }

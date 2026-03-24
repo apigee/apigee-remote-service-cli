@@ -251,7 +251,7 @@ func (p *provision) createSecretPropertyset(jwks []byte, privateKey []byte, prop
 
 	res, err = p.ApigeeClient.Do(req, nil)
 	if res != nil {
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 	}
 	if err == nil { // returns if successful
 		return nil
@@ -268,7 +268,7 @@ func (p *provision) createSecretPropertyset(jwks []byte, privateKey []byte, prop
 
 	res, err = p.ApigeeClient.Do(req, nil)
 	if res != nil {
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 	}
 	return err
 }

@@ -25,7 +25,7 @@ func TestGetProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 	customizedProxy, err := getCustomizedProxy(tempDir, remoteServiceProxy, nil)
 	if err != nil {
 		t.Fatal(err)

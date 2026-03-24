@@ -43,7 +43,7 @@ func CopyFromEmbedded(embedded embed.FS, embeddedPath, extractDir string) error 
 			if err != nil {
 				return errors.Wrap(err, "os.Create")
 			}
-			defer f.Close()
+			defer func() { _ = f.Close() }()
 			_, err = f.Write(bytes)
 			return errors.Wrap(err, "f.Write")
 		}

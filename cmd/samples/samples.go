@@ -299,7 +299,7 @@ func (s *samples) createConfig(templateDir string, printf shared.FormatFn) error
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	err = getTemplates(tempDir, templateDir)
 	if err != nil {

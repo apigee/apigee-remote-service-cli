@@ -140,7 +140,7 @@ func (p *provision) run(printf shared.FormatFn) error {
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	replaceVH := func(proxyDir string) error {
 		proxiesFile := filepath.Join(proxyDir, "proxies", "default.xml")
@@ -513,7 +513,7 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		}
 		res, err := client.Do(req)
 		if res != nil {
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError && res.StatusCode != http.StatusUnauthorized {
 				return fmt.Errorf("GET request to %q returns %d", targetURL, res.StatusCode)
 			}
@@ -535,7 +535,7 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		req.Header.Add("Content-Type", "application/json")
 		res, err = client.Do(req)
 		if res != nil {
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			if res.StatusCode != http.StatusUnauthorized && res.StatusCode != http.StatusInternalServerError { // 401 or 500 is ok, either the secret is not there or we didn't use a valid api key
 				verifyErrors = errorset.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", verifyAPIKeyURL, res.StatusCode))
 			}
@@ -551,7 +551,7 @@ func (p *provision) verifyRemoteServiceProxy(client *http.Client, printf shared.
 		req.Header.Add("Content-Type", "application/json")
 		res, err = client.Do(req)
 		if res != nil {
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			if res.StatusCode != http.StatusUnauthorized && res.StatusCode != http.StatusOK {
 				verifyErrors = errorset.Append(verifyErrors, fmt.Errorf("POST request to %q returns %d", quotasURL, res.StatusCode))
 			}

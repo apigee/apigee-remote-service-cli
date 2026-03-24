@@ -157,16 +157,14 @@ type DeletedProxyInfo struct {
 // the list of available revisions, and the created and last modified dates and actors.
 func (s *ProxiesServiceOp) Get(proxy string) (*Proxy, *Response, error) {
 	urlPath := path.Join(proxiesPath, proxy)
-	req, e := s.client.NewRequestNoEnv("GET", urlPath, nil)
-	if e != nil {
-		return nil, nil, e
+	req, err := s.client.NewRequestNoEnv("GET", urlPath, nil)
+	if err != nil {
+		return nil, nil, err
 	}
+
 	returnedProxy := Proxy{}
-	resp, e := s.client.Do(req, &returnedProxy)
-	if e != nil {
-		return nil, resp, e
-	}
-	return &returnedProxy, resp, e
+	resp, err := s.client.Do(req, &returnedProxy)
+	return &returnedProxy, resp, err
 }
 
 func smartFilter(urlPath string) bool {
@@ -184,10 +182,10 @@ func zipDirectory(source string, target string, filter func(string) bool) error 
 	if err != nil {
 		return err
 	}
-	defer zipfile.Close()
+	defer func() { _ = zipfile.Close() }()
 
 	archive := zip.NewWriter(zipfile)
-	defer archive.Close()
+	defer func() { _ = archive.Close() }()
 
 	info, err := os.Stat(source)
 	if err != nil {
@@ -199,56 +197,46 @@ func zipDirectory(source string, target string, filter func(string) bool) error 
 		baseDir = filepath.Base(source)
 	}
 
-	if err := filepath.Walk(source, func(rootPath string, info os.FileInfo, err error) error {
-		if filter == nil || filter(rootPath) {
-			if err != nil {
-				return err
-			}
-
-			header, err := zip.FileInfoHeader(info)
-			if err != nil {
-				return err
-			}
-
-			if baseDir != "" {
-				name := filepath.Join(baseDir, strings.TrimPrefix(rootPath, source))
-				header.Name = strings.ReplaceAll(name, `\`, `/`)
-			}
-
-			// This archive will be unzipped by a Java process.  When ZIP64 extensions
-			// are used, Java insists on having Deflate as the compression method (0x08)
-			// even for directories.
-			header.Method = zip.Deflate
-
-			if info.IsDir() {
-				header.Name += "/"
-			}
-
-			writer, err := archive.CreateHeader(header)
-			if err != nil {
-				return err
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			file, err := os.Open(rootPath)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-			_, err = io.Copy(writer, file)
-			if err != nil {
-				return err
-			}
+	return filepath.Walk(source, func(rootPath string, info os.FileInfo, err error) error {
+		if filter != nil && !filter(rootPath) {
+			return nil
 		}
-		return err
-	}); err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	return nil
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		if baseDir != "" {
+			name := filepath.Join(baseDir, strings.TrimPrefix(rootPath, source))
+			header.Name = strings.ReplaceAll(name, `\`, `/`)
+		}
+
+		header.Method = zip.Deflate
+		if info.IsDir() {
+			header.Name += "/"
+		}
+
+		writer, err := archive.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(rootPath)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = file.Close() }()
+		_, err = io.Copy(writer, file)
+		return err
+	})
 }
 
 // Import an API proxy into an organization, creating a new API Proxy revision.
@@ -263,36 +251,28 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 	}
 	zipfileName := source
 	if info.IsDir() {
-		// create a temporary zip file
 		if proxyName == "" {
 			proxyName = filepath.Base(source)
 		}
-		tempDir, e := os.MkdirTemp("", "go-apigee-edge-")
-		if e != nil {
-			return nil, nil, fmt.Errorf("while creating temp dir, error: %#v", e)
+		tempDir, err := os.MkdirTemp("", "go-apigee-edge-")
+		if err != nil {
+			return nil, nil, fmt.Errorf("while creating temp dir, error: %#v", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 		zipfileName = filepath.Join(tempDir, "apiproxy.zip")
-		e = zipDirectory(filepath.Join(source, "apiproxy"), zipfileName, smartFilter)
-		if e != nil {
-			return nil, nil, fmt.Errorf("while creating temp dir, error: %#v", e)
+		if err = zipDirectory(filepath.Join(source, "apiproxy"), zipfileName, smartFilter); err != nil {
+			return nil, nil, fmt.Errorf("while creating temp dir, error: %#v", err)
 		}
 	}
 
 	if !strings.HasSuffix(zipfileName, ".zip") {
 		return nil, nil, errors.New("source must be a zipfile")
 	}
-
-	_, err = os.Stat(zipfileName)
-	if err != nil {
+	if _, err = os.Stat(zipfileName); err != nil {
 		return nil, nil, err
 	}
 
-	// append the query params
-	origURL, err := url.Parse(proxiesPath)
-	if err != nil {
-		return nil, nil, err
-	}
+	origURL, _ := url.Parse(proxiesPath)
 	q := origURL.Query()
 	q.Add("action", "import")
 	q.Add("name", proxyName)
@@ -303,45 +283,40 @@ func (s *ProxiesServiceOp) Import(proxyName string, source string) (*ProxyRevisi
 	if err != nil {
 		return nil, nil, err
 	}
-	defer ioreader.Close()
+	defer func() { _ = ioreader.Close() }()
 
 	var req *http.Request
 	if !s.client.IsGCPManaged {
 		req, err = s.client.NewRequestNoEnv("POST", urlPath, ioreader)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else { // GCP API requires formdata format
+	} else {
 		var b bytes.Buffer
 		w := multipart.NewWriter(&b)
-		var fw io.Writer
-		if fw, err = w.CreateFormFile("file", zipfileName); err != nil {
+		fw, err := w.CreateFormFile("file", zipfileName)
+		if err != nil {
 			return nil, nil, err
 		}
 		if _, err = io.Copy(fw, ioreader); err != nil {
 			return nil, nil, err
 		}
-		w.Close()
-
+		_ = w.Close()
 		req, err = s.client.NewRequestNoEnv("POST", urlPath, &b)
 		if err != nil {
 			return nil, nil, err
 		}
 		req.Header.Set("Content-Type", w.FormDataContentType())
 	}
+	if err != nil {
+		return nil, nil, err
+	}
 
 	returnedProxyRevision := ProxyRevision{}
 	res, err := s.client.Do(req, &returnedProxyRevision)
-	if err != nil {
-		return nil, res, err
-	}
 	return &returnedProxyRevision, res, err
 }
 
 // Undeploy a specific revision of an API Proxy from a particular environment within an Edge organization.
 func (s *ProxiesServiceOp) Undeploy(proxyName, env string, rev Revision) (*ProxyRevisionDeployment, *Response, error) {
 	urlPath := path.Join(proxiesPath, proxyName, "revisions", fmt.Sprintf("%d", rev), "deployments")
-
 	var req *http.Request
 	var err error
 	if s.client.IsGCPManaged {
@@ -355,8 +330,8 @@ func (s *ProxiesServiceOp) Undeploy(proxyName, env string, rev Revision) (*Proxy
 		q.Add("action", "undeploy")
 		q.Add("env", env)
 		origURL.RawQuery = q.Encode()
-		urlPath = origURL.String()
-		if req, err = s.client.NewRequestNoEnv("POST", urlPath, nil); err != nil {
+		req, err = s.client.NewRequestNoEnv("POST", origURL.String(), nil)
+		if err != nil {
 			return nil, nil, err
 		}
 	}
@@ -366,16 +341,12 @@ func (s *ProxiesServiceOp) Undeploy(proxyName, env string, rev Revision) (*Proxy
 
 	deployment := ProxyRevisionDeployment{}
 	resp, err := s.client.Do(req, &deployment)
-	if err != nil {
-		return nil, resp, err
-	}
 	return &deployment, resp, err
 }
 
 // Deploy a revision of an API proxy to a specific environment within an organization.
 func (s *ProxiesServiceOp) Deploy(proxyName, env string, rev Revision) (*ProxyRevisionDeployment, *Response, error) {
 	urlPath := path.Join(proxiesPath, proxyName, "revisions", fmt.Sprintf("%d", rev), "deployments")
-	// append the query params
 	origURL, err := url.Parse(urlPath)
 	if err != nil {
 		return nil, nil, err
@@ -388,19 +359,15 @@ func (s *ProxiesServiceOp) Deploy(proxyName, env string, rev Revision) (*ProxyRe
 		q.Add("env", env)
 	}
 	origURL.RawQuery = q.Encode()
-	urlPath = origURL.String()
 
-	req, e := s.client.NewRequest("POST", urlPath, nil)
-	if e != nil {
-		return nil, nil, e
+	req, err := s.client.NewRequest("POST", origURL.String(), nil)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	deployment := ProxyRevisionDeployment{}
-	resp, e := s.client.Do(req, &deployment)
-	if e != nil {
-		return nil, resp, e
-	}
-	return &deployment, resp, e
+	resp, err := s.client.Do(req, &deployment)
+	return &deployment, resp, err
 }
 
 // GetDeployment retrieves the information about the deployment of an API Proxy in an environment.
@@ -410,33 +377,34 @@ func (s *ProxiesServiceOp) GetDeployment(proxy string) (*EnvironmentDeployment, 
 		return nil, nil, errors.New("not compatible with GCP Experience")
 	}
 	urlPath := path.Join(proxiesPath, proxy, "deployments")
-	req, e := s.client.NewRequest("GET", urlPath, nil)
-	if e != nil {
-		return nil, nil, e
+	req, err := s.client.NewRequest("GET", urlPath, nil)
+	if err != nil {
+		return nil, nil, err
 	}
+
 	deployment := EnvironmentDeployment{}
-	resp, e := s.client.Do(req, &deployment)
-	if e != nil {
-		return nil, resp, e
-	}
-	return &deployment, resp, e
+	resp, err := s.client.Do(req, &deployment)
+	return &deployment, resp, err
 }
 
 // GetDeployedRevision returns the Revision that is deployed to an environment.
 func (s *ProxiesServiceOp) GetDeployedRevision(proxy string) (*Revision, error) {
 	deployment, resp, err := s.GetDeployment(proxy)
-	if err != nil && (resp == nil || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) {
-		return nil, err
-	}
-	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusBadRequest {
-		return nil, nil
-	}
-	for _, rev := range deployment.Revision {
-		if rev.State == "deployed" {
-			return &rev.Number, nil
+	if err != nil {
+		if resp == nil || resp.StatusCode == 401 || resp.StatusCode == 403 {
+			return nil, err
 		}
 	}
-
+	if resp != nil && (resp.StatusCode == 404 || resp.StatusCode == 400) {
+		return nil, nil
+	}
+	if deployment != nil {
+		for _, rev := range deployment.Revision {
+			if rev.State == "deployed" {
+				return &rev.Number, nil
+			}
+		}
+	}
 	return nil, nil
 }
 
@@ -447,32 +415,32 @@ func (s *ProxiesServiceOp) GetGCPDeployments(proxy string) ([]GCPDeployment, *Re
 		return nil, nil, errors.New("only compatible with GCP Experience")
 	}
 	urlPath := path.Join(proxiesPath, proxy, "deployments")
-	req, e := s.client.NewRequest("GET", urlPath, nil)
-	if e != nil {
-		return nil, nil, e
+	req, err := s.client.NewRequest("GET", urlPath, nil)
+	if err != nil {
+		return nil, nil, err
 	}
+
 	deployments := GCPDeployments{}
-	resp, e := s.client.Do(req, &deployments)
-	if e != nil {
-		return nil, resp, e
-	}
-	return deployments.Deployments, resp, e
+	resp, err := s.client.Do(req, &deployments)
+	return deployments.Deployments, resp, err
 }
 
 // GetGCPDeployedRevision returns the Revision that is deployed to an environment in GCP.
 func (s *ProxiesServiceOp) GetGCPDeployedRevision(proxy string) (*Revision, error) {
 	deployments, resp, err := s.GetGCPDeployments(proxy)
-	if err != nil && (resp == nil || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) {
-		return nil, err
+	if err != nil {
+		if resp == nil || resp.StatusCode == 401 || resp.StatusCode == 403 {
+			return nil, err
+		}
 	}
 	if len(deployments) > 0 {
-		rev, err := strconv.ParseInt(strings.TrimSuffix(strings.TrimPrefix(deployments[0].Revision, "\""), "\""), 10, 32)
+		revStr := strings.Trim(deployments[0].Revision, "\"")
+		rev, err := strconv.ParseInt(revStr, 10, 32)
 		if err != nil {
 			return nil, err
 		}
 		r := Revision(rev)
 		return &r, nil
 	}
-
 	return nil, nil
 }

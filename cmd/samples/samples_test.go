@@ -53,7 +53,7 @@ func TestFlagValidation(t *testing.T) {
 	if _, err := configFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(configFile.Name())
+	defer func() { _ = os.Remove(configFile.Name()) }()
 
 	for i, f := range testSamples {
 		print := testutil.Printer("TestFlagValidation")
@@ -156,7 +156,7 @@ func TestCreateEnvoyConfigs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	config := generateConfig(t, false, false)
 
@@ -167,7 +167,7 @@ func TestCreateEnvoyConfigs(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// make a fake tag
 	shared.BuildInfo.Version = "v0.0.0-SNAPSHOT"
@@ -200,7 +200,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	config := generateConfig(t, false, false)
 
@@ -211,7 +211,7 @@ func TestCreateIstioConfigsWithHttpbin(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// make a fake tag
 	shared.BuildInfo.Version = "0.0.0-SNAPSHOT"
@@ -246,7 +246,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	config := generateConfig(t, true, false)
 
@@ -257,7 +257,7 @@ func TestCreateIstioConfigsWithoutHttpbin(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
@@ -288,7 +288,7 @@ func TestCreateIncompatibleSample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	config := generateConfig(t, true, false)
 
@@ -299,7 +299,7 @@ func TestCreateIncompatibleSample(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// existing directory with no overwrite
 	rootArgs := &shared.RootArgs{}
@@ -318,7 +318,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	config := generateConfig(t, true, true)
 
@@ -329,7 +329,7 @@ func TestCreateIstioConfigWithAnalyticsSecret(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// a good command
 	rootArgs := &shared.RootArgs{}
@@ -351,7 +351,7 @@ func TestExistingDirectoryError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	config := generateConfig(t, true, false)
 
@@ -362,7 +362,7 @@ func TestExistingDirectoryError(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// existing directory with no overwrite
 	rootArgs := &shared.RootArgs{}
@@ -381,7 +381,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	config := generateConfig(t, false, false)
 
@@ -392,7 +392,7 @@ func TestExistingDirectoryOverwrite(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// existing directory with overwrite
 	rootArgs := &shared.RootArgs{}
@@ -422,7 +422,7 @@ func TestLoadConfigError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// bad config file path
 	rootArgs := &shared.RootArgs{}

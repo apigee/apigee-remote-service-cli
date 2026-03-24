@@ -141,7 +141,7 @@ func (r *RootArgs) Resolve(skipAuth, requireRuntime bool) error {
 	if r.IsLegacySaaS && r.IsOPDK {
 		return fmt.Errorf("--legacy and --opdk options are exclusive")
 	}
-	r.IsGCPManaged = !(r.IsLegacySaaS || r.IsOPDK)
+	r.IsGCPManaged = !r.IsLegacySaaS && !r.IsOPDK
 
 	if r.ManagementBase == "" {
 		r.ManagementBase = DefaultManagementBase
@@ -328,7 +328,7 @@ func (r *RootArgs) loadConfig() error {
 		r.IsGCPManaged = true
 
 		if r.ServerConfig.Tenant.PrivateKey == nil || r.ServerConfig.Tenant.PrivateKeyID == "" {
-			return fmt.Errorf("Secret CRD not found in file: %s", r.ConfigPath)
+			return fmt.Errorf("secret CRD not found in file: %s", r.ConfigPath)
 		}
 	}
 

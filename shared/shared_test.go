@@ -98,7 +98,7 @@ analytics:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +140,7 @@ analytics:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ analytics:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ tenant:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ tenant:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -322,7 +322,7 @@ tenant:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -363,7 +363,7 @@ tenant:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -402,7 +402,7 @@ analytics:
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if _, err := tf.WriteString(configMapYAML); err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +414,7 @@ analytics:
 		ConfigPath: tf.Name(),
 	}
 
-	want := fmt.Sprintf("Secret CRD not found in file: %s", tf.Name())
+	want := fmt.Sprintf("secret CRD not found in file: %s", tf.Name())
 	if err := r.Resolve(false, true); err == nil || err.Error() != want {
 		t.Errorf("want %s got %v", want, err)
 	}
@@ -515,7 +515,7 @@ func TestResolveWithTLS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	keyFile := path.Join(tempDir, "key.pem")
 	certFile := path.Join(tempDir, "cert.pem")
@@ -548,7 +548,7 @@ func TestResolveWithTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(invalidCert.Name())
+	defer func() { _ = os.Remove(invalidCert.Name()) }()
 
 	r.TLSCertFile = invalidCert.Name()
 	want = "tls: failed to find any PEM data in certificate input"
@@ -595,7 +595,7 @@ func TestPrint(t *testing.T) {
 
 	Printf("test %s", "Printf")
 
-	w.Close()
+	_ = w.Close()
 	out, err := io.ReadAll(r)
 	if err != nil {
 		t.Fatal(err)
@@ -613,7 +613,7 @@ func TestPrint(t *testing.T) {
 
 	Errorf("test %s", "Errorf")
 
-	w.Close()
+	_ = w.Close()
 	out, err = io.ReadAll(r)
 	if err != nil {
 		t.Fatal(err)

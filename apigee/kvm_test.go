@@ -16,6 +16,7 @@ package apigee
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -25,12 +26,10 @@ import (
 
 func kvmTestServer(t *testing.T) *httptest.Server {
 	m := http.NewServeMux()
+	kvm := KVM{Name: "kvm-1"}
 
-	kvm := KVM{
-		Name: "kvm-1",
-	}
-
-	m.HandleFunc("/keyvaluemaps/", (func(w http.ResponseWriter, r *http.Request) {
+	// Handle both /keyvaluemaps and /keyvaluemaps/
+	handler := func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			if strings.Contains(r.URL.Path, "kvm-2") {
@@ -38,24 +37,28 @@ func kvmTestServer(t *testing.T) *httptest.Server {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(kvm); err != nil {
-				t.Fatalf("want no error %v", err)
+			_ = json.NewEncoder(w).Encode(kvm)
+		case http.MethodPost:
+			bodyBytes, _ := io.ReadAll(r.Body)
+			// Trigger 500 error if name is error-trigger
+			if strings.Contains(string(bodyBytes), "error-trigger") {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
+			w.WriteHeader(http.StatusCreated)
+			_ = json.NewEncoder(w).Encode(kvm)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-	}))
+	}
+
+	m.HandleFunc("/keyvaluemaps", handler)
+	m.HandleFunc("/keyvaluemaps/", handler)
 	m.HandleFunc("/keyvaluemaps/kvm/entries/", (func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			if strings.Contains(r.URL.Path, "kvm-2") {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(kvm); err != nil {
-				t.Fatalf("want no error %v", err)
-			}
+			_ = json.NewEncoder(w).Encode(kvm)
 		case http.MethodPost:
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("{}"))
@@ -70,28 +73,12 @@ func kvmTestServer(t *testing.T) *httptest.Server {
 func TestGetKVM(t *testing.T) {
 	ts := kvmTestServer(t)
 	defer ts.Close()
-
-	baseUrl, err := url.Parse(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := &EdgeClient{
-		client:     http.DefaultClient,
-		BaseURLEnv: baseUrl,
-		BaseURL:    baseUrl,
-	}
-	kvms := &KVMServiceOp{
-		client: client,
-	}
-
+	baseUrl, _ := url.Parse(ts.URL)
+	kvms := &KVMServiceOp{client: &EdgeClient{client: http.DefaultClient, BaseURLEnv: baseUrl, BaseURL: baseUrl}}
 	kvm, _, err := kvms.Get("kvm-1")
-	if err != nil {
-		t.Error(err)
+	if err != nil || kvm.Name != "kvm-1" {
+		t.Errorf("Get failed: %v", err)
 	}
-	if kvm.Name != "kvm-1" {
-		t.Errorf("want kvm-1 got %s", kvm.Name)
-	}
-
 	_, _, err = kvms.Get("kvm-2")
 	if err == nil {
 		t.Error("want error got none")
@@ -101,107 +88,108 @@ func TestGetKVM(t *testing.T) {
 func TestCreateKVM(t *testing.T) {
 	ts := kvmTestServer(t)
 	defer ts.Close()
-
-	baseUrl, err := url.Parse(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := &EdgeClient{
-		client:     http.DefaultClient,
-		BaseURLEnv: baseUrl,
-		BaseURL:    baseUrl,
-	}
-	kvms := &KVMServiceOp{
-		client: client,
-	}
-
-	kvm := KVM{
-		Name: "kvm-1",
-	}
-
-	_, err = kvms.Create(kvm)
+	baseUrl, _ := url.Parse(ts.URL)
+	kvms := &KVMServiceOp{client: &EdgeClient{client: http.DefaultClient, BaseURLEnv: baseUrl, BaseURL: baseUrl}}
+	_, err := kvms.Create(KVM{Name: "kvm-1"})
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestGetValueKVM(t *testing.T) {
-	kvm := &KVM{
-		Name: "kvm",
-		Entries: []Entry{
-			{
-				Name:  "k1",
-				Value: "v1",
-			},
-		},
+	kvm := &KVM{Entries: []Entry{{Name: "k1", Value: "v1"}}}
+	if v, ok := kvm.GetValue("k1"); !ok || v != "v1" {
+		t.Error("GetValue failed")
 	}
-
-	v, ok := kvm.GetValue("k1")
-	if !ok {
-		t.Error("KVM should have entry k1")
-	}
-	if v != "v1" {
-		t.Errorf("want v1 got %s", v)
-	}
-
-	_, ok = kvm.GetValue("k2")
-	if ok {
-		t.Error("KVM should not have entry k2")
+	if _, ok := kvm.GetValue("k2"); ok {
+		t.Error("GetValue should fail")
 	}
 }
 
 func TestUpdateEntryKVM(t *testing.T) {
 	ts := kvmTestServer(t)
 	defer ts.Close()
-
-	baseUrl, err := url.Parse(ts.URL)
+	baseUrl, _ := url.Parse(ts.URL)
+	kvms := &KVMServiceOp{client: &EdgeClient{client: http.DefaultClient, BaseURLEnv: baseUrl, BaseURL: baseUrl}}
+	_, err := kvms.UpdateEntry("kvm", Entry{Name: "k1", Value: "v1"})
 	if err != nil {
-		t.Fatal(err)
-	}
-	client := &EdgeClient{
-		client:     http.DefaultClient,
-		BaseURLEnv: baseUrl,
-		BaseURL:    baseUrl,
-	}
-	kvms := &KVMServiceOp{
-		client: client,
-	}
-
-	e := Entry{
-		Name:  "k1",
-		Value: "v1",
-	}
-
-	_, err = kvms.UpdateEntry("kvm", e)
-	if err != nil {
-		t.Errorf("want no error got %v", err)
+		t.Error(err)
 	}
 }
 
 func TestAddEntryKVM(t *testing.T) {
 	ts := kvmTestServer(t)
 	defer ts.Close()
-
-	baseUrl, err := url.Parse(ts.URL)
+	baseUrl, _ := url.Parse(ts.URL)
+	kvms := &KVMServiceOp{client: &EdgeClient{client: http.DefaultClient, BaseURLEnv: baseUrl, BaseURL: baseUrl}}
+	_, err := kvms.AddEntry("kvm", Entry{Name: "k1", Value: "v1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
-	client := &EdgeClient{
-		client:     http.DefaultClient,
-		BaseURLEnv: baseUrl,
-		BaseURL:    baseUrl,
+}
+
+func TestKVMErrorPaths(t *testing.T) {
+	ts := kvmTestServer(t)
+	defer ts.Close()
+	baseUrl, _ := url.Parse(ts.URL)
+	kvms := &KVMServiceOp{client: &EdgeClient{client: http.DefaultClient, BaseURLEnv: baseUrl, BaseURL: baseUrl}}
+
+	// 1. NewRequest error
+	_, _, err := kvms.Get("%%invalid")
+	if err == nil {
+		t.Error("expected error for invalid URL")
 	}
+
+	// 2. Server Error (this should now pass)
+	_, err = kvms.Create(KVM{Name: "error-trigger"})
+	if err == nil {
+		t.Error("expected server error")
+	}
+}
+
+func TestKVM_FinalPrecisionHits(t *testing.T) {
+	u, _ := url.Parse("http://localhost")
 	kvms := &KVMServiceOp{
-		client: client,
+		client: &EdgeClient{
+			client:     http.DefaultClient,
+			BaseURL:    u,
+			BaseURLEnv: u,
+		},
 	}
 
-	e := Entry{
-		Name:  "k1",
-		Value: "v1",
-	}
+	// We use a control character \x7f (DEL) or a newline,
+	// which are illegal in URL paths and force url.Parse to error out.
+	illegalPath := "invalid\x7fpath"
 
-	_, err = kvms.AddEntry("kvm", e)
-	if err != nil {
-		t.Errorf("want no error got %v", err)
-	}
+	t.Run("CreateNewRequestError", func(t *testing.T) {
+		// We give it a valid-looking URL that has a control character.
+		// url.Parse might pass it, but ResolveReference or NewRequest will fail
+		// when trying to join it with the relative "keyvaluemaps" path.
+		badURL := &url.URL{Scheme: "http", Host: "localhost\n"}
+		kvms.client.BaseURL = badURL
+
+		_, err := kvms.Create(KVM{Name: "test"})
+		if err == nil {
+			t.Error("expected error for illegal BaseURL in Create")
+		}
+
+		// Restore for any subsequent tests
+		kvms.client.BaseURL, _ = url.Parse("http://localhost")
+	})
+
+	t.Run("UpdateEntryNewRequestError", func(t *testing.T) {
+		// Line 84: Hits the 'return nil, e' branch
+		_, err := kvms.UpdateEntry("kvm", Entry{Name: illegalPath})
+		if err == nil {
+			t.Error("expected error for illegal entry name")
+		}
+	})
+
+	t.Run("AddEntryNewRequestError", func(t *testing.T) {
+		// Line 93: Hits the 'return nil, e' branch
+		_, err := kvms.AddEntry(illegalPath, Entry{Name: "test"})
+		if err == nil {
+			t.Error("expected error for illegal KVM name in AddEntry")
+		}
+	})
 }

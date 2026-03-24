@@ -30,7 +30,7 @@ func TestCopyFromEmbedded(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer os.RemoveAll(tmpdir)
+	defer func() { _ = os.RemoveAll(tmpdir) }()
 	if err := CopyFromEmbedded(testdir, "testdir/testfile", tmpdir); err != nil {
 		t.Fatal(err)
 	}

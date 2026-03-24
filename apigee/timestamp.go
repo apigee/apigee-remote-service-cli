@@ -29,7 +29,7 @@ type Timestamp struct {
 
 // MarshalJSON creates a JSON representation of this Timestamp
 func (t Timestamp) MarshalJSON() ([]byte, error) {
-	ms := t.Time.UnixNano() / 1000000
+	ms := t.UnixNano() / 1000000
 	stamp := fmt.Sprintf("%d", ms)
 	return []byte(stamp), nil
 }
@@ -46,7 +46,7 @@ func (t *Timestamp) UnmarshalJSON(b []byte) error {
 }
 
 func (t Timestamp) String() string {
-	return fmt.Sprintf("%d", int64(t.Time.UnixNano())/1000000)
+	return fmt.Sprintf("%d", int64(t.UnixNano())/1000000)
 }
 
 // Equal reports whether t and u are equal based on time.Equal

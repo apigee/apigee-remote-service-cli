@@ -30,7 +30,7 @@ type CacheService interface {
 
 // Cache represents a cache definition
 type Cache struct {
-	Name                              string          `json:"-,omitempty"`
+	Name                              string          `json:"-"`
 	Description                       string          `json:"description,omitempty"`
 	ExpirySettings                    *expirySettings `json:"expirySettings,omitempty"`
 	OverflowToDisk                    *bool           `json:"overflowToDisk,omitempty"`
@@ -65,6 +65,7 @@ func (s *CacheServiceOp) Get(cachename string) (*Cache, *Response, error) {
 	if e != nil {
 		return nil, resp, e
 	}
+	returnedCache.Name = cachename
 	return &returnedCache, resp, e
 }
 

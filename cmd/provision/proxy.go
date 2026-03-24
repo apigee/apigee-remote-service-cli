@@ -123,7 +123,7 @@ func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, pr
 		printf("creating new proxy %s revision: %d...", name, newRev)
 		_, res, err := noDebugClient.Proxies.Import(name, file)
 		if res != nil {
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 		}
 		if err != nil {
 			return errors.Wrapf(err, "importing proxy %s", name)
@@ -135,7 +135,7 @@ func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, pr
 			name, oldRev, p.Env)
 		_, res, err := p.ApigeeClient.Proxies.Undeploy(name, p.Env, *oldRev)
 		if res != nil {
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 		}
 		if err != nil {
 			return errors.Wrapf(err, "undeploying proxy %s", name)
@@ -163,7 +163,7 @@ func (p *provision) checkAndDeployProxy(name, file string, forceInstall bool, pr
 	printf("deploying proxy %s revision %d to env %s...", name, newRev, p.Env)
 	_, res, err := p.ApigeeClient.Proxies.Deploy(name, p.Env, newRev)
 	if res != nil {
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 	}
 	if err != nil {
 		return errors.Wrapf(err, "deploying proxy %s", name)

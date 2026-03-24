@@ -220,7 +220,7 @@ func (t *token) createToken(printf shared.FormatFn) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "creating token")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	return tokenRes.Token, nil
 }
@@ -330,7 +330,7 @@ func (t *token) rotateCert(printf shared.FormatFn) error {
 		}
 		return errors.Wrap(err, "rotating cert")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	verbosef("new private key:\n%s", string(keyBytes))
 	verbosef("new jwks:\n%s", string(jwksBytes))

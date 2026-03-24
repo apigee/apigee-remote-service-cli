@@ -15,9 +15,7 @@
 package provision
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
@@ -110,7 +108,7 @@ func (p *provision) deployInternalProxy(replaceVirtualHosts func(proxyDir string
 	return p.checkAndDeployProxy(internalProxyName, customizedProxy, p.forceProxyInstall, verbosef)
 }
 
-//check if the KVM exists, if it doesn't, create a new one and sets certs for JWT
+// check if the KVM exists, if it doesn't, create a new one and sets certs for JWT
 func (p *provision) getOrCreateKVM(cred *keySecret, printf shared.FormatFn) error {
 
 	kid, keyBytes, jwksBytes, err := p.CreateJWKS(1, printf)
@@ -158,15 +156,10 @@ func (p *provision) getOrCreateKVM(cred *keySecret, printf shared.FormatFn) erro
 
 // hash for key and secret
 func newHash() (string, error) {
-	// use crypto seed
-	var seed int64
-	if err := binary.Read(rand.Reader, binary.BigEndian, &seed); err != nil {
-		return "", err
-	}
-	rnd.Seed(seed)
-
 	t := time.Now()
 	h := sha256.New()
+	// We still use rnd.Int() to maintain the existing logic of adding
+	// a random integer to the hash input.
 	if _, err := h.Write([]byte(t.String() + string(rune(rnd.Int())))); err != nil {
 		return "", err
 	}
@@ -233,7 +226,7 @@ func (p *provision) verifyInternalProxy(client *http.Client, printf shared.Forma
 	if err == nil {
 		res, err = client.Do(req)
 		if res != nil {
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 		}
 	}
 	if (res != nil && res.StatusCode > 299) || err != nil {

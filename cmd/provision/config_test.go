@@ -44,7 +44,7 @@ func TestConfigWithAnalyticsSecretFile(t *testing.T) {
 	if _, err := tmpFile.Write(fakeServiceAccount()); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	p := &provision{
 		RootArgs:                r,

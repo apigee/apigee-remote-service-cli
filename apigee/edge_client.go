@@ -68,21 +68,20 @@ type EdgeClient struct {
 	KVMService KVMService
 
 	CacheService CacheService
-	// Account           AccountService
-	// Actions           ActionsService
-	// Domains           DomainsService
-	// DropletActions    DropletActionsService
-	// Images            ImagesService
-	// ImageActions      ImageActionsService
-	// Keys              KeysService
-	// Regions           RegionsService
-	// Sizes             SizesService
-	// FloatingIPs       FloatingIPsService
+	// Account            AccountService
+	// Actions            ActionsService
+	// Domains            DomainsService
+	// DropletActions     DropletActionsService
+	// Images             ImagesService
+	// ImageActions       ImageActionsService
+	// Keys               KeysService
+	// Regions            RegionsService
+	// Sizes              SizesService
+	// FloatingIPs        FloatingIPsService
 	// FloatingIPActions FloatingIPActionsService
-	// Storage           StorageService
-	// StorageActions    StorageActionsService
-	// Tags              TagsService
-
+	// Storage            StorageService
+	// StorageActions     StorageActionsService
+	// Tags               TagsService
 	IsGCPManaged bool
 
 	// Optional function called after every successful request made to the DO APIs
@@ -98,7 +97,7 @@ type ListOptions struct {
 	Expand bool `url:"expand"`
 }
 
-// Response wraps the standard http.Response returned from Apigee Edge. (why?)
+// Response wraps the standard http.Response returned from Apigee Edge.
 type Response struct {
 	*http.Response
 }
@@ -195,25 +194,21 @@ func retrieveAuthFromNetrc(netrcPath, host string) (*EdgeAuth, error) {
 		fmt.Printf("while parsing .netrc, error:\n%#v\n", e)
 		return nil, e
 	}
-	machine := n.FindMachine(host) // eg, "api.enterprise.apigee.com"
+	machine := n.FindMachine(host)
 	if machine == nil || machine.Password == "" {
-		msg := fmt.Sprintf("while scanning %s, cannot find machine:%s", netrcPath, host)
-		return nil, errors.New(msg)
+		return nil, fmt.Errorf("while scanning %s, cannot find machine:%s", netrcPath, host)
 	}
-	auth := &EdgeAuth{Username: machine.Login, Password: machine.Password}
-	return auth, nil
+	return &EdgeAuth{Username: machine.Login, Password: machine.Password}, nil
 }
 
 // NewEdgeClient returns a new EdgeClient.
 func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	httpClient := http.DefaultClient
-
 	tr := http.DefaultTransport.(*http.Transport).Clone()
 
 	if o.InsecureSkipVerify {
 		tr.TLSClientConfig.InsecureSkipVerify = true
 	}
-
 	// config mTLS
 	if o.RootCAs != nil {
 		tr.TLSClientConfig.RootCAs = o.RootCAs
@@ -223,11 +218,11 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 	}
 
 	httpClient.Transport = tr
-
 	mgmtURL := o.MgmtURL
 	if o.MgmtURL == "" {
 		mgmtURL = defaultBaseURL
 	}
+
 	baseURL, err := url.Parse(mgmtURL)
 	if err != nil {
 		return nil, err
@@ -257,10 +252,8 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 			c.auth, e = retrieveAuthFromNetrc(o.Auth.NetrcPath, baseURL.Host)
 		} else {
 			c.auth = &EdgeAuth{
-				Username:    o.Auth.Username,
-				Password:    o.Auth.Password,
-				BearerToken: o.Auth.BearerToken,
-				MFAToken:    o.Auth.MFAToken,
+				Username: o.Auth.Username, Password: o.Auth.Password,
+				BearerToken: o.Auth.BearerToken, MFAToken: o.Auth.MFAToken,
 			}
 		}
 		if e != nil {
@@ -270,8 +263,7 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 		// otherwise enforcing oauth on legacy saas
 		if o.Auth.BearerToken == "" && mgmtURL == defaultBaseURL {
 			c.auth.MFAToken = o.Auth.MFAToken
-			e = c.getOAuthToken()
-			if e != nil {
+			if e = c.getOAuthToken(); e != nil {
 				return nil, e
 			}
 		}
@@ -279,11 +271,8 @@ func NewEdgeClient(o *EdgeClientOptions) (*EdgeClient, error) {
 
 	if o.Debug {
 		c.debug = true
-		c.onRequestCompleted = func(req *http.Request, resp *http.Response) {
-			debugDump(httputil.DumpResponse(resp, true))
-		}
+		c.onRequestCompleted = func(req *http.Request, resp *http.Response) { debugDump(httputil.DumpResponse(resp, true)) }
 	}
-
 	return c, nil
 }
 
@@ -307,7 +296,7 @@ func (c *EdgeClient) getOAuthToken() error {
 		return err
 	}
 	if res != nil {
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 	}
 	if err := CheckResponse(res); err != nil {
 		var errorResponse *ErrorResponse
@@ -340,41 +329,36 @@ func (c *EdgeClient) NewRequestNoEnv(method, urlStr string, body interface{}) (*
 
 func (c *EdgeClient) newRequest(method, urlStr string, body interface{}, includeEnv bool) (*http.Request, error) {
 	rel, err := url.Parse(urlStr)
-	ctype := ""
 	if err != nil {
 		return nil, err
 	}
+	ctype := ""
 	u := c.BaseURL.ResolveReference(rel)
-
 	if includeEnv {
 		u.Path = path.Join(c.BaseURLEnv.Path, rel.Path)
 	} else {
 		u.Path = path.Join(c.BaseURL.Path, rel.Path)
 	}
-
 	var req *http.Request
 	if body != nil {
-		switch body := body.(type) {
+		switch b := body.(type) {
 		default:
 			ctype = appJSON
 			buf := new(bytes.Buffer)
-			err = json.NewEncoder(buf).Encode(body)
-			if err != nil {
+			if err = json.NewEncoder(buf).Encode(b); err != nil {
 				return nil, err
 			}
 			req, err = http.NewRequest(method, u.String(), buf)
 		case io.Reader:
 			ctype = octetStream
-			req, err = http.NewRequest(method, u.String(), body)
+			req, err = http.NewRequest(method, u.String(), b)
 		}
 	} else {
 		req, err = http.NewRequest(method, u.String(), nil)
 	}
-
 	if err != nil {
 		return nil, err
 	}
-
 	if ctype != "" {
 		req.Header.Add("Content-Type", ctype)
 	}
@@ -387,22 +371,16 @@ func (c *EdgeClient) newRequest(method, urlStr string, body interface{}, include
 }
 
 // OnRequestCompleted sets the request completion callback for the API
-func (c *EdgeClient) OnRequestCompleted(rc RequestCompletionCallback) {
-	c.onRequestCompleted = rc
-}
+func (c *EdgeClient) OnRequestCompleted(rc RequestCompletionCallback) { c.onRequestCompleted = rc }
 
 // newResponse creates a new Response for the provided http.Response
-func newResponse(r *http.Response) *Response {
-	response := Response{Response: r}
-
-	return &response
-}
+func newResponse(r *http.Response) *Response { return &Response{Response: r} }
 
 func debugDump(data []byte, err error) {
 	if err == nil {
 		fmt.Fprintf(os.Stderr, "%s\n\n", data)
 	} else {
-		log.Fatalf("%s\n\n", err)
+		log.Printf("debug dump error: %s\n\n", err)
 	}
 }
 
@@ -414,7 +392,6 @@ func (c *EdgeClient) Do(req *http.Request, v interface{}) (*Response, error) {
 	if c.debug {
 		debugDump(httputil.DumpRequestOut(req, true))
 	}
-
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -422,40 +399,23 @@ func (c *EdgeClient) Do(req *http.Request, v interface{}) (*Response, error) {
 	if c.onRequestCompleted != nil {
 		c.onRequestCompleted(req, resp)
 	}
-
-	defer func() {
-		if rerr := resp.Body.Close(); err == nil {
-			err = rerr
-		}
-	}()
-
+	defer func() { _ = resp.Body.Close() }()
 	response := newResponse(resp)
-
-	err = CheckResponse(resp)
-	if err != nil {
+	if err = CheckResponse(resp); err != nil {
 		return response, err
 	}
-
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
-			_, err := io.Copy(w, resp.Body)
-			if err != nil {
-				return nil, err
-			}
+			_, err = io.Copy(w, resp.Body)
 		} else {
-			err := json.NewDecoder(resp.Body).Decode(v)
-			if err != nil {
-				return nil, err
-			}
+			err = json.NewDecoder(resp.Body).Decode(v)
 		}
 	}
-
 	return response, err
 }
 
 func (r *ErrorResponse) Error() string {
-	return fmt.Sprintf("%v %v: %d %v",
-		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message)
+	return fmt.Sprintf("%v %v: %d %v", r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message)
 }
 
 // CheckResponse checks the API response for errors, and returns them if
@@ -467,45 +427,27 @@ func CheckResponse(r *http.Response) error {
 	if c := r.StatusCode; c >= 200 && c <= 299 {
 		return nil
 	}
-
 	errorResponse := &ErrorResponse{Response: r}
-	data, err := io.ReadAll(r.Body)
-	if err == nil && len(data) > 0 {
-		err := json.Unmarshal(data, errorResponse)
-		if err != nil {
-			errorResponse.Message = ResponseErrorMessage{
-				Message: string(data),
-			}
+	if data, err := io.ReadAll(r.Body); err == nil && len(data) > 0 {
+		if err := json.Unmarshal(data, errorResponse); err != nil {
+			errorResponse.Message = ResponseErrorMessage{Message: string(data)}
 		}
 	}
-
 	return errorResponse
 }
 
 // String is a helper routine that allocates a new string value
 // to store v and returns a pointer to it.
-func String(v string) *string {
-	p := new(string)
-	*p = v
-	return p
-}
+func String(v string) *string { p := new(string); *p = v; return p }
 
 // Int is a helper routine that allocates a new int32 value
 // to store v and returns a pointer to it, but unlike Int32
 // its argument value is an int.
-func Int(v int) *int {
-	p := new(int)
-	*p = v
-	return p
-}
+func Int(v int) *int { p := new(int); *p = v; return p }
 
 // Bool is a helper routine that allocates a new bool value
 // to store v and returns a pointer to it.
-func Bool(v bool) *bool {
-	p := new(bool)
-	*p = v
-	return p
-}
+func Bool(v bool) *bool { p := new(bool); *p = v; return p }
 
 // StreamToString converts a reader to a string
 func StreamToString(stream io.Reader) string {
@@ -515,9 +457,7 @@ func StreamToString(stream io.Reader) string {
 }
 
 // SetOAuthURL sets the OAuth url
-func SetOAuthURL(url string) {
-	OAuthURL = url
-}
+func SetOAuthURL(url string) { OAuthURL = url }
 
 // OAuthResponse represents the response from the token request
 type OAuthResponse struct {

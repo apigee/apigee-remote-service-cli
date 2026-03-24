@@ -613,7 +613,7 @@ func TestProvisionNGSaaS(t *testing.T) {
 	if err := os.WriteFile(credFile, []byte(`{"type": "service_account"}`), 0644); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.RemoveAll(credDir)
+	defer func() { _ = os.RemoveAll(credDir) }()
 
 	// good provision with rotate
 	rootArgs := &shared.RootArgs{}

@@ -215,7 +215,7 @@ func TestTokenInspect(t *testing.T) {
 	shared.AddCommandWithFlags(rootCmd, rootArgs, Cmd(rootArgs, print.Printf))
 
 	err = rootCmd.Execute()
-	testutil.ErrorContains(t, err, "inspecting token: parsing jwt token: invalid jws message")
+	testutil.ErrorContains(t, err, "inspecting token: parsing jwt token: failed to parse token: EOF")
 }
 
 func TestTokenRotateCert(t *testing.T) {
@@ -237,7 +237,7 @@ func TestTokenRotateCert(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	print := testutil.Printer("TestTokenRotateCert")
 
@@ -438,7 +438,7 @@ func TestCreateInternalJWT(t *testing.T) {
 	if _, err := tmpFile.Write(config); err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	print := testutil.Printer("TestCreateInternalJWT")
 
